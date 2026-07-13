@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <template id="cash_camera_modal" name="Cash Camera Modal">
+        <div
+            class="modal fade"
+            tabindex="-1"
+            aria-hidden="true"
+            data-cash-camera-modal="1"
+        >
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Capture Receipt</h5>
+                        <button
+                            type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Close"
+                        />
+                    </div>
+                    <div class="modal-body">
+                        <div class="d-flex flex-wrap gap-2 mb-2">
+                            <button
+                                type="button"
+                                class="btn btn-outline-secondary btn-sm"
+                                data-cash-camera-capture="1"
+                                disabled="disabled"
+                            >
+                                Capture Photo
+                            </button>
+                        </div>
+                        <video
+                            class="w-100 rounded border bg-dark"
+                            data-cash-camera-video="1"
+                            autoplay="autoplay"
+                            playsinline="playsinline"
+                        />
+                        <canvas class="d-none" data-cash-camera-canvas="1" />
+                        <img
+                            class="d-none w-100 rounded border mt-2"
+                            data-cash-camera-preview="1"
+                            alt="Captured receipt"
+                        />
+                        <div
+                            class="small text-muted mt-2 d-none"
+                            data-cash-camera-status="1"
+                        />
+                        <hr />
+                        <label class="form-label" for="cash_camera_file_input">
+                            Or choose an image file
+                        </label>
+                        <input
+                            id="cash_camera_file_input"
+                            class="form-control"
+                            type="file"
+                            accept="image/*"
+                            data-cash-camera-file-input="1"
+                        />
+                    </div>
+                    <div class="modal-footer">
+                        <button
+                            type="button"
+                            class="btn btn-secondary"
+                            data-bs-dismiss="modal"
+                        >
+                            Close
+                        </button>
+                        <button
+                            type="button"
+                            class="btn btn-primary"
+                            data-cash-camera-use="1"
+                            disabled="disabled"
+                        >
+                            Use Photo
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+</odoo>

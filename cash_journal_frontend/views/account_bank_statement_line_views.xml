@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record
+        id="account_bank_statement_line_form_cash_journal_frontend"
+        model="ir.ui.view"
+    >
+        <field
+            name="name"
+        >account.bank.statement.line.form.cash.journal.frontend</field>
+        <field name="model">account.bank.statement.line</field>
+        <field
+            name="inherit_id"
+            ref="account_statement_base.account_bank_statement_line_form"
+        />
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page name="cash_journal_frontend_receipt_image" string="Receipt Image">
+                    <field name="receipt_image" widget="image" readonly="1" />
+                </page>
+            </xpath>
+            <xpath expr="//notebook" position="after">
+                <chatter reload_on_attachment="True" />
+            </xpath>
+        </field>
+    </record>
+</odoo>

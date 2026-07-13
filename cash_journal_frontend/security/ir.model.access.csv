@@ -1,0 +1,4 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_account_journal_cash_frontend_user,account.journal.cash.frontend.user,account.model_account_journal,base.group_user,1,0,0,0
+access_account_analytic_plan_cash_frontend_user,account.analytic.plan.cash.frontend.user,analytic.model_account_analytic_plan,base.group_user,1,0,0,0
+access_account_analytic_account_cash_frontend_user,account.analytic.account.cash.frontend.user,analytic.model_account_analytic_account,base.group_user,1,0,0,0

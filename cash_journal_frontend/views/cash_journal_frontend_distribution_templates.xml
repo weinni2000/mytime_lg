@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <template id="cash_distribution_modal" name="Cash Analytic Distribution Modal">
+        <div
+            class="modal fade"
+            tabindex="-1"
+            aria-hidden="true"
+            data-cash-distribution-modal="1"
+        >
+            <div class="modal-dialog modal-xl modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Analytic Distribution</h5>
+                        <button
+                            type="button"
+                            class="btn-close"
+                            data-cash-distribution-cancel="1"
+                            aria-label="Close"
+                        />
+                    </div>
+                    <div class="modal-body">
+                        <div
+                            class="alert alert-danger d-none"
+                            data-cash-distribution-error="1"
+                            role="alert"
+                        />
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle mb-2">
+                                <thead>
+                                    <tr>
+                                        <th
+                                            t-foreach="analytic_plans"
+                                            t-as="analytic_plan_header_id"
+                                        >
+                                            <t t-out="analytic_plan_header_id.name" />
+                                        </th>
+                                        <th style="width: 160px;">Percentage</th>
+                                        <th style="width: 48px;" />
+                                    </tr>
+                                </thead>
+                                <tbody data-cash-distribution-list="1" />
+                            </table>
+                        </div>
+                        <button
+                            type="button"
+                            class="btn btn-link px-0"
+                            data-cash-distribution-add="1"
+                        >
+                            Add Line
+                        </button>
+                    </div>
+                    <div class="modal-footer">
+                        <div class="me-auto">
+                            <span>Total: </span>
+                            <strong data-cash-distribution-total="1">0</strong>
+                            <span>%</span>
+                        </div>
+                        <button
+                            type="button"
+                            class="btn btn-secondary"
+                            data-cash-distribution-cancel="1"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="button"
+                            class="btn btn-primary"
+                            data-cash-distribution-save="1"
+                        >
+                            Save
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <template data-cash-distribution-row-template="1">
+            <tr data-cash-distribution-row="1">
+                <td t-foreach="analytic_plans" t-as="analytic_plan_column_id">
+                    <div data-cash-analytic-search="1">
+                        <select
+                            class="form-control"
+                            data-cash-analytic-select="1"
+                            t-att-data-cash-analytic-plan-id="analytic_plan_column_id.id"
+                        />
+                        <input type="hidden" data-cash-analytic-display="1" />
+                        <div
+                            class="small text-muted mt-1 d-none"
+                            data-cash-analytic-status="1"
+                        />
+                    </div>
+                </td>
+                <td>
+                    <input
+                        class="form-control"
+                        type="number"
+                        min="0.01"
+                        max="100"
+                        step="0.01"
+                        value="100"
+                        data-cash-distribution-percentage="1"
+                    />
+                </td>
+                <td class="text-end">
+                    <button
+                        type="button"
+                        class="btn btn-outline-secondary"
+                        data-cash-distribution-remove="1"
+                        title="Remove line"
+                    >
+                        <i class="fa fa-trash" />
+                    </button>
+                </td>
+            </tr>
+        </template>
+    </template>
+
+    <template
+        id="cash_analytic_account_create_modal"
+        name="Cash Analytic Account Create Modal"
+    >
+        <div
+            class="modal fade"
+            tabindex="-1"
+            aria-hidden="true"
+            data-cash-analytic-create-modal="1"
+        >
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">New Analytic Account</h5>
+                        <button
+                            type="button"
+                            class="btn-close"
+                            data-cash-analytic-create-cancel="1"
+                            aria-label="Close"
+                        />
+                    </div>
+                    <div class="modal-body">
+                        <div
+                            class="alert alert-danger d-none"
+                            data-cash-analytic-create-error="1"
+                            role="alert"
+                        />
+                        <label
+                            class="form-label"
+                            for="cash_analytic_create_name"
+                        >Name</label>
+                        <input
+                            id="cash_analytic_create_name"
+                            class="form-control"
+                            type="text"
+                            data-cash-analytic-create-name="1"
+                        />
+                    </div>
+                    <div class="modal-footer">
+                        <button
+                            type="button"
+                            class="btn btn-secondary"
+                            data-cash-analytic-create-cancel="1"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="button"
+                            class="btn btn-primary"
+                            data-cash-analytic-create-save="1"
+                        >
+                            Create
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+</odoo>

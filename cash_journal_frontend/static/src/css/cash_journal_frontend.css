@@ -1,0 +1,6 @@
+/* The website theme forces `overflow: auto` on every .modal-body, which adds
+   a second horizontal scrollbar around the whole modal on top of the one
+   already provided by .table-responsive inside the distribution modal. */
+[data-cash-distribution-modal] .modal-body {
+    overflow-x: hidden !important;
+}

@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="view_users_form_cash_journal_frontend" model="ir.ui.view">
+        <field name="name">res.users.form.cash.journal.frontend</field>
+        <field name="model">res.users</field>
+        <field name="inherit_id" ref="base.view_users_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page name="cash_journal_frontend" string="Cash Journal">
+                    <group>
+                        <field name="cash_company_id" options="{'no_create': True}" />
+                        <field
+                            name="cash_journal_id"
+                            context="{'cash_journal_frontend_select': True}"
+                            options="{'no_create': True}"
+                        />
+                        <field name="cash_account_id" options="{'no_create': True}" />
+                        <field
+                            name="cash_analytic_plan_id"
+                            options="{'no_create': True}"
+                        />
+                        <field
+                            name="cash_analytic_account_id"
+                            options="{'no_create': True}"
+                        />
+                        <field name="cash_analytic_tag_ids" widget="many2many_tags" />
+                        <field
+                            name="cash_manual_distribution_id"
+                            options="{'no_create': True}"
+                        />
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_users_form_simple_modif_cash_journal_frontend" model="ir.ui.view">
+        <field name="name">res.users.preferences.form.cash.journal.frontend</field>
+        <field name="model">res.users</field>
+        <field name="inherit_id" ref="base.view_users_form_simple_modif" />
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page name="cash_journal_frontend" string="Cash Journal">
+                    <group>
+                        <field name="cash_company_id" options="{'no_create': True}" />
+                        <field
+                            name="cash_journal_id"
+                            context="{'cash_journal_frontend_select': True}"
+                            options="{'no_create': True}"
+                        />
+                        <field name="cash_account_id" options="{'no_create': True}" />
+                        <field
+                            name="cash_analytic_plan_id"
+                            options="{'no_create': True}"
+                        />
+                        <field
+                            name="cash_analytic_account_id"
+                            options="{'no_create': True}"
+                        />
+                        <field name="cash_analytic_tag_ids" widget="many2many_tags" />
+                        <field
+                            name="cash_manual_distribution_id"
+                            options="{'no_create': True}"
+                        />
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <record
+        id="hr_res_users_view_form_preferences_cash_journal_frontend"
+        model="ir.ui.view"
+    >
+        <field name="name">hr.res.users.preferences.form.cash.journal.frontend</field>
+        <field name="model">res.users</field>
+        <field name="inherit_id" ref="hr.res_users_view_form_preferences" />
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page name="cash_journal_frontend" string="Cash Journal">
+                    <group>
+                        <field name="cash_company_id" options="{'no_create': True}" />
+                        <field
+                            name="cash_journal_id"
+                            context="{'cash_journal_frontend_select': True}"
+                            options="{'no_create': True}"
+                        />
+                        <field name="cash_account_id" options="{'no_create': True}" />
+                        <field
+                            name="cash_analytic_plan_id"
+                            options="{'no_create': True}"
+                        />
+                        <field
+                            name="cash_analytic_account_id"
+                            options="{'no_create': True}"
+                        />
+                        <field name="cash_analytic_tag_ids" widget="many2many_tags" />
+                        <field
+                            name="cash_manual_distribution_id"
+                            options="{'no_create': True}"
+                        />
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>
