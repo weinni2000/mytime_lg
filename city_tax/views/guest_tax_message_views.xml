@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="guest_tax_message_list_view" model="ir.ui.view">
+        <field name="name">guest.tax.message.list</field>
+        <field name="model">guest.tax.message</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name" />
+                <field name="x_sale_order_id" />
+                <field name="x_arrival_date" />
+                <field name="x_departure_date" />
+                <field name="x_guest_line_ids" widget="many2many_tags" />
+            </list>
+        </field>
+    </record>
+
+    <record id="guest_tax_message_form_view" model="ir.ui.view">
+        <field name="name">guest.tax.message.form</field>
+        <field name="model">guest.tax.message</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button
+                        string="Send to Deskline"
+                        type="object"
+                        name="action_send_to_deskline"
+                        class="btn-primary"
+                        invisible="not x_guest_line_ids"
+                        confirm="Submit all guests of this message to Deskline?"
+                    />
+                    <button
+                        string="Convert to Meldeschein"
+                        type="object"
+                        name="action_convert_to_meldeschein"
+                        class="btn-secondary"
+                        invisible="not x_deskline_master_id"
+                        confirm="Convert this Deskline registration into a final numbered Meldeschein?"
+                    />
+                </header>
+                <sheet>
+                    <group>
+                        <field name="name" />
+                        <field name="x_sale_order_id" />
+                        <field name="x_arrival_date" />
+                        <field name="x_departure_date" />
+                    </group>
+                    <field name="x_guest_line_ids">
+                        <list>
+                            <field name="x_guest_partner_id" />
+                            <field name="x_main_guest" />
+                        </list>
+                    </field>
+                    <notebook>
+                        <page string="Technical" name="technical">
+                            <group>
+                                <field name="x_deskline_master_id" readonly="1" />
+                                <field name="x_deskline_master_sub_type" readonly="1" />
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="guest_tax_message_action" model="ir.actions.act_window">
+        <field name="name">Guest Tax Messages</field>
+        <field name="res_model">guest.tax.message</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem
+        id="menu_guest_tax_message"
+        name="Guest Tax Messages"
+        parent="booking_engine.menu_availability_steering"
+        action="guest_tax_message_action"
+        sequence="32"
+    />
+</odoo>

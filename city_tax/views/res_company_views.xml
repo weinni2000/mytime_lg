@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="res_company_view_form_inherit_city_tax" model="ir.ui.view">
+        <field name="name">res.company.form.inherit.city_tax</field>
+        <field name="model">res.company</field>
+        <field name="inherit_id" ref="base.view_company_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page name="deskline" string="Deskline" groups="base.group_system">
+                    <group>
+                        <group string="Credentials">
+                            <field name="x_deskline_username" />
+                            <field name="x_deskline_password" password="True" />
+                        </group>
+                        <group string="Property">
+                            <field name="x_deskline_property_id" />
+                            <field name="x_deskline_db_ov" />
+                        </group>
+                    </group>
+                    <group string="Session">
+                        <button
+                            string="Log in to Deskline"
+                            type="object"
+                            name="action_deskline_login"
+                            class="btn-secondary mb-2"
+                            confirm="This may take some time until the connection is verified."
+                        />
+                        <group>
+                        <field name="x_deskline_session_cookies" />
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

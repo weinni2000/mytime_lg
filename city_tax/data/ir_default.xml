@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo noupdate="1">
+    <record id="default_x_save_as_contact" model="ir.default">
+        <field name="field_id" ref="model_x_guests_line_x_save_as_contact" />
+        <field name="json_value">true</field>
+    </record>
+</odoo>

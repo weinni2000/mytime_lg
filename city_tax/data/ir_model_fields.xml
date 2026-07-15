@@ -1,0 +1,296 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <!-- x_guests_line is a Studio/manual model (no Python base class), so its
+         fields can only be added via ir.model.fields data, not Python _inherit.
+         res.partner's new fields (x_document_date, x_birthdate, ...) live in
+         models/res_partner.py, since res.partner is a real Python model. -->
+    <record id="model_x_guests_line_x_main_guest" model="ir.model.fields">
+        <field name="ttype">boolean</field>
+        <field name="copied" eval="True" />
+        <field name="field_description">Main Guest</field>
+        <field name="model_id" ref="booking_engine.x_model_guests_line" />
+        <field name="name">x_main_guest</field>
+    </record>
+    <record id="model_x_guests_line_x_refresh" model="ir.model.fields">
+        <field name="ttype">boolean</field>
+        <field name="field_description">Refresh</field>
+        <field
+            name="help"
+        >Toggle to force the arrival/departure and guest-check fields to recompute.</field>
+        <field name="model_id" ref="booking_engine.x_model_guests_line" />
+        <field name="name">x_refresh</field>
+    </record>
+    <record id="model_x_guests_line_x_main_guest_check" model="ir.model.fields">
+        <field name="ttype">selection</field>
+        <field
+            name="compute"
+        ><![CDATA[for record in self:
+    if not record.x_guest_partner_id:
+        record['x_main_guest_check'] = 'na'
+        record['x_guest_check_warning'] = False
+        continue
+    if not record.x_main_guest:
+        record['x_main_guest_check'] = record.x_guest_partner_id.x_guest_data_check
+        record['x_guest_check_warning'] = record.x_guest_partner_id.x_guest_data_warning
+        continue
+    missing = []
+    if not record.x_arrival_date:
+        missing.append('Arrival')
+    if not record.x_departure_date:
+        missing.append('Departure')
+    partner_warning = record.x_guest_partner_id.x_guest_full_data_warning
+    if partner_warning:
+        missing.append(partner_warning.replace('Missing: ', ''))
+    if missing:
+        record['x_main_guest_check'] = 'invalid'
+        record['x_guest_check_warning'] = 'Missing: ' + ', '.join(missing)
+    else:
+        record['x_main_guest_check'] = 'ok'
+        record['x_guest_check_warning'] = False
+]]></field>
+        <field
+            name="depends"
+        >x_main_guest, x_refresh, x_arrival_date, x_departure_date, x_guest_partner_id.x_guest_data_check, x_guest_partner_id.x_guest_full_data_check</field>
+        <field name="field_description">Guest Check</field>
+        <field name="model_id" ref="booking_engine.x_model_guests_line" />
+        <field name="name">x_main_guest_check</field>
+        <field name="readonly" eval="True" />
+        <field name="selectable" eval="False" />
+        <field name="store" eval="False" />
+    </record>
+    <record
+        id="model_x_guests_line_x_main_guest_check_selection_na"
+        model="ir.model.fields.selection"
+    >
+        <field name="name">NA</field>
+        <field name="field_id" ref="model_x_guests_line_x_main_guest_check" />
+        <field name="value">na</field>
+    </record>
+    <record
+        id="model_x_guests_line_x_main_guest_check_selection_ok"
+        model="ir.model.fields.selection"
+    >
+        <field name="name">OK</field>
+        <field name="field_id" ref="model_x_guests_line_x_main_guest_check" />
+        <field name="value">ok</field>
+    </record>
+    <record
+        id="model_x_guests_line_x_main_guest_check_selection_invalid"
+        model="ir.model.fields.selection"
+    >
+        <field name="name">Invalid</field>
+        <field name="field_id" ref="model_x_guests_line_x_main_guest_check" />
+        <field name="value">invalid</field>
+    </record>
+    <!-- The personal-data completeness check (name, anrede, nationality, address, ...)
+         is computed once on res.partner (models/res_partner.py) and just related in
+         here; only the stay-specific arrival/departure requirement is guest-line-only. -->
+    <record id="model_x_guests_line_x_guest_check_warning" model="ir.model.fields">
+        <field name="ttype">char</field>
+        <field
+            name="compute"
+        ><![CDATA[for record in self:
+    if not record.x_guest_partner_id:
+        record['x_main_guest_check'] = 'na'
+        record['x_guest_check_warning'] = False
+        continue
+    if not record.x_main_guest:
+        record['x_main_guest_check'] = record.x_guest_partner_id.x_guest_data_check
+        record['x_guest_check_warning'] = record.x_guest_partner_id.x_guest_data_warning
+        continue
+    missing = []
+    if not record.x_arrival_date:
+        missing.append('Arrival')
+    if not record.x_departure_date:
+        missing.append('Departure')
+    partner_warning = record.x_guest_partner_id.x_guest_full_data_warning
+    if partner_warning:
+        missing.append(partner_warning.replace('Missing: ', ''))
+    if missing:
+        record['x_main_guest_check'] = 'invalid'
+        record['x_guest_check_warning'] = 'Missing: ' + ', '.join(missing)
+    else:
+        record['x_main_guest_check'] = 'ok'
+        record['x_guest_check_warning'] = False
+]]></field>
+        <field
+            name="depends"
+        >x_main_guest, x_refresh, x_arrival_date, x_departure_date, x_guest_partner_id.x_guest_data_warning, x_guest_partner_id.x_guest_full_data_warning</field>
+        <field name="field_description">Guest Check Warning</field>
+        <field name="model_id" ref="booking_engine.x_model_guests_line" />
+        <field name="name">x_guest_check_warning</field>
+        <field name="readonly" eval="True" />
+        <field name="store" eval="False" />
+    </record>
+
+    <record id="model_x_guests_line_x_arrival_date" model="ir.model.fields">
+        <field name="ttype">date</field>
+        <field
+            name="compute"
+        ><![CDATA[for record in self:
+    start = record.x_sale_order_id.rental_start_date
+    record['x_arrival_date'] = start.date() if start else False
+]]></field>
+        <field name="depends">x_refresh, x_sale_order_id.rental_start_date</field>
+        <field name="field_description">Arrival</field>
+        <field name="model_id" ref="booking_engine.x_model_guests_line" />
+        <field name="name">x_arrival_date</field>
+        <field name="readonly" eval="True" />
+        <field name="store" eval="True" />
+    </record>
+    <record id="model_x_guests_line_x_planned_departure_date" model="ir.model.fields">
+        <field name="ttype">date</field>
+        <field name="field_description">Planned Departure</field>
+        <field name="model_id" ref="booking_engine.x_model_guests_line" />
+        <field name="name">x_planned_departure_date</field>
+    </record>
+    <record id="model_x_guests_line_x_departure_date" model="ir.model.fields">
+        <field name="ttype">date</field>
+        <field
+            name="compute"
+        ><![CDATA[for record in self:
+    end = record.x_sale_order_id.rental_return_date
+    record['x_departure_date'] = end.date() if end else False
+]]></field>
+        <field name="depends">x_refresh, x_sale_order_id.rental_return_date</field>
+        <field name="field_description">Departure</field>
+        <field name="model_id" ref="booking_engine.x_model_guests_line" />
+        <field name="name">x_departure_date</field>
+        <field name="readonly" eval="True" />
+        <field name="store" eval="True" />
+    </record>
+    <record id="model_x_guests_line_x_save_as_contact" model="ir.model.fields">
+        <field name="ttype">boolean</field>
+        <field name="field_description">Save In Guest Addresses</field>
+        <field name="model_id" ref="booking_engine.x_model_guests_line" />
+        <field name="name">x_save_as_contact</field>
+    </record>
+
+    <!-- related pass-through fields onto the guest partner, mirroring the
+         existing x_guest_identity_check related field from booking_engine -->
+    <record id="model_x_guests_line_x_guest_name" model="ir.model.fields">
+        <field name="ttype">char</field>
+        <field name="related">x_guest_partner_id.name</field>
+        <field name="field_description">Name</field>
+        <field name="model_id" ref="booking_engine.x_model_guests_line" />
+        <field name="name">x_guest_name</field>
+    </record>
+    <record id="model_x_guests_line_x_guest_title_id" model="ir.model.fields">
+        <field name="ttype">many2one</field>
+        <field name="related">x_guest_partner_id.title_id</field>
+        <field name="relation">res.partner.title</field>
+        <field name="field_description">Title</field>
+        <field name="model_id" ref="booking_engine.x_model_guests_line" />
+        <field name="name">x_guest_title_id</field>
+    </record>
+    <record id="model_x_guests_line_x_anrede" model="ir.model.fields">
+        <field name="ttype">selection</field>
+        <field name="related">x_guest_partner_id.x_anrede</field>
+        <field name="field_description">Anrede</field>
+        <field name="model_id" ref="booking_engine.x_model_guests_line" />
+        <field name="name">x_anrede</field>
+    </record>
+    <record id="model_x_guests_line_x_guest_lang" model="ir.model.fields">
+        <field name="ttype">selection</field>
+        <field name="related">x_guest_partner_id.lang</field>
+        <field name="field_description">Language</field>
+        <field name="model_id" ref="booking_engine.x_model_guests_line" />
+        <field name="name">x_guest_lang</field>
+    </record>
+    <record id="model_x_guests_line_x_guest_country_id" model="ir.model.fields">
+        <field name="ttype">many2one</field>
+        <field name="related">x_guest_partner_id.country_id</field>
+        <field name="relation">res.country</field>
+        <field name="field_description">Country</field>
+        <field name="model_id" ref="booking_engine.x_model_guests_line" />
+        <field name="name">x_guest_country_id</field>
+    </record>
+    <record id="model_x_guests_line_x_guest_nationality" model="ir.model.fields">
+        <field name="ttype">many2one</field>
+        <field name="related">x_guest_partner_id.x_nationality</field>
+        <field name="relation">res.country</field>
+        <field name="field_description">Nationality</field>
+        <field name="model_id" ref="booking_engine.x_model_guests_line" />
+        <field name="name">x_guest_nationality</field>
+    </record>
+    <record id="model_x_guests_line_x_calc_nationality_id" model="ir.model.fields">
+        <field name="ttype">many2one</field>
+        <field name="related">x_guest_partner_id.x_calc_nationality_id</field>
+        <field name="relation">res.country</field>
+        <field name="field_description">Calculated Nationality</field>
+        <field name="model_id" ref="booking_engine.x_model_guests_line" />
+        <field name="name">x_calc_nationality_id</field>
+    </record>
+    <record id="model_x_guests_line_x_guest_zip" model="ir.model.fields">
+        <field name="ttype">char</field>
+        <field name="related">x_guest_partner_id.zip</field>
+        <field name="field_description">Zip</field>
+        <field name="model_id" ref="booking_engine.x_model_guests_line" />
+        <field name="name">x_guest_zip</field>
+    </record>
+    <record id="model_x_guests_line_x_guest_city" model="ir.model.fields">
+        <field name="ttype">char</field>
+        <field name="related">x_guest_partner_id.city</field>
+        <field name="field_description">City</field>
+        <field name="model_id" ref="booking_engine.x_model_guests_line" />
+        <field name="name">x_guest_city</field>
+    </record>
+    <record id="model_x_guests_line_x_guest_street" model="ir.model.fields">
+        <field name="ttype">char</field>
+        <field name="related">x_guest_partner_id.street</field>
+        <field name="field_description">Street</field>
+        <field name="model_id" ref="booking_engine.x_model_guests_line" />
+        <field name="name">x_guest_street</field>
+    </record>
+    <record id="model_x_guests_line_x_guest_document_type" model="ir.model.fields">
+        <field name="ttype">selection</field>
+        <field name="related">x_guest_partner_id.x_document_type</field>
+        <field name="field_description">Document Type</field>
+        <field name="model_id" ref="booking_engine.x_model_guests_line" />
+        <field name="name">x_guest_document_type</field>
+    </record>
+    <record id="model_x_guests_line_x_guest_document_number" model="ir.model.fields">
+        <field name="ttype">char</field>
+        <field name="related">x_guest_partner_id.x_document_number</field>
+        <field name="field_description">Document Number</field>
+        <field name="model_id" ref="booking_engine.x_model_guests_line" />
+        <field name="name">x_guest_document_number</field>
+    </record>
+    <record id="model_x_guests_line_x_guest_document_date" model="ir.model.fields">
+        <field name="ttype">date</field>
+        <field name="related">x_guest_partner_id.x_document_date</field>
+        <field name="field_description">Document Date</field>
+        <field name="model_id" ref="booking_engine.x_model_guests_line" />
+        <field name="name">x_guest_document_date</field>
+    </record>
+    <record id="model_x_guests_line_x_guest_document_authority" model="ir.model.fields">
+        <field name="ttype">char</field>
+        <field name="related">x_guest_partner_id.x_document_authority</field>
+        <field name="field_description">Document Authority</field>
+        <field name="model_id" ref="booking_engine.x_model_guests_line" />
+        <field name="name">x_guest_document_authority</field>
+    </record>
+    <record id="model_x_guests_line_x_guest_birthdate" model="ir.model.fields">
+        <field name="ttype">date</field>
+        <field name="related">x_guest_partner_id.x_birthdate</field>
+        <field name="field_description">Birthdate</field>
+        <field name="model_id" ref="booking_engine.x_model_guests_line" />
+        <field name="name">x_guest_birthdate</field>
+    </record>
+    <record id="model_x_guests_line_x_guest_age" model="ir.model.fields">
+        <field name="ttype">integer</field>
+        <field name="related">x_guest_partner_id.x_age</field>
+        <field name="field_description">Age</field>
+        <field name="model_id" ref="booking_engine.x_model_guests_line" />
+        <field name="name">x_guest_age</field>
+        <field name="readonly" eval="True" />
+        <field name="store" eval="False" />
+    </record>
+    <record id="model_x_guests_line_x_guest_marketing_consent" model="ir.model.fields">
+        <field name="ttype">boolean</field>
+        <field name="related">x_guest_partner_id.x_marketing_consent</field>
+        <field name="field_description">Marketing Consent</field>
+        <field name="model_id" ref="booking_engine.x_model_guests_line" />
+        <field name="name">x_guest_marketing_consent</field>
+    </record>
+</odoo>
