@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="view_company_form_pitchup_sync" model="ir.ui.view">
+        <field name="name">res.company.form.pitchup.sync</field>
+        <field name="model">res.company</field>
+        <field name="inherit_id" ref="base.view_company_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='general_info']/group" position="after">
+                <group string="Pitchup" groups="base.group_system">
+                    <group>
+                        <field name="pitchup_api_key" password="True" />
+                    </group>
+                    <group>
+                        <button
+                            name="action_sync_pitchup_orders"
+                            type="object"
+                            string="Sync Pitchup Orders"
+                            class="btn-primary"
+                            invisible="not pitchup_api_key"
+                        />
+                    </group>
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo>

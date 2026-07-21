@@ -1,0 +1,47 @@
+<odoo>
+    <record id="view_pitchup_sync_wizard_form" model="ir.ui.view">
+        <field name="name">pitchup.sync.wizard.form</field>
+        <field name="model">pitchup.sync.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Synchronize Pitchup">
+                <group>
+                    <field name="company_id" groups="base.group_multi_company" />
+                </group>
+                <p class="text-muted">
+                    Map every Pitchup pitch type to the rental product used on the Odoo order.
+                </p>
+                <field name="line_ids">
+                    <list editable="bottom">
+                        <field name="pitch_type_id" />
+                        <field name="product_id" />
+                    </list>
+                </field>
+                <footer>
+                    <button
+                        name="action_sync"
+                        string="Save and Sync"
+                        type="object"
+                        class="btn-primary"
+                    />
+                    <button string="Cancel" special="cancel" class="btn-secondary" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_pitchup_sync_wizard" model="ir.actions.act_window">
+        <field name="name">Sync Pitchup</field>
+        <field name="res_model">pitchup.sync.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <menuitem
+        id="menu_pitchup_sync"
+        name="Sync Pitchup"
+        parent="sale_renting.rental_order_menu"
+        action="action_pitchup_sync_wizard"
+        sequence="90"
+        groups="sales_team.group_sale_manager"
+    />
+</odoo>
