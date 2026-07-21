@@ -1,0 +1,2 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_camping_guesty_sync_system,camping.guesty.sync.system,model_camping_guesty_sync,base.group_system,1,1,1,1
