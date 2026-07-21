@@ -43,4 +43,4 @@ class SaleOrder(models.Model):
 
     def _get_deskline_company(self):
         self.ensure_one()
-        return self.company_id or self.env.company
+        return self.company_id

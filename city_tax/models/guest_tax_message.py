@@ -7,6 +7,9 @@ class GuestTaxMessage(models.Model):
     _inherit = ["guest.tax.deskline.mixin"]
 
     name = fields.Char(required=True, copy=False, readonly=True, default="/")
+    company_id = fields.Many2one(
+        "res.company", string="Company", required=True, default=lambda self: self.env.company
+    )
     x_sale_order_id = fields.Many2one("sale.order", string="Sale Order")
     x_guest_line_ids = fields.One2many("y_guests_line", "x_group_id", string="Guests")
     x_arrival_date = fields.Date(
@@ -26,7 +29,13 @@ class GuestTaxMessage(models.Model):
     def _get_or_create_for_sale_order(self, sale_order):
         message = self.search([("x_sale_order_id", "=", sale_order.id)], limit=1)
         if not message:
-            message = self.create({"name": sale_order.name, "x_sale_order_id": sale_order.id})
+            message = self.create(
+                {
+                    "name": sale_order.name,
+                    "x_sale_order_id": sale_order.id,
+                    "company_id": sale_order.company_id.id,
+                }
+            )
         return message
 
     @api.model
@@ -40,4 +49,4 @@ class GuestTaxMessage(models.Model):
 
     def _get_deskline_company(self):
         self.ensure_one()
-        return self.x_sale_order_id.company_id or self.env.company
+        return self.company_id

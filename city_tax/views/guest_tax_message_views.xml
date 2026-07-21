@@ -6,6 +6,7 @@
         <field name="arch" type="xml">
             <list>
                 <field name="name" />
+                <field name="company_id" />
                 <field name="x_sale_order_id" />
                 <field name="x_arrival_date" />
                 <field name="x_departure_date" />
@@ -33,13 +34,12 @@
                         type="object"
                         name="action_convert_to_meldeschein"
                         class="btn-secondary"
-                        invisible="not x_deskline_master_id"
-                        confirm="Convert this Deskline registration into a final numbered Meldeschein?"
                     />
                 </header>
                 <sheet>
                     <group>
                         <field name="name" />
+                        <field name="company_id" options="{'no_create': True}" />
                         <field name="x_sale_order_id" />
                         <field name="x_arrival_date" />
                         <field name="x_departure_date" />

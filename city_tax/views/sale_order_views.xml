@@ -3,6 +3,7 @@
     <record id="rental_order_view_inherit_city_tax" model="ir.ui.view">
         <field name="arch" type="xml">
             <xpath expr="//field[@name='x_guest_line_ids']" position="before">
+                <field name="company_id" groups="base.group_multi_company" />
                 <button
                     string="Add Customer as Guest"
                     type="object"
