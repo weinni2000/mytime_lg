@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="view_pitchup_product_mapping_list" model="ir.ui.view">
+        <field name="name">pitchup.product.mapping.list</field>
+        <field name="model">pitchup.product.mapping</field>
+        <field name="arch" type="xml">
+            <list>
+                <header>
+                    <button
+                        name="action_sync_pitchup_product_mappings"
+                        string="Sync Pitchup Pitches"
+                        type="object"
+                        class="btn-primary"
+                        display="always"
+                    />
+                </header>
+                <field name="pitch_type_id" />
+                <field name="pitch_type_name" />
+                <field
+                    name="product_template_id"
+                    domain="[('x_is_a_room_offer', '=', True)]"
+                />
+                <field name="company_id" groups="base.group_multi_company" />
+            </list>
+        </field>
+    </record>
+
+    <record id="view_pitchup_product_mapping_form" model="ir.ui.view">
+        <field name="name">pitchup.product.mapping.form</field>
+        <field name="model">pitchup.product.mapping</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="pitch_type_id" />
+                            <field name="pitch_type_name" />
+                        </group>
+                        <group>
+                            <field
+                                name="product_template_id"
+                                domain="[('x_is_a_room_offer', '=', True)]"
+                            />
+                            <field
+                                name="company_id"
+                                groups="base.group_multi_company"
+                            />
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_pitchup_product_mapping_search" model="ir.ui.view">
+        <field name="name">pitchup.product.mapping.search</field>
+        <field name="model">pitchup.product.mapping</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="pitch_type_id" />
+                <field name="pitch_type_name" />
+                <field name="product_template_id" />
+                <field name="company_id" groups="base.group_multi_company" />
+            </search>
+        </field>
+    </record>
+
+    <record id="action_pitchup_product_mapping" model="ir.actions.act_window">
+        <field name="name">Pitchup Product Mappings</field>
+        <field name="res_model">pitchup.product.mapping</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem
+        id="menu_booking_synchronisation"
+        name="Synchronisation"
+        parent="booking_engine.booking_engine_rooms_menu"
+        sequence="90"
+    />
+
+    <menuitem
+        id="menu_pitchup_product_mapping_synchronisation"
+        name="Pitchup Product Mappings"
+        parent="menu_booking_synchronisation"
+        action="action_pitchup_product_mapping"
+        sequence="10"
+    />
+</odoo>

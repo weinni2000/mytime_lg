@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="sale_order_form_view_camping_confirmation" model="ir.ui.view">
+        <field name="name">sale.order.form.camping.confirmation</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form" />
+        <field name="arch" type="xml">
+            <xpath
+                expr="//header/button[@name='action_quotation_send'][1]"
+                position="after"
+            >
+                <button
+                    string="Send Camping Confirmation"
+                    name="action_send_camping_confirmation_email"
+                    type="object"
+                    class="btn-secondary"
+                    invisible="not order_line or not partner_id"
+                    confirm="Send the camping confirmation email to this customer?"
+                />
+            </xpath>
+        </field>
+    </record>
+</odoo>

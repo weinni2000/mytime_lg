@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="product_template_form_view_camping_confirmation" model="ir.ui.view">
+        <field name="name">product.template.form.camping.confirmation</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_form_view" />
+        <field name="arch" type="xml">
+            <xpath
+                expr="//page[@name='sales']//group[@name='description']"
+                position="after"
+            >
+                <group string="Camping Confirmation" name="camping_confirmation">
+                    <field
+                        name="camping_confirmation_text"
+                        nolabel="1"
+                        placeholder="Hello,&#10;&#10;You booked a stay at our camping site in Sattledt for today.&#10;Please fill out the guest registration:&#10;https://lisigruen.at/gaesteregistrierung&#10;&#10;Here are the directions to the camping ground:&#10;https://lisigruen.at/anfahrt&#10;&#10;To find the shower and toilet have a look at this link:&#10;https://lisigruen.at/ammenities&#10;&#10;For payment please use this link:&#10;https://pay.sumup.com/b2c/Q6LNKN8H"
+                    />
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo>

@@ -1,3 +1,4 @@
+import base64
 import logging
 import re
 from datetime import datetime, time
@@ -42,16 +43,45 @@ class ResCompany(models.Model):
         response.raise_for_status()
         return response.json()
 
-    def _pitchup_fetch_bookings(self):
+    def _pitchup_fetch_paginated(self, path, params=None):
         self.ensure_one()
-        data = self._pitchup_get("/booking/", {"page_size": 100})
-        bookings = []
+        request_params = {"page_size": 100}
+        request_params.update(params or {})
+        data = self._pitchup_get(path, request_params)
+        if isinstance(data, list):
+            return data
+
+        records = []
         while True:
-            bookings.extend(data.get("results", []))
+            results = data.get("results")
+            if results is None:
+                return [data]
+            records.extend(results)
             next_url = data.get("next")
             if not next_url:
-                return bookings
+                return records
             data = self._pitchup_get(next_url)
+
+    def _pitchup_fetch_bookings(self):
+        self.ensure_one()
+        return self._pitchup_fetch_paginated("/booking/")
+
+    def _pitchup_fetch_products(self):
+        self.ensure_one()
+        paths = ("/pitchtype/", "/pitch-type/", "/product/")
+        for path in paths:
+            try:
+                return self._pitchup_fetch_paginated(path)
+            except requests.HTTPError as error:
+                if error.response is not None and error.response.status_code == 404:
+                    continue
+                raise
+        raise UserError(
+            _(
+                "Could not find a Pitchup products endpoint. Tried: %(paths)s",
+                paths=", ".join(paths),
+            )
+        )
 
     @staticmethod
     def _pitchup_id_from_url(value):
@@ -123,7 +153,269 @@ class ResCompany(models.Model):
             }
         )
 
-    def _pitchup_order_values(self, booking, partner, channel, product):
+    @staticmethod
+    def _pitchup_product_id(product):
+        if isinstance(product, dict):
+            value = product.get("id") or product.get("pk") or product.get("url") or product.get("resource_uri")
+            try:
+                return int(value)
+            except (TypeError, ValueError):
+                return ResCompany._pitchup_id_from_url(value)
+        return False
+
+    @staticmethod
+    def _pitchup_product_name(product):
+        if not isinstance(product, dict):
+            return False
+        for key in ("name", "title", "display_name", "description"):
+            value = product.get(key)
+            if value:
+                return value
+        pitch_type_id = ResCompany._pitchup_product_id(product)
+        return pitch_type_id and _("Pitchup pitch type %(pitch_type)s", pitch_type=pitch_type_id)
+
+    @staticmethod
+    def _pitchup_image_url_from_value(value):
+        if isinstance(value, str) and value.startswith("http"):
+            return value
+        if isinstance(value, dict):
+            for key in ("url", "image", "photo", "original", "large", "thumbnail"):
+                image_url = ResCompany._pitchup_image_url_from_value(value.get(key))
+                if image_url:
+                    return image_url
+        if isinstance(value, list):
+            for item in value:
+                image_url = ResCompany._pitchup_image_url_from_value(item)
+                if image_url:
+                    return image_url
+        return False
+
+    @staticmethod
+    def _pitchup_product_detail_url(product):
+        if not isinstance(product, dict):
+            return False
+        for key in ("url", "resource_uri", "self"):
+            value = product.get(key)
+            if isinstance(value, str) and value.startswith("http"):
+                return value
+        return False
+
+    @staticmethod
+    def _pitchup_product_image_url(product):
+        if not isinstance(product, dict):
+            return False
+        for key in (
+            "image",
+            "images",
+            "photo",
+            "photos",
+            "picture",
+            "pictures",
+            "media",
+            "gallery",
+        ):
+            image_url = ResCompany._pitchup_image_url_from_value(product.get(key))
+            if image_url:
+                return image_url
+        return False
+
+    def _pitchup_product_with_image_data(self, product):
+        self.ensure_one()
+        if self._pitchup_product_image_url(product):
+            return product
+
+        detail_url = self._pitchup_product_detail_url(product)
+        if not detail_url:
+            return product
+        try:
+            detail = self._pitchup_get(detail_url)
+        except requests.RequestException:
+            _logger.exception("Could not fetch Pitchup product detail from %s.", detail_url)
+            return product
+        if isinstance(detail, dict):
+            combined = dict(product)
+            combined.update(detail)
+            return combined
+        return product
+
+    def _pitchup_download_image(self, image_url):
+        self.ensure_one()
+        response = requests.get(
+            image_url,
+            headers={
+                "Authorization": f"Token {self.pitchup_api_key}",
+                "User-Agent": "mytime_pitchup_sync/19.0",
+            },
+            timeout=PITCHUP_TIMEOUT,
+        )
+        response.raise_for_status()
+        content_type = response.headers.get("Content-Type") or ""
+        if content_type and not content_type.startswith("image/"):
+            raise UserError(
+                _(
+                    "Pitchup image URL returned %(content_type)s instead of an image: %(url)s",
+                    content_type=content_type,
+                    url=image_url,
+                )
+            )
+        return base64.b64encode(response.content)
+
+    def _pitchup_update_product_image(self, product_template_id, product_data):
+        self.ensure_one()
+        image_url = self._pitchup_product_image_url(product_data)
+        if not image_url:
+            return False
+
+        try:
+            product_template_id.write({"image_1920": self._pitchup_download_image(image_url)})
+        except requests.RequestException:
+            _logger.exception(
+                "Could not download Pitchup image %s for product %s.",
+                image_url,
+                product_template_id.display_name,
+            )
+            return False
+        return True
+
+    def _pitchup_find_or_create_product_template(self, pitch_type_id, name):
+        self.ensure_one()
+        product_template_model = self.env["product.template"].sudo().with_company(self)
+        default_code = f"PITCHUP-{pitch_type_id}"
+        product_template_id = product_template_model.search(
+            [
+                ("default_code", "=", default_code),
+                ("company_id", "in", [False, self.id]),
+            ],
+            limit=1,
+        )
+        if product_template_id:
+            product_template_id.write(
+                {
+                    "name": name,
+                    "purchase_ok": False,
+                    "rent_ok": True,
+                    "sale_ok": True,
+                    "type": "service",
+                    "planning_enabled": True,
+                    "x_is_a_room_offer": True,
+                }
+            )
+            return product_template_id
+        return product_template_model.create(
+            {
+                "name": name,
+                "default_code": default_code,
+                "purchase_ok": False,
+                "rent_ok": True,
+                "sale_ok": True,
+                "type": "service",
+                "planning_enabled": True,
+                "x_is_a_room_offer": True,
+                "company_id": self.id,
+            }
+        )
+
+    def _download_pitchup_products(self):
+        self.ensure_one()
+        if not self.pitchup_api_key:
+            raise UserError(_("Set a Pitchup API key on company %(company)s first.", company=self.name))
+
+        product_values = self._pitchup_fetch_products()
+        mapping_model = self.env["pitchup.product.mapping"].sudo()
+        stats = {"created": 0, "updated": 0, "images": 0, "skipped": 0}
+        for product_data in product_values:
+            product_data = self._pitchup_product_with_image_data(product_data)
+            pitch_type_id = self._pitchup_product_id(product_data)
+            name = self._pitchup_product_name(product_data)
+            if not pitch_type_id or not name:
+                stats["skipped"] += 1
+                _logger.warning("Skipped Pitchup product with incomplete data: %s", product_data)
+                continue
+
+            product_template_id = self._pitchup_find_or_create_product_template(pitch_type_id, name)
+            if self._pitchup_update_product_image(product_template_id, product_data):
+                stats["images"] += 1
+            mapping_id = mapping_model.search(
+                [
+                    ("company_id", "=", self.id),
+                    ("pitch_type_id", "=", pitch_type_id),
+                ],
+                limit=1,
+            )
+            values = {
+                "pitch_type_id": pitch_type_id,
+                "pitch_type_name": name,
+                "product_template_id": product_template_id.id,
+                "company_id": self.id,
+            }
+            if mapping_id:
+                mapping_id.write(values)
+                stats["updated"] += 1
+            else:
+                mapping_model.create(values)
+                stats["created"] += 1
+
+        _logger.info("Pitchup product download for %s completed: %s", self.display_name, stats)
+        return stats
+
+    def _pitchup_prepare_unmapped_wizard_action(self, line_values):
+        self.ensure_one()
+        wizard_id = self.env["pitchup.sync.wizard"].create(
+            {
+                "company_id": self.id,
+                "sync_unmapped_only": True,
+                "line_ids": [(0, 0, values) for values in line_values],
+            }
+        )
+        return {
+            "type": "ir.actions.act_window",
+            "name": _("Map Pitchup Products"),
+            "res_model": "pitchup.sync.wizard",
+            "view_mode": "form",
+            "res_id": wizard_id.id,
+            "target": "new",
+        }
+
+    def _sync_pitchup_product_mappings(self):
+        self.ensure_one()
+        if not self.pitchup_api_key:
+            raise UserError(_("Set a Pitchup API key on company %(company)s first.", company=self.name))
+
+        product_values = self._pitchup_fetch_products()
+        mapping_model = self.env["pitchup.product.mapping"].sudo()
+        existing_mapping_ids = mapping_model.search([("company_id", "=", self.id)])
+        existing_by_pitch_type = {mapping_id.pitch_type_id: mapping_id for mapping_id in existing_mapping_ids}
+        line_values = []
+        stats = {"updated": 0, "images": 0, "unmapped": 0, "skipped": 0}
+        for product_data in product_values:
+            product_data = self._pitchup_product_with_image_data(product_data)
+            pitch_type_id = self._pitchup_product_id(product_data)
+            name = self._pitchup_product_name(product_data)
+            if not pitch_type_id or not name:
+                stats["skipped"] += 1
+                _logger.warning("Skipped Pitchup product with incomplete data: %s", product_data)
+                continue
+
+            mapping_id = existing_by_pitch_type.get(pitch_type_id)
+            if mapping_id:
+                mapping_id.write({"pitch_type_name": name})
+                if self._pitchup_update_product_image(mapping_id.product_template_id, product_data):
+                    stats["images"] += 1
+                stats["updated"] += 1
+                continue
+
+            line_values.append(
+                {
+                    "pitch_type_id": pitch_type_id,
+                    "pitch_type_name": name,
+                }
+            )
+            stats["unmapped"] += 1
+
+        _logger.info("Pitchup mapping sync for %s completed: %s", self.display_name, stats)
+        return stats, line_values
+
+    def _pitchup_order_values(self, booking, partner, channel, product_template_id):
         arrive = booking["arrive"]
         depart = booking["depart"]
         booking_id = booking.get("pretty_id") or str(booking["id"])
@@ -146,7 +438,8 @@ class ResCompany(models.Model):
                 f"Special requests: {booking.get('special_requests') or ''}",
             ]
         )
-        line_name = f"{product.display_name}\n{arrive} 18:00 to {depart} 09:00"
+        product_id = product_template_id.product_variant_id
+        line_name = f"{product_template_id.display_name}\n{arrive} 18:00 to {depart} 09:00"
         return {
             "partner_id": partner.id,
             "partner_invoice_id": partner.id,
@@ -164,7 +457,7 @@ class ResCompany(models.Model):
                     0,
                     0,
                     {
-                        "product_id": product.id,
+                        "product_id": product_id.id,
                         "product_uom_qty": 1.0,
                         "is_rental": True,
                         "price_unit": price,
@@ -227,8 +520,8 @@ class ResCompany(models.Model):
                 limit=1,
             )
         )
-        product = mapping.product_id
-        if not product:
+        product_template_id = mapping.product_template_id
+        if not product_template_id:
             raise UserError(
                 _(
                     "No Odoo product mapping exists for Pitchup pitch type %(pitch_type)s.",
@@ -238,7 +531,7 @@ class ResCompany(models.Model):
 
         if not order:
             partner = self._pitchup_find_partner(booking)
-            values = self._pitchup_order_values(booking, partner, channel, product)
+            values = self._pitchup_order_values(booking, partner, channel, product_template_id)
             order = order_model.create(values)
             # Rental creation may recompute the product price; restore API truth.
             order.order_line[:1].write({"price_unit": self._pitchup_money(booking)})
@@ -252,7 +545,7 @@ class ResCompany(models.Model):
     def _sync_pitchup_orders(self):
         self.ensure_one()
         if not self.pitchup_api_key:
-            raise UserError(_("Set a Pitchup API key on company %s first.", self.name))
+            raise UserError(_("Set a Pitchup API key on company %(company)s first.", company=self.name))
 
         bookings = self._pitchup_fetch_bookings()
         channel = self._pitchup_sale_channel()
@@ -288,6 +581,45 @@ class ResCompany(models.Model):
                 ),
                 "type": "warning" if totals["errors"] else "success",
                 "sticky": bool(totals["errors"]),
+            },
+        }
+
+    def action_download_pitchup_products(self):
+        totals = {"created": 0, "updated": 0, "images": 0, "skipped": 0}
+        for company in self:
+            stats = company._download_pitchup_products()
+            for key, value in stats.items():
+                totals[key] += value
+        return {
+            "type": "ir.actions.client",
+            "tag": "display_notification",
+            "params": {
+                "title": _("Pitchup products downloaded"),
+                "message": _(
+                    "Created: %(created)s, updated: %(updated)s, " "images: %(images)s, skipped: %(skipped)s",
+                    **totals,
+                ),
+                "type": "warning" if totals["skipped"] else "success",
+                "sticky": bool(totals["skipped"]),
+            },
+        }
+
+    def action_sync_pitchup_product_mappings(self):
+        self.ensure_one()
+        stats, line_values = self._sync_pitchup_product_mappings()
+        if line_values:
+            return self._pitchup_prepare_unmapped_wizard_action(line_values)
+        return {
+            "type": "ir.actions.client",
+            "tag": "display_notification",
+            "params": {
+                "title": _("Pitchup product mappings synchronized"),
+                "message": _(
+                    "Updated: %(updated)s, images: %(images)s, skipped: %(skipped)s",
+                    **stats,
+                ),
+                "type": "warning" if stats["skipped"] else "success",
+                "sticky": bool(stats["skipped"]),
             },
         }
 

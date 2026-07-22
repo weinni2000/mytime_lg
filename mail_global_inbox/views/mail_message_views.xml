@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="view_mail_message_global_tree" model="ir.ui.view">
+        <field name="name">mail.message.global.list</field>
+        <field name="model">mail.message</field>
+        <field name="arch" type="xml">
+            <list string="All Emails" default_order="date desc">
+                <field name="starred" widget="boolean_favorite" nolabel="1" />
+                <field name="needaction" invisible="1" />
+                <field name="date" />
+                <field name="subject" />
+                <field name="email_from" />
+                <field name="model" />
+                <field name="res_id" />
+                <field name="author_id" />
+                <field name="checked_by_id" />
+                <button
+                    name="action_open_related_document"
+                    type="object"
+                    icon="fa-external-link"
+                    title="Zugehöriges Dokument öffnen"
+                    invisible="not res_id"
+                />
+            </list>
+        </field>
+    </record>
+
+    <record id="view_mail_message_global_form" model="ir.ui.view">
+        <field name="name">mail.message.global.form</field>
+        <field name="model">mail.message</field>
+        <field name="arch" type="xml">
+            <form string="Email">
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button
+                            name="toggle_message_starred"
+                            type="object"
+                            class="oe_stat_button"
+                            icon="fa-star"
+                        >
+                            <field
+                                name="starred"
+                                widget="boolean_favorite"
+                                nolabel="1"
+                            />
+                        </button>
+                        <button
+                            name="action_open_related_document"
+                            type="object"
+                            class="oe_stat_button"
+                            icon="fa-external-link"
+                            string="Dokument öffnen"
+                            invisible="not res_id"
+                        />
+                    </div>
+                    <field name="needaction" invisible="1" />
+                    <button
+                        name="set_message_done"
+                        type="object"
+                        string="Als gelesen markieren"
+                        class="btn btn-secondary"
+                        invisible="not needaction"
+                    />
+                    <group>
+                        <group>
+                            <field name="subject" />
+                            <field name="email_from" />
+                            <field name="date" />
+                        </group>
+                        <group>
+                            <field name="model" />
+                            <field name="res_id" />
+                            <field name="author_id" />
+                            <field name="checked_by_id" />
+                        </group>
+                    </group>
+                    <separator string="Body" />
+                    <field name="body" widget="html" readonly="1" />
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_global_emails" model="ir.actions.act_window">
+        <field name="name">All Emails</field>
+        <field name="res_model">mail.message</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('message_type', '=', 'email')]</field>
+        <field name="context">{'default_message_type': 'email'}</field>
+        <field
+            name="view_ids"
+            eval="[
+            (5, 0, 0),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('view_mail_message_global_tree')}),
+            (0, 0, {'view_mode': 'form', 'view_id': ref('view_mail_message_global_form')}),
+        ]"
+        />
+    </record>
+</odoo>

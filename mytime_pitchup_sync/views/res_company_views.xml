@@ -5,21 +5,34 @@
         <field name="model">res.company</field>
         <field name="inherit_id" ref="base.view_company_form" />
         <field name="arch" type="xml">
-            <xpath expr="//page[@name='general_info']/group" position="after">
-                <group string="Pitchup" groups="base.group_system">
-                    <group>
-                        <field name="pitchup_api_key" password="True" />
+            <xpath expr="//page[@name='general_info']" position="after">
+                <page
+                    name="booking_sync"
+                    string="Booking Sync"
+                    groups="base.group_system"
+                >
+                    <group string="Pitchup">
+                        <group>
+                            <field name="pitchup_api_key" password="True" />
+                        </group>
+                        <group>
+                            <button
+                                name="action_download_pitchup_products"
+                                type="object"
+                                string="Download Pitchup Products"
+                                class="btn-secondary"
+                                invisible="not pitchup_api_key"
+                            />
+                            <button
+                                name="action_sync_pitchup_orders"
+                                type="object"
+                                string="Sync Pitchup Orders"
+                                class="btn-primary"
+                                invisible="not pitchup_api_key"
+                            />
+                        </group>
                     </group>
-                    <group>
-                        <button
-                            name="action_sync_pitchup_orders"
-                            type="object"
-                            string="Sync Pitchup Orders"
-                            class="btn-primary"
-                            invisible="not pitchup_api_key"
-                        />
-                    </group>
-                </group>
+                </page>
             </xpath>
         </field>
     </record>

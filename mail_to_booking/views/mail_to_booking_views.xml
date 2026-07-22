@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="mail_to_booking_list_view" model="ir.ui.view">
+        <field name="name">mail.to.booking.list</field>
+        <field name="model">mail.to.booking</field>
+        <field name="arch" type="xml">
+            <list decoration-danger="state == 'no_product'">
+                <field name="name" />
+                <field name="sale_channel_id" />
+                <field name="sender" />
+                <field name="subject" />
+                <field name="booking_code" />
+                <field name="guest_name" />
+                <field name="checkin_date" />
+                <field name="checkout_date" />
+                <field name="sale_order_id" />
+                <field name="state" />
+                <button
+                    name="action_open_product_mapping_wizard"
+                    type="object"
+                    string="Choose Product"
+                    icon="fa-cube"
+                    invisible="state != 'no_product'"
+                />
+                <button
+                    name="action_reprocess"
+                    type="object"
+                    string="Reprocess"
+                    icon="fa-refresh"
+                />
+            </list>
+        </field>
+    </record>
+
+    <record id="mail_to_booking_form_view" model="ir.ui.view">
+        <field name="name">mail.to.booking.form</field>
+        <field name="model">mail.to.booking</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button
+                        name="action_retry"
+                        string="Retry"
+                        type="object"
+                        class="btn-secondary"
+                        invisible="state == 'created'"
+                    />
+                    <button
+                        name="action_open_product_mapping_wizard"
+                        string="Choose Product"
+                        type="object"
+                        class="btn-primary"
+                        invisible="state != 'no_product'"
+                    />
+                    <field name="state" widget="statusbar" />
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button
+                            name="action_view_sale_order"
+                            type="object"
+                            class="oe_stat_button"
+                            icon="fa-shopping-cart"
+                            invisible="not sale_order_id"
+                        >
+                            <field
+                                name="sale_order_id"
+                                widget="statinfo"
+                                string="Booking"
+                            />
+                        </button>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="name" />
+                            <field name="sender" />
+                            <field name="subject" />
+                            <field name="fetchmail_server_id" />
+                            <field
+                                name="company_id"
+                                groups="base.group_multi_company"
+                            />
+                        </group>
+                        <group>
+                            <field name="sale_channel_id" />
+                            <field name="booking_code" />
+                            <field name="sale_order_id" readonly="1" />
+                        </group>
+                    </group>
+                    <div
+                        invisible="not error_message"
+                        class="alert alert-danger"
+                        role="alert"
+                    >
+                        <field name="error_message" nolabel="1" />
+                    </div>
+                    <div
+                        invisible="state != 'no_product'"
+                        class="alert alert-warning"
+                        role="alert"
+                    >
+                        No product could be matched automatically for hint "<field
+                            name="product_hint"
+                            nolabel="1"
+                            readonly="1"
+                            class="oe_inline"
+                        />". Use "Choose Product" to map it and create the booking.
+                    </div>
+                    <div
+                        invisible="not confirm_warning"
+                        class="alert alert-warning"
+                        role="alert"
+                    >
+                        The booking was created but could not be confirmed automatically:
+                        <field name="confirm_warning" nolabel="1" readonly="1" />
+                    </div>
+                    <notebook>
+                        <page name="booking" string="Booking">
+                            <group>
+                                <group>
+                                    <field name="guest_name" />
+                                    <field name="email" />
+                                    <field name="phone" />
+                                    <field name="message" />
+                                </group>
+                                <group>
+                                    <field name="product_hint" />
+                                    <field name="product_id" />
+                                    <field name="checkin_date" />
+                                    <field name="checkout_date" />
+                                    <field name="nights" />
+                                    <field name="adults" />
+                                    <field name="vehicles" />
+                                    <field name="price_unit" />
+                                </group>
+                            </group>
+                        </page>
+                        <page name="mail" string="Mail">
+                            <field name="mail_body" nolabel="1" />
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter />
+            </form>
+        </field>
+    </record>
+
+    <record id="mail_to_booking_search_view" model="ir.ui.view">
+        <field name="name">mail.to.booking.search</field>
+        <field name="model">mail.to.booking</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name" />
+                <field name="sale_channel_id" />
+                <field name="sender" />
+                <field name="subject" />
+                <field name="booking_code" />
+                <field name="guest_name" />
+                <field name="sale_order_id" />
+                <filter
+                    name="filter_created"
+                    string="Booking Created"
+                    domain="[('state', '=', 'created')]"
+                />
+                <filter
+                    name="filter_no_product"
+                    string="Product Missing"
+                    domain="[('state', '=', 'no_product')]"
+                />
+                <filter
+                    name="filter_error"
+                    string="Error"
+                    domain="[('state', '=', 'error')]"
+                />
+                <separator />
+                <group>
+                    <filter
+                        name="group_by_state"
+                        string="Status"
+                        context="{'group_by': 'state'}"
+                    />
+                    <filter
+                        name="group_by_server"
+                        string="Mail Server"
+                        context="{'group_by': 'fetchmail_server_id'}"
+                    />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="mail_to_booking_action" model="ir.actions.act_window">
+        <field name="name">Mail to Booking</field>
+        <field name="res_model">mail.to.booking</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem
+        id="mail_to_booking_parent_menu"
+        name="Mail to Booking"
+        parent="booking_engine.booking_engine_rooms_menu"
+        sequence="96"
+    />
+
+    <menuitem
+        id="mail_to_booking_menu"
+        name="Mail to Booking"
+        parent="mail_to_booking_parent_menu"
+        action="mail_to_booking_action"
+        sequence="10"
+    />
+</odoo>

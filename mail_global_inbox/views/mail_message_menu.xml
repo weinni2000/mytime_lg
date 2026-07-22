@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <!-- Top-level menu item in Discuss app -->
+    <menuitem
+        id="menu_global_emails_root"
+        name="All Emails"
+        parent="mail.menu_root_discuss"
+        action="action_global_emails"
+        sequence="100"
+    />
+</odoo>

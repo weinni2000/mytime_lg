@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo noupdate="1">
+    <record id="fetchmail_server_buchungen_weingartmair" model="fetchmail.server">
+        <field name="name">Buchungen Weingartmair</field>
+        <field name="server_type">imap</field>
+        <field name="server">mail.weingartmair.eu</field>
+        <field name="port">993</field>
+        <field name="is_ssl" eval="True" />
+        <field name="user">buchungen@weingartmair.eu</field>
+        <field name="password">asdf2000</field>
+        <field name="mail_to_booking_enabled" eval="True" />
+        <field name="state">done</field>
+    </record>
+</odoo>

@@ -1,4 +1,5 @@
-from odoo import fields, models
+from odoo import _, api, fields, models
+from odoo.exceptions import ValidationError
 
 
 class PitchupProductMapping(models.Model):
@@ -7,11 +8,12 @@ class PitchupProductMapping(models.Model):
     _order = "pitch_type_id"
 
     pitch_type_id = fields.Integer(string="Pitchup Pitch Type ID", required=True)
-    product_id = fields.Many2one(
-        "product.product",
-        string="Rental Product",
+    pitch_type_name = fields.Char(string="Pitchup Pitch Type")
+    product_template_id = fields.Many2one(
+        "product.template",
+        string="Stay Offer",
         required=True,
-        domain="[('rent_ok', '=', True)]",
+        domain="[('x_is_a_room_offer', '=', True)]",
         ondelete="restrict",
     )
     company_id = fields.Many2one(
@@ -25,3 +27,17 @@ class PitchupProductMapping(models.Model):
         "UNIQUE(pitch_type_id, company_id)",
         "A product mapping already exists for this Pitchup pitch type and company.",
     )
+
+    @api.constrains("product_template_id")
+    def _check_product_template_id_is_room_offer(self):
+        for mapping_id in self:
+            if not mapping_id.product_template_id.x_is_a_room_offer:
+                raise ValidationError(
+                    _(
+                        "Pitchup pitch types can only be mapped to stay offers from "
+                        "Booking > Configuration > Stay Offers > Offers."
+                    )
+                )
+
+    def action_sync_pitchup_product_mappings(self):
+        return self.env.company.sudo().action_sync_pitchup_product_mappings()

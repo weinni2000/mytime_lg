@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="insert_from_mail_list_view" model="ir.ui.view">
+        <field name="name">insert.from.mail.list</field>
+        <field name="model">insert.from.mail</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name" />
+                <field name="platform" />
+                <field name="sender" />
+                <field name="subject" />
+                <field name="booking_code" />
+                <field name="guest_name" />
+                <field name="checkin_date" />
+                <field name="checkout_date" />
+                <field name="sale_order_id" />
+                <field name="state" />
+            </list>
+        </field>
+    </record>
+
+    <record id="insert_from_mail_form_view" model="ir.ui.view">
+        <field name="name">insert.from.mail.form</field>
+        <field name="model">insert.from.mail</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button
+                        name="action_fetch_mail_body"
+                        string="Fetch Mail"
+                        type="object"
+                        class="btn-secondary"
+                    />
+                    <button
+                        name="action_extract_mail"
+                        string="Extract"
+                        type="object"
+                        class="btn-secondary"
+                    />
+                    <button
+                        name="action_create_booking"
+                        string="Create Booking"
+                        type="object"
+                        class="btn-primary"
+                        invisible="state == 'created'"
+                    />
+                    <field name="state" widget="statusbar" />
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button
+                            name="action_open_sale_order"
+                            type="object"
+                            class="oe_stat_button"
+                            icon="fa-shopping-cart"
+                            invisible="not sale_order_id"
+                        >
+                            <field
+                                name="sale_order_id"
+                                widget="statinfo"
+                                string="Booking"
+                            />
+                        </button>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="name" />
+                            <field name="sender" />
+                            <field name="subject" />
+                            <field name="mail_url" />
+                            <field
+                                name="company_id"
+                                groups="base.group_multi_company"
+                            />
+                        </group>
+                        <group>
+                            <field name="platform" />
+                            <field name="booking_code" />
+                            <field name="sale_order_id" readonly="1" />
+                        </group>
+                    </group>
+                    <notebook>
+                        <page name="booking" string="Booking">
+                            <group>
+                                <group>
+                                    <field name="guest_name" />
+                                    <field name="email" />
+                                    <field name="phone" />
+                                    <field name="message" />
+                                </group>
+                                <group>
+                                    <field name="product_id" />
+                                    <field name="checkin_date" />
+                                    <field name="checkout_date" />
+                                    <field name="arrival_hour_utc" />
+                                    <field name="nights" />
+                                    <field name="adults" />
+                                    <field name="vehicles" />
+                                </group>
+                            </group>
+                            <group>
+                                <field name="price_unit" />
+                                <field name="price_details" />
+                            </group>
+                        </page>
+                        <page name="mail" string="Mail">
+                            <field name="mail_body" nolabel="1" />
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="insert_from_mail_search_view" model="ir.ui.view">
+        <field name="name">insert.from.mail.search</field>
+        <field name="model">insert.from.mail</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name" />
+                <field name="platform" />
+                <field name="sender" />
+                <field name="subject" />
+                <field name="booking_code" />
+                <field name="guest_name" />
+                <field name="sale_order_id" />
+            </search>
+        </field>
+    </record>
+
+    <record id="insert_from_mail_action" model="ir.actions.act_window">
+        <field name="name">Insert From Mail</field>
+        <field name="res_model">insert.from.mail</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem
+        id="insert_from_mail_parent_menu"
+        name="Mail Import"
+        parent="booking_engine.booking_engine_rooms_menu"
+        sequence="95"
+    />
+
+    <menuitem
+        id="insert_from_mail_menu"
+        name="Insert From Mail"
+        parent="insert_from_mail_parent_menu"
+        action="insert_from_mail_action"
+        sequence="10"
+    />
+</odoo>

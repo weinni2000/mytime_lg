@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="view_product_template_list_pitchup_sync" model="ir.ui.view">
+        <field name="name">product.template.list.pitchup.sync</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="booking_engine.booking_engine_offers_list" />
+        <field name="arch" type="xml">
+            <xpath expr="//list" position="inside">
+                <header>
+                    <button
+                        name="action_sync_pitchup_product_mappings"
+                        string="Sync Pitchup Pitches"
+                        type="object"
+                        class="btn-primary"
+                        display="always"
+                    />
+                </header>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_product_template_form_pitchup_info" model="ir.ui.view">
+        <field name="name">product.template.form.pitchup.info</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="booking_engine.booking_engine_offers_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//notebook[1]" position="inside">
+                <page
+                    string="Pitchup"
+                    name="pitchup_info"
+                    invisible="not x_is_a_room_offer"
+                >
+                    <field
+                        name="pitchup_mapping_ids"
+                        context="{'default_product_template_id': id}"
+                    >
+                        <list editable="bottom">
+                            <field name="pitch_type_id" />
+                            <field name="pitch_type_name" />
+                            <field
+                                name="company_id"
+                                groups="base.group_multi_company"
+                            />
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

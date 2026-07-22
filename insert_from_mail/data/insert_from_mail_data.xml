@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo noupdate="1">
+    <record id="ir_config_parameter_gog_command" model="ir.config_parameter">
+        <field name="key">insert_from_mail.gog_command</field>
+        <field name="value">/home/weinni2000/bin/gog-unlocked</field>
+    </record>
+
+    <record id="insert_from_mail_alpacacamping" model="insert.from.mail">
+        <field name="name">Alpacacamping booking confirmation</field>
+        <field name="platform">Alpacacamping</field>
+        <field name="sender">kontakt@alpacacamping.de</field>
+        <field name="subject">Dein Angebot wurde gebucht</field>
+    </record>
+
+    <record id="insert_from_mail_roadsurfer" model="insert.from.mail">
+        <field name="name">Roadsurfer booking confirmation</field>
+        <field name="platform">Roadsurfer</field>
+        <field name="sender">spots@roadsurfer.com</field>
+        <field name="subject">Neue Spot-Buchung</field>
+    </record>
+
+    <record id="insert_from_mail_pitchup" model="insert.from.mail">
+        <field name="name">Pitchup booking confirmation</field>
+        <field name="platform">Pitchup</field>
+        <field name="sender">enquiries@pitchup.com</field>
+        <field name="subject">Buchungsbestätigung: Camping@Unternhub</field>
+    </record>
+</odoo>
