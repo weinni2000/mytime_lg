@@ -20,6 +20,42 @@
         <field name="model_id" ref="booking_engine.x_model_guests_line" />
         <field name="name">x_refresh</field>
     </record>
+    <record id="model_x_guests_line_x_arrival_date" model="ir.model.fields">
+        <field name="ttype">date</field>
+        <field
+            name="compute"
+        ><![CDATA[for record in self:
+    start = record.x_sale_order_id.rental_start_date
+    record['x_arrival_date'] = start.date() if start else False
+]]></field>
+        <field name="depends">x_refresh, x_sale_order_id.rental_start_date</field>
+        <field name="field_description">Arrival</field>
+        <field name="model_id" ref="booking_engine.x_model_guests_line" />
+        <field name="name">x_arrival_date</field>
+        <field name="readonly" eval="True" />
+        <field name="store" eval="True" />
+    </record>
+    <record id="model_x_guests_line_x_planned_departure_date" model="ir.model.fields">
+        <field name="ttype">date</field>
+        <field name="field_description">Planned Departure</field>
+        <field name="model_id" ref="booking_engine.x_model_guests_line" />
+        <field name="name">x_planned_departure_date</field>
+    </record>
+    <record id="model_x_guests_line_x_departure_date" model="ir.model.fields">
+        <field name="ttype">date</field>
+        <field
+            name="compute"
+        ><![CDATA[for record in self:
+    end = record.x_sale_order_id.rental_return_date
+    record['x_departure_date'] = end.date() if end else False
+]]></field>
+        <field name="depends">x_refresh, x_sale_order_id.rental_return_date</field>
+        <field name="field_description">Departure</field>
+        <field name="model_id" ref="booking_engine.x_model_guests_line" />
+        <field name="name">x_departure_date</field>
+        <field name="readonly" eval="True" />
+        <field name="store" eval="True" />
+    </record>
     <record id="model_x_guests_line_x_main_guest_check" model="ir.model.fields">
         <field name="ttype">selection</field>
         <field
@@ -123,42 +159,6 @@
         <field name="store" eval="False" />
     </record>
 
-    <record id="model_x_guests_line_x_arrival_date" model="ir.model.fields">
-        <field name="ttype">date</field>
-        <field
-            name="compute"
-        ><![CDATA[for record in self:
-    start = record.x_sale_order_id.rental_start_date
-    record['x_arrival_date'] = start.date() if start else False
-]]></field>
-        <field name="depends">x_refresh, x_sale_order_id.rental_start_date</field>
-        <field name="field_description">Arrival</field>
-        <field name="model_id" ref="booking_engine.x_model_guests_line" />
-        <field name="name">x_arrival_date</field>
-        <field name="readonly" eval="True" />
-        <field name="store" eval="True" />
-    </record>
-    <record id="model_x_guests_line_x_planned_departure_date" model="ir.model.fields">
-        <field name="ttype">date</field>
-        <field name="field_description">Planned Departure</field>
-        <field name="model_id" ref="booking_engine.x_model_guests_line" />
-        <field name="name">x_planned_departure_date</field>
-    </record>
-    <record id="model_x_guests_line_x_departure_date" model="ir.model.fields">
-        <field name="ttype">date</field>
-        <field
-            name="compute"
-        ><![CDATA[for record in self:
-    end = record.x_sale_order_id.rental_return_date
-    record['x_departure_date'] = end.date() if end else False
-]]></field>
-        <field name="depends">x_refresh, x_sale_order_id.rental_return_date</field>
-        <field name="field_description">Departure</field>
-        <field name="model_id" ref="booking_engine.x_model_guests_line" />
-        <field name="name">x_departure_date</field>
-        <field name="readonly" eval="True" />
-        <field name="store" eval="True" />
-    </record>
     <record id="model_x_guests_line_x_save_as_contact" model="ir.model.fields">
         <field name="ttype">boolean</field>
         <field name="field_description">Save In Guest Addresses</field>

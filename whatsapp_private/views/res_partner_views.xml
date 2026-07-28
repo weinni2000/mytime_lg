@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_partner_form_private_whatsapp" model="ir.ui.view">
+        <field name="name">res.partner.form.private.whatsapp</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='phone'][1]" position="after">
+                <field name="whatsapp_private_jid"/>
+            </xpath>
+        </field>
+    </record>
+    <record id="view_partner_list_private_whatsapp" model="ir.ui.view">
+        <field name="name">res.partner.list.private.whatsapp</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_tree"/>
+        <field name="arch" type="xml">
+            <field name="phone" position="after">
+                <field name="whatsapp_private_jid" optional="hide"/>
+            </field>
+        </field>
+    </record>
+</odoo>

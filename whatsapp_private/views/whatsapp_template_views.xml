@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="whatsapp_template_view_form_editable_account" model="ir.ui.view">
+        <field name="name">whatsapp.template.form.editable.account</field>
+        <field name="model">whatsapp.template</field>
+        <field name="inherit_id" ref="whatsapp.whatsapp_template_view_form"/>
+        <field name="arch" type="xml">
+            <field name="wa_account_id" position="attributes">
+                <attribute name="readonly">False</attribute>
+            </field>
+            <field name="wa_account_id" position="after">
+                <field name="is_private_whatsapp" invisible="1"/>
+            </field>
+            <field name="template_type" position="attributes">
+                <attribute name="readonly">status != 'draft' and not is_private_whatsapp</attribute>
+            </field>
+            <field name="template_name" position="attributes">
+                <attribute name="readonly">(not wa_template_uid or status != 'draft') and not is_private_whatsapp</attribute>
+            </field>
+            <field name="lang_code" position="attributes">
+                <attribute name="readonly">status != 'draft' and not is_private_whatsapp</attribute>
+            </field>
+            <field name="header_type" position="attributes">
+                <attribute name="readonly">status != 'draft' and not is_private_whatsapp</attribute>
+            </field>
+            <field name="header_text" position="attributes">
+                <attribute name="readonly">status != 'draft' and not is_private_whatsapp</attribute>
+            </field>
+            <field name="footer_text" position="attributes">
+                <attribute name="readonly">status != 'draft' and not is_private_whatsapp</attribute>
+            </field>
+            <field name="body" position="attributes">
+                <attribute name="readonly">status != 'draft' and not is_private_whatsapp</attribute>
+            </field>
+            <field name="button_ids" position="attributes">
+                <attribute name="readonly">status != 'draft' and not is_private_whatsapp</attribute>
+            </field>
+        </field>
+    </record>
+</odoo>

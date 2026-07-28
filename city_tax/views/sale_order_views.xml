@@ -27,27 +27,9 @@
                     confirm="Convert this Deskline registration into a final numbered Meldeschein?"
                     class="btn-secondary mb-2"
                 />
-                <field
-                    name="x_guest_line_ids"
-                    string="Order Party"
-                    domain="[('x_guest_partner_id', '=', partner_id)]"
-                    context="{'default_x_guest_partner_id': partner_id}"
-                >
-                    <list create="false" delete="false">
-                        <field name="x_guest_partner_id" widget="many2one_avatar" />
-                        <field
-                            name="x_guest_identity_check"
-                            widget="badge"
-                            decoration-success="x_guest_identity_check == 'ok'"
-                            decoration-warning="x_guest_identity_check == 'na'"
-                            decoration-danger="x_guest_identity_check == 'invalid'"
-                        />
-                        <field name="x_room_resource_id" />
-                    </list>
-                </field>
             </xpath>
             <xpath
-                expr="//field[@name='x_guest_line_ids'][not(@domain)]//field[@name='x_guest_partner_id']"
+                expr="//field[@name='x_guest_line_ids']//field[@name='x_guest_partner_id']"
                 position="after"
             >
                 <field name="x_main_guest" optional="show" />
@@ -62,7 +44,7 @@
                 />
             </xpath>
             <xpath
-                expr="//field[@name='x_guest_line_ids'][not(@domain)]//field[@name='x_room_resource_id']"
+                expr="//field[@name='x_guest_line_ids']//field[@name='x_room_resource_id']"
                 position="after"
             >
                 <field name="x_arrival_date" optional="show" readonly="1" />
@@ -77,13 +59,13 @@
                 <field name="x_refresh" optional="show" widget="boolean_toggle" />
             </xpath>
             <xpath
-                expr="//field[@name='x_guest_line_ids'][not(@domain)]/list"
+                expr="//field[@name='x_guest_line_ids']/list"
                 position="attributes"
             >
                 <attribute name="open_form_view">1</attribute>
             </xpath>
             <xpath
-                expr="//field[@name='x_guest_line_ids'][not(@domain)]"
+                expr="//field[@name='x_guest_line_ids']"
                 position="after"
             >
                 <field name="y_guest_line_ids">

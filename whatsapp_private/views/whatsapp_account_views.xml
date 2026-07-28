@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="whatsapp_account_view_list_private" model="ir.ui.view">
+        <field name="name">whatsapp.account.view.list.private.dev</field>
+        <field name="model">whatsapp.account</field>
+        <field name="inherit_id" ref="whatsapp.whatsapp_account_view_tree" />
+        <field name="arch" type="xml">
+            <field name="name" position="after">
+                <field name="connection_type" />
+            </field>
+            <field name="phone_uid" position="after">
+                <field name="private_company_id" groups="base.group_multi_company" optional="hide" />
+                <field name="private_connection_status" optional="show" />
+            </field>
+        </field>
+    </record>
+
+    <record id="whatsapp_account_view_form_private" model="ir.ui.view">
+        <field name="name">whatsapp.account.view.form.private.dev</field>
+        <field name="model">whatsapp.account</field>
+        <field name="inherit_id" ref="whatsapp.whatsapp_account_view_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//div[@id='title']/h1" position="after">
+                <field name="connection_type" class="oe_inline" />
+            </xpath>
+
+            <xpath expr="//div[@id='app_setup']" position="attributes">
+                <attribute name="invisible">connection_type == 'private'</attribute>
+            </xpath>
+            <xpath expr="//div[@id='api_setup']" position="attributes">
+                <attribute name="invisible">connection_type == 'private'</attribute>
+            </xpath>
+            <xpath expr="//div[@id='toreceive_msg']" position="attributes">
+                <attribute name="invisible">connection_type == 'private'</attribute>
+            </xpath>
+
+            <field name="app_uid" position="attributes">
+                <attribute name="required">connection_type == 'cloud'</attribute>
+            </field>
+            <field name="app_secret" position="attributes">
+                <attribute name="required">connection_type == 'cloud'</attribute>
+            </field>
+            <field name="phone_uid" position="attributes">
+                <attribute name="required">connection_type == 'cloud'</attribute>
+            </field>
+            <field name="account_uid" position="attributes">
+                <attribute name="required">connection_type == 'cloud'</attribute>
+            </field>
+            <field name="token" position="attributes">
+                <attribute name="required">connection_type == 'cloud'</attribute>
+            </field>
+
+            <xpath expr="//div[@id='api_setup']" position="after">
+                <div class="o_horizontal_separator mt-4 mb-3 text-uppercase fw-bolder small" invisible="connection_type != 'private'">
+                    Private WhatsApp Connection
+                </div>
+                <div class="row mt16 o_settings_container" id="private_whatsapp_setup" invisible="connection_type != 'private'">
+                    <setting string="Company">
+                        <field name="private_company_id" required="connection_type == 'private'" />
+                    </setting>
+                    <setting string="Phone Number">
+                        <field name="phone_number" readonly="1" />
+                    </setting>
+                    <setting string="Connection Status">
+                        <field name="private_connection_status" readonly="1" />
+                        <field name="private_status_detail" readonly="1" invisible="not private_status_detail" />
+                    </setting>
+                    <setting string="Connect private WhatsApp">
+                        <div class="content-group">
+                            <button name="action_private_whatsapp_connect" type="object" string="Link WhatsApp" icon="fa-whatsapp" class="btn-link p-1" invisible="not id" /><br />
+                            <button name="action_private_whatsapp_refresh" type="object" string="Refresh Status / QR" icon="fa-refresh" class="btn-link p-1" invisible="not id" /><br />
+                            <button name="action_private_whatsapp_send_message" type="object" string="Send Message" icon="fa-paper-plane" class="btn-link p-1" invisible="not id" />
+                        </div>
+                    </setting>
+                    <setting string="Scan with WhatsApp Linked Devices" invisible="not private_qr_code">
+                        <field name="private_qr_code" widget="image" readonly="1" nolabel="1" options="{'size': [320, 320]}" />
+                    </setting>
+                </div>
+            </xpath>
+        </field>
+    </record>
+</odoo>

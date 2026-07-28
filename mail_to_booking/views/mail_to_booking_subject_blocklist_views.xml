@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="mail_to_booking_subject_blocklist_list_view" model="ir.ui.view">
+        <field name="name">mail.to.booking.subject.blocklist.list</field>
+        <field name="model">mail.to.booking.subject.blocklist</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="sale_channel_id" />
+                <field name="subject_keyword" />
+                <field name="company_id" groups="base.group_multi_company" />
+            </list>
+        </field>
+    </record>
+
+    <record id="mail_to_booking_subject_blocklist_action" model="ir.actions.act_window">
+        <field name="name">Not-a-Booking Subject Rules</field>
+        <field name="res_model">mail.to.booking.subject.blocklist</field>
+        <field name="view_mode">list</field>
+    </record>
+
+    <menuitem
+        id="mail_to_booking_subject_blocklist_menu"
+        name="Not-a-Booking Subject Rules"
+        parent="mail_to_booking_parent_menu"
+        action="mail_to_booking_subject_blocklist_action"
+        sequence="30"
+    />
+</odoo>

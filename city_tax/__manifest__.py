@@ -7,7 +7,7 @@
     "author": "mytime.click",
     "website": "https://mytime.click",
     "depends": ["booking_engine", "partner_title", "partner_contact_personal_information_page"],
-    "external_dependencies": {"python": ["requests", "playwright", "chromium"]},
+    "external_dependencies": {"python": ["requests", "playwright"]},
     "data": [
         "security/ir.model.access.csv",
         "data/ir_model_fields.xml",

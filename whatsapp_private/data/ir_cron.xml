@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo noupdate="1">
+    <record id="ir_cron_private_whatsapp_listener" model="ir.cron">
+        <field name="name">Private WhatsApp: Receive Messages</field>
+        <field name="model_id" ref="whatsapp.model_whatsapp_account" />
+        <field name="state">code</field>
+        <field name="code">model._cron_private_whatsapp_listener()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">minutes</field>
+        <field name="active" eval="True" />
+        <field name="user_id" ref="base.user_root" />
+    </record>
+</odoo>

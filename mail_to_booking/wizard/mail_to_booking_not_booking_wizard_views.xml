@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="view_mail_to_booking_not_booking_wizard_form" model="ir.ui.view">
+        <field name="name">mail.to.booking.not.booking.wizard.form</field>
+        <field name="model">mail.to.booking.not.booking.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Not a Booking">
+                <group>
+                    <field name="subject" readonly="1" />
+                    <field name="sale_channel_id" />
+                    <field name="subject_keyword" />
+                </group>
+                <p class="text-muted">
+                    Future emails on this sales channel whose subject contains the
+                    text above will automatically be marked as "Not a Booking".
+                </p>
+                <footer>
+                    <button
+                        name="action_confirm"
+                        string="Mark as Not a Booking"
+                        type="object"
+                        class="btn-primary"
+                    />
+                    <button string="Cancel" special="cancel" class="btn-secondary" />
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

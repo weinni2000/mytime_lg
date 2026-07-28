@@ -21,6 +21,7 @@
         "views/product_template_views.xml",
         "wizard/pitchup_sync_wizard_views.xml",
         "data/ir_cron.xml",
+        "data/ir_actions_server.xml",
     ],
     "installable": True,
     "application": False,

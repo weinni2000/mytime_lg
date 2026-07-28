@@ -23,6 +23,20 @@
                     invisible="state != 'no_product'"
                 />
                 <button
+                    name="action_remove_booking"
+                    type="object"
+                    string="Remove Booking"
+                    icon="fa-trash"
+                    invisible="state != 'created'"
+                />
+                <button
+                    name="action_open_not_a_booking_wizard"
+                    type="object"
+                    string="Not a Booking"
+                    icon="fa-ban"
+                    invisible="state == 'skipped'"
+                />
+                <button
                     name="action_reprocess"
                     type="object"
                     string="Reprocess"
@@ -51,6 +65,20 @@
                         type="object"
                         class="btn-primary"
                         invisible="state != 'no_product'"
+                    />
+                    <button
+                        name="action_remove_booking"
+                        string="Remove Booking"
+                        type="object"
+                        class="btn-secondary"
+                        invisible="state != 'created'"
+                    />
+                    <button
+                        name="action_open_not_a_booking_wizard"
+                        string="Not a Booking"
+                        type="object"
+                        class="btn-secondary"
+                        invisible="state == 'skipped'"
                     />
                     <field name="state" widget="statusbar" />
                 </header>

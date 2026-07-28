@@ -2,3 +2,5 @@
 SPARQLWrapper
 instaloader
 pandas
+playwright
+dotenv

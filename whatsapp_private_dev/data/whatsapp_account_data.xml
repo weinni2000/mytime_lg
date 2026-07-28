@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo noupdate="1">
+    <record id="whatsapp_account_private_436502728225" model="whatsapp.account">
+        <field name="name">Private +436502728225</field>
+        <field name="connection_type">private</field>
+        <field name="phone_number">+436502728225</field>
+        <field name="private_company_id" ref="base.main_company" />
+        <field name="allowed_company_ids" eval="[(6, 0, [ref('base.main_company')])]" />
+        <field name="notify_user_ids" eval="[(6, 0, [ref('base.user_admin')])]" />
+    </record>
+</odoo>

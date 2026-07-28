@@ -19,9 +19,11 @@ def post_init_hook(env):
         raise UserError(_("Cash journal 'Bargeld NW' was not found."))
 
     account_domain = [("code", "=", "9400")]
+    account_model = env["account.account"].sudo()
     if journal_id.company_id:
         account_domain.append(("company_ids", "in", journal_id.company_id.ids))
-    account_id = env["account.account"].sudo().search(account_domain, limit=1)
+        account_model = account_model.with_company(journal_id.company_id)
+    account_id = account_model.search(account_domain, limit=1)
     if not account_id:
         raise UserError(_("Account '9400' was not found."))
 

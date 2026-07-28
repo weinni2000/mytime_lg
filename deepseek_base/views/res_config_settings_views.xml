@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="res_config_settings_view_form_deepseek" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.deepseek</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="base_setup.res_config_settings_view_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//block[@name='integration']" position="inside">
+                <setting
+                    id="deepseek_api_key_setting"
+                    string="DeepSeek"
+                    help="Configure the API key used by DeepSeek integrations."
+                    groups="base.group_system"
+                >
+                    <div class="content-group">
+                        <div class="mt16">
+                            <label
+                                for="deepseek_api_key"
+                                string="API Key"
+                                class="col-lg-3 o_light_label"
+                            />
+                            <field
+                                name="deepseek_api_key"
+                                password="True"
+                                placeholder="sk-..."
+                            />
+                        </div>
+                    </div>
+                </setting>
+            </xpath>
+        </field>
+    </record>
+</odoo>

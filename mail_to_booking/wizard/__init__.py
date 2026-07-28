@@ -1,1 +1,2 @@
+from . import mail_to_booking_not_booking_wizard
 from . import mail_to_booking_product_mapping_wizard

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="res_company_form_view_special_temporary_info" model="ir.ui.view">
+        <field name="name">res.company.form.special.temporary.info</field>
+        <field name="model">res.company</field>
+        <field name="inherit_id" ref="base.view_company_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='general_info']" position="inside">
+                <group string="Special Temporary Information">
+                    <field
+                        name="special_temporary_info"
+                        nolabel="1"
+                        placeholder="Enter temporary information to display on sales orders..."
+                    />
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo>

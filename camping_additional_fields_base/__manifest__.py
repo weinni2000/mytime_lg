@@ -1,0 +1,28 @@
+{
+    "name": "Camping Additional Fields Base",
+    "summary": "Base module for additional camping-specific fields on products.",
+    "version": "19.0.1.0.0",
+    "category": "Sales/Rental",
+    "license": "OPL-1",
+    "author": "mytime.click",
+    "website": "https://mytime.click",
+    "depends": [
+        "product",
+        "sale",
+        "booking_engine",
+    ],
+    "data": [
+        "data/ir_cron.xml",
+        "views/planning_slot_views.xml",
+        "views/product_template_views.xml",
+        "views/res_company_views.xml",
+        "views/sale_order_views.xml",
+    ],
+    "assets": {
+        "web.assets_backend_lazy": [
+            "camping_additional_fields_base/static/src/views/planning_gantt_renderer.js",
+        ],
+    },
+    "installable": True,
+    "application": False,
+}

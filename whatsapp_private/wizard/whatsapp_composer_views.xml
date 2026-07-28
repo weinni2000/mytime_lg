@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="whatsapp_composer_view_form_private" model="ir.ui.view">
+        <field name="name">whatsapp.composer.view.form.private</field>
+        <field name="model">whatsapp.composer</field>
+        <field name="inherit_id" ref="whatsapp.whatsapp_composer_view_form" />
+        <field name="arch" type="xml">
+            <field name="wa_template_id" position="after">
+                <field name="is_private_whatsapp" invisible="1" />
+                <field name="is_individual" invisible="not is_private_whatsapp" />
+                <field name="individual_message" invisible="not is_individual" required="is_individual" />
+            </field>
+        </field>
+    </record>
+</odoo>

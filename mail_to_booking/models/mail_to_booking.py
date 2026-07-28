@@ -99,12 +99,29 @@ class MailToBooking(models.Model):
             record._create_booking()
         return True
 
+    def action_remove_booking(self):
+        for record in self:
+            record._remove_sale_order()
+            record.write({"state": "draft", "confirm_warning": False})
+        return True
+
     def action_open_product_mapping_wizard(self):
         self.ensure_one()
         return {
             "type": "ir.actions.act_window",
             "name": _("Choose Product"),
             "res_model": "mail.to.booking.product.mapping.wizard",
+            "view_mode": "form",
+            "target": "new",
+            "context": {"active_id": self.id},
+        }
+
+    def action_open_not_a_booking_wizard(self):
+        self.ensure_one()
+        return {
+            "type": "ir.actions.act_window",
+            "name": _("Not a Booking"),
+            "res_model": "mail.to.booking.not.booking.wizard",
             "view_mode": "form",
             "target": "new",
             "context": {"active_id": self.id},
@@ -149,6 +166,17 @@ class MailToBooking(models.Model):
 
     def _run_extraction(self, body_text):
         self.ensure_one()
+        blocklist_channel_id = self._guess_sale_channel_from_sender()
+        if blocklist_channel_id and self._is_subject_blocklisted(blocklist_channel_id):
+            self.write(
+                {
+                    "sale_channel_id": blocklist_channel_id.id,
+                    "is_booking": False,
+                    "state": "skipped",
+                    "error_message": False,
+                }
+            )
+            return
         try:
             extraction = self._call_deepseek(body_text or "")
         except (UserError, requests.RequestException, ValueError, KeyError, IndexError) as error:
@@ -316,6 +344,57 @@ class MailToBooking(models.Model):
             )
             return str(error)
         return False
+
+    def _guess_sale_channel_from_sender(self):
+        # Best-effort channel resolution from the sender address, used for the
+        # subject-blocklist check: the real channel is normally only known
+        # after DeepSeek extraction has run.
+        self.ensure_one()
+        sender_emails = email_split(self.sender or "")
+        if not sender_emails:
+            return self.env["sale.channel"]
+        return (
+            self.env["sale.channel"]
+            .sudo()
+            .search(
+                [
+                    ("email", "=ilike", sender_emails[0]),
+                    ("company_id", "in", [False, self.company_id.id]),
+                ],
+                limit=1,
+            )
+        )
+
+    def _is_subject_blocklisted(self, sale_channel_id):
+        self.ensure_one()
+        subject = (self.subject or "").lower()
+        if not subject:
+            return False
+        blocklist_ids = (
+            self.env["mail.to.booking.subject.blocklist"]
+            .sudo()
+            .search([("sale_channel_id", "=", sale_channel_id.id)])
+        )
+        return any(entry.subject_keyword and entry.subject_keyword.lower() in subject for entry in blocklist_ids)
+
+    def _remove_sale_order(self):
+        self.ensure_one()
+        order_id = self.sale_order_id
+        if not order_id:
+            return
+        try:
+            with self.env.cr.savepoint():
+                if order_id.state not in ("draft", "sent", "cancel"):
+                    order_id.action_cancel()
+                order_id.unlink()
+        except UserError as error:
+            _logger.warning(
+                "Mail to Booking could not delete sale order %s, cancelling instead: %s",
+                order_id.display_name,
+                error,
+            )
+            order_id.action_cancel()
+        self.write({"sale_order_id": False, "product_id": False})
 
     def _find_or_create_sale_channel(self, name):
         self.ensure_one()
