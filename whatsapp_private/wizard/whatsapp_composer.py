@@ -25,8 +25,11 @@ class WhatsappComposer(models.TransientModel):
             composer.is_private_whatsapp = composer.wa_template_id.wa_account_id.connection_type == "private"
 
     @api.depends(
-        "is_individual", "wa_template_id", "header_text_1",
-        "button_dynamic_url_1", "button_dynamic_url_2",
+        "is_individual",
+        "wa_template_id",
+        "header_text_1",
+        "button_dynamic_url_1",
+        "button_dynamic_url_2",
         *(f"free_text_{i}" for i in range(1, 11)),
     )
     def _compute_individual_message(self):
@@ -35,9 +38,7 @@ class WhatsappComposer(models.TransientModel):
                 continue
             records = composer._get_active_records()
             if composer.wa_template_id and records:
-                composer.individual_message = html2plaintext(
-                    composer._get_template_whatsapp_body(records[0])
-                )
+                composer.individual_message = html2plaintext(composer._get_template_whatsapp_body(records[0]))
 
     def _get_free_text_fields(self):
         return super()._get_free_text_fields() + ["is_individual", "individual_message"]

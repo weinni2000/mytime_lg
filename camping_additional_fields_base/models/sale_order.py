@@ -11,7 +11,6 @@ class SaleOrder(models.Model):
     )
     directions = fields.Text(
         compute="_compute_direction_info",
-        string="Directions",
     )
     direction_product_template_ids = fields.Many2many(
         comodel_name="product.template",
@@ -34,8 +33,7 @@ class SaleOrder(models.Model):
         for order in self:
             invoices = order.invoice_ids.filtered(lambda inv: inv.state == "posted")
             order.is_paid = bool(invoices) and all(
-                invoice.payment_state in ("paid", "in_payment")
-                for invoice in invoices
+                invoice.payment_state in ("paid", "in_payment") for invoice in invoices
             )
 
     @api.depends("rental_start_date", "rental_return_date")
@@ -66,9 +64,7 @@ class SaleOrder(models.Model):
     @api.depends("order_line.product_id.product_tmpl_id.directions")
     def _compute_direction_info(self):
         for order in self:
-            source_products = order.order_line.product_id.product_tmpl_id.filtered(
-                "directions"
-            )
+            source_products = order.order_line.product_id.product_tmpl_id.filtered("directions")
             directions = source_products.mapped("directions")
             order.directions = "\n\n".join(
                 dict.fromkeys(direction.strip() for direction in directions if direction)

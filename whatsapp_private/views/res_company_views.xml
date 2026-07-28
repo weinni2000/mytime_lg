@@ -47,10 +47,7 @@
                                 options="{'size': [320, 320]}"
                                 invisible="not whatsapp_private_qr_code"
                             />
-                            <p
-                                class="text-muted"
-                                invisible="whatsapp_private_qr_code"
-                            >
+                            <p class="text-muted" invisible="whatsapp_private_qr_code">
                                 Click “Link WhatsApp”, wait a moment, then click
                                 “Refresh Status / QR”.
                             </p>

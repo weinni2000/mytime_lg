@@ -12,10 +12,7 @@ class ResPartner(models.Model):
         string="Customer Language",
         domain=[],
         context={"active_test": False},
-        help=(
-            "Language used for external translation (DeepSeek), independent "
-            "from installed UI languages."
-        ),
+        help=("Language used for external translation (DeepSeek), independent " "from installed UI languages."),
     )
 
     def _get_communication_language_from_country(self, country):
@@ -24,20 +21,16 @@ class ResPartner(models.Model):
 
         languages = self.env["res.lang"].with_context(active_test=False).search([])
         if country.lang:
-            configured_language = languages.filtered(
-                lambda language: language.code == country.lang
-            )
+            configured_language = languages.filtered(lambda language: language.code == country.lang)
             if configured_language:
                 return configured_language[:1]
 
         country_code = country.code.upper()
         country_languages = languages.filtered(
-            lambda language: language.code.replace("-", "_").split("_")[-1].upper()
-            == country_code
+            lambda language: language.code.replace("-", "_").split("_")[-1].upper() == country_code
         )
         preferred_language = country_languages.filtered(
-            lambda language: language.code.split("_")[0].lower()
-            == country_code.lower()
+            lambda language: language.code.split("_")[0].lower() == country_code.lower()
         )
         return (preferred_language or country_languages).sorted("code")[:1]
 
@@ -45,10 +38,8 @@ class ResPartner(models.Model):
     def _onchange_country_id_set_communication_language(self):
         for partner in self:
             if not partner.communication_lang_id:
-                partner.communication_lang_id = (
-                    partner._get_communication_language_from_country(
-                        partner.country_id
-                    )
+                partner.communication_lang_id = partner._get_communication_language_from_country(
+                    partner.country_id
                 )
 
     @api.model_create_multi
@@ -56,18 +47,14 @@ class ResPartner(models.Model):
         for vals in vals_list:
             if vals.get("country_id") and not vals.get("communication_lang_id"):
                 country = self.env["res.country"].browse(vals["country_id"])
-                vals["communication_lang_id"] = (
-                    self._get_communication_language_from_country(country).id
-                )
+                vals["communication_lang_id"] = self._get_communication_language_from_country(country).id
         return super().create(vals_list)
 
     def write(self, vals):
         result = super().write(vals)
         if "country_id" in vals and "communication_lang_id" not in vals:
             for partner in self.filtered(lambda item: not item.communication_lang_id):
-                partner.communication_lang_id = (
-                    partner._get_communication_language_from_country(
-                        partner.country_id
-                    )
+                partner.communication_lang_id = partner._get_communication_language_from_country(
+                    partner.country_id
                 )
         return result

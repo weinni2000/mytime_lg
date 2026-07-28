@@ -13,9 +13,10 @@ class AccountGeneralLedgerPrivatReportHandler(models.AbstractModel):
     _description = "General Ledger (Privat) Custom Handler"
 
     def _custom_options_initializer(self, report, options, previous_options):
-        super()._custom_options_initializer(report, options, previous_options=previous_options)
+        result = super()._custom_options_initializer(report, options, previous_options=previous_options)
         analytic_account_ids = self._get_privataufteilung_analytic_account_ids()
         if analytic_account_ids:
             options["forced_domain"] = options.get("forced_domain", []) + [
                 ("analytic_distribution", "in", analytic_account_ids),
             ]
+        return result

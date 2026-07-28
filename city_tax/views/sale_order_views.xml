@@ -58,16 +58,10 @@
                 <field name="x_guest_check_warning" optional="show" />
                 <field name="x_refresh" optional="show" widget="boolean_toggle" />
             </xpath>
-            <xpath
-                expr="//field[@name='x_guest_line_ids']/list"
-                position="attributes"
-            >
+            <xpath expr="//field[@name='x_guest_line_ids']/list" position="attributes">
                 <attribute name="open_form_view">1</attribute>
             </xpath>
-            <xpath
-                expr="//field[@name='x_guest_line_ids']"
-                position="after"
-            >
+            <xpath expr="//field[@name='x_guest_line_ids']" position="after">
                 <field name="y_guest_line_ids">
                     <list editable="bottom" open_form_view="1">
                         <field name="x_main_guest" />

@@ -2,7 +2,7 @@ import logging
 import re
 import uuid
 
-from odoo import models
+from odoo import _, models
 from odoo.exceptions import UserError, ValidationError
 from odoo.tools import html2plaintext
 
@@ -20,13 +20,13 @@ class WhatsAppMessage(models.Model):
         account = self.wa_account_id
         try:
             if not account.private_company_id:
-                raise ValidationError("No company is configured for this Private Business account.")
+                raise ValidationError(_("No company is configured for this Private Business account."))
             phone = re.sub(r"\D", "", self.mobile_number_formatted or self.mobile_number or "")
             if not 7 <= len(phone) <= 15:
-                raise ValidationError("The WhatsApp recipient number is invalid.")
+                raise ValidationError(_("The WhatsApp recipient number is invalid."))
             message = html2plaintext(self.body or "", include_references=False).strip()
             if not message:
-                raise ValidationError("The WhatsApp message is empty.")
+                raise ValidationError(_("The WhatsApp message is empty."))
 
             _logger.info(
                 "Sending private WhatsApp message %s to %s via account %s.",
@@ -50,7 +50,7 @@ class WhatsAppMessage(models.Model):
             if self.wa_template_id and self.wa_template_id.model != "discuss.channel":
                 self._post_message_in_active_channel()
         if with_commit:
-            self.env.cr.commit()
+            self.env.cr.commit()  # pylint: disable=invalid-commit
 
     def _send_message(self, with_commit=False):
         private_messages = self.filtered(lambda message: message.wa_account_id.connection_type == "private")

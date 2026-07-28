@@ -10,19 +10,17 @@ class WhatsAppTemplate(models.Model):
 
     def _approve_private_templates(self):
         private_templates = self.filtered(
-            lambda template: template.wa_account_id.connection_type == "private"
-            and template.status != "approved"
+            lambda template: template.wa_account_id.connection_type == "private" and template.status != "approved"
         )
         if private_templates:
-            private_templates.with_context(
-                skip_private_template_auto_approval=True
-            ).write({"status": "approved"})
+            private_templates.with_context(skip_private_template_auto_approval=True).write({"status": "approved"})
 
     @api.onchange("wa_account_id")
     def _onchange_wa_account_id(self):
-        super()._onchange_wa_account_id()
+        result = super()._onchange_wa_account_id()
         if self.wa_account_id.connection_type == "private":
             self.status = "approved"
+        return result
 
     @api.model_create_multi
     def create(self, vals_list):

@@ -1,11 +1,16 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <odoo>
-    <record id="ir_actions_server_sync_pitchup_product_mappings" model="ir.actions.server">
+    <record
+        id="ir_actions_server_sync_pitchup_product_mappings"
+        model="ir.actions.server"
+    >
         <field name="name">Sync Pitchup Pitches</field>
         <field name="model_id" ref="product.model_product_template" />
         <field name="binding_model_id" ref="product.model_product_template" />
         <field name="binding_view_types">list,form</field>
         <field name="state">code</field>
-        <field name="code">action = records.action_sync_pitchup_product_mappings()</field>
+        <field
+            name="code"
+        >action = records.action_sync_pitchup_product_mappings()</field>
     </record>
 </odoo>

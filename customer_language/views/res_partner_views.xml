@@ -1,12 +1,12 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8" ?>
 <odoo>
     <record id="res_partner_view_form_customer_language" model="ir.ui.view">
         <field name="name">res.partner.form.customer.language</field>
         <field name="model">res.partner</field>
-        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="inherit_id" ref="base.view_partner_form" />
         <field name="arch" type="xml">
             <field name="lang" position="after">
-                <field name="communication_lang_id"/>
+                <field name="communication_lang_id" />
             </field>
         </field>
     </record>

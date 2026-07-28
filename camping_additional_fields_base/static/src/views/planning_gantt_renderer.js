@@ -1,14 +1,11 @@
 /** @odoo-module **/
 
-import { PlanningGanttRenderer } from "@planning/views/planning_gantt/planning_gantt_renderer";
-import { patch } from "@web/core/utils/patch";
+import {PlanningGanttRenderer} from "@planning/views/planning_gantt/planning_gantt_renderer";
+import {patch} from "@web/core/utils/patch";
 
 patch(PlanningGanttRenderer.prototype, {
     _usesGuestAggregation(pill) {
-        return (
-            this._guestAggregation ||
-            Object.hasOwn(pill?.record || {}, "x_guests")
-        );
+        return this._guestAggregation || Object.hasOwn(pill?.record || {}, "x_guests");
     },
 
     addTo(pill, group) {
@@ -31,14 +28,14 @@ patch(PlanningGanttRenderer.prototype, {
         return String(pill.aggregateValue);
     },
 
-    _computeDisplayName(pill, workHours) {
+    _computeDisplayName(pill) {
         if (this._usesGuestAggregation(pill)) {
             return pill.displayName;
         }
         return super._computeDisplayName(...arguments);
     },
 
-    _computeResourceOvertimeColors(pill, workHours) {
+    _computeResourceOvertimeColors(pill) {
         if (this._usesGuestAggregation(pill)) {
             return "bg-primary border-primary";
         }

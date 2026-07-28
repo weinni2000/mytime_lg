@@ -1,33 +1,33 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <odoo>
-    <record id="sale_order_form_view_special_temporary_info"
-        model="ir.ui.view">
+    <record id="sale_order_form_view_special_temporary_info" model="ir.ui.view">
         <field name="name">sale.order.form.special.temporary.info</field>
         <field name="model">sale.order</field>
-        <field name="inherit_id"
-            ref="sale.view_order_form" />
-        <field name="arch"
-            type="xml">
-            <xpath expr="//sheet/notebook"
-                position="inside">
-                <page name="communication"
-                    string="Communication">
+        <field name="inherit_id" ref="sale.view_order_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//sheet/notebook" position="inside">
+                <page name="communication" string="Communication">
                     <group>
-                        <group string="Special Temporary Information"
-                            invisible="not special_temporary_info">
-                            <field name="special_temporary_info"
+                        <group
+                            string="Special Temporary Information"
+                            invisible="not special_temporary_info"
+                        >
+                            <field
+                                name="special_temporary_info"
                                 readonly="1"
-                                nolabel="1" />
-                            <field name="company_id"
+                                nolabel="1"
+                            />
+                            <field
+                                name="company_id"
                                 string="Source Company"
                                 readonly="1"
-                                options="{'no_create': True}" />
+                                options="{'no_create': True}"
+                            />
                         </group>
                     </group>
                     <group>
                         <group string="Directions">
-                            <field name="directions"
-                                readonly="1" />
+                            <field name="directions" readonly="1" />
 
                         </group>
 
@@ -45,26 +45,22 @@
         </field>
     </record>
 
-    <record id="booking_engine_orders_kanban_is_paid"
-        model="ir.ui.view">
+    <record id="booking_engine_orders_kanban_is_paid" model="ir.ui.view">
         <field name="name">booking.engine.orders.kanban.is.paid</field>
         <field name="model">sale.order</field>
-        <field name="inherit_id"
-            ref="booking_engine.booking_engine_orders_kanban" />
-        <field name="arch"
-            type="xml">
-            <field name="is_late"
-                position="after">
+        <field name="inherit_id" ref="booking_engine.booking_engine_orders_kanban" />
+        <field name="arch" type="xml">
+            <field name="is_late" position="after">
                 <field name="is_paid" />
             </field>
-            <field name="rental_status"
-                position="after">
-                <span t-if="record.is_paid.raw_value"
-                    class="badge text-bg-success ms-1">
+            <field name="rental_status" position="after">
+                <span
+                    t-if="record.is_paid.raw_value"
+                    class="badge text-bg-success ms-1"
+                >
                     <i class="fa fa-check-circle" /> Paid
                 </span>
-                <span t-else=""
-                    class="badge text-bg-danger ms-1">
+                <span t-else="" class="badge text-bg-danger ms-1">
                     <i class="fa fa-exclamation-circle" /> Not Paid
                 </span>
             </field>

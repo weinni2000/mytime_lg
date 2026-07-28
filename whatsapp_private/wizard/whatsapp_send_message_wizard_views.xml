@@ -6,7 +6,11 @@
         <field name="arch" type="xml">
             <form string="Send WhatsApp Message">
                 <group>
-                    <field name="company_id" readonly="1" groups="base.group_multi_company" />
+                    <field
+                        name="company_id"
+                        readonly="1"
+                        groups="base.group_multi_company"
+                    />
                     <field name="partner_id" />
                     <field name="phone" placeholder="+436641234567" />
                     <field name="message" placeholder="Write a message…" />

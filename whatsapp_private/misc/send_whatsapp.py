@@ -19,7 +19,6 @@ from neonize.aioze.client import ClientFactory, NewAClient
 from neonize.aioze.events import ConnectedEv
 from neonize.utils import build_jid
 
-
 DEFAULT_SESSION = Path(__file__).with_name("whatsapp_session.db")
 
 
@@ -30,16 +29,13 @@ def normalize_phone(value: str) -> str:
         phone = phone[2:]
     if not 7 <= len(phone) <= 15:
         raise argparse.ArgumentTypeError(
-            "Use an international number with country code, for example "
-            "+436641234567 (7 to 15 digits)."
+            "Use an international number with country code, for example " "+436641234567 (7 to 15 digits)."
         )
     return phone
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description="Send a message from a linked private WhatsApp account."
-    )
+    parser = argparse.ArgumentParser(description="Send a message from a linked private WhatsApp account.")
     parser.add_argument(
         "phone",
         type=normalize_phone,
@@ -69,11 +65,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def get_message(args: argparse.Namespace) -> str:
-    text = (
-        args.message_file.read_text(encoding="utf-8")
-        if args.message_file
-        else args.message
-    )
+    text = args.message_file.read_text(encoding="utf-8") if args.message_file else args.message
     if not text or not text.strip():
         raise ValueError("The message must not be empty.")
     return text
@@ -104,7 +96,7 @@ async def send_message(
             )
             message_id = getattr(result, "ID", None) or getattr(result, "id", None)
             detail = f" (message ID: {message_id})" if message_id else ""
-            print(f"Message sent to +{phone}{detail}.")
+            sys.stdout.write(f"Message sent to +{phone}{detail}.\n")
         except BaseException as exc:
             failure.append(exc)
         finally:
@@ -136,10 +128,10 @@ def main() -> int:
             )
         )
     except KeyboardInterrupt:
-        print("Cancelled.", file=sys.stderr)
+        sys.stderr.write("Cancelled.\n")
         return 130
     except Exception as exc:
-        print(f"WhatsApp message failed: {exc}", file=sys.stderr)
+        sys.stderr.write(f"WhatsApp message failed: {exc}\n")
         return 1
     return 0
 

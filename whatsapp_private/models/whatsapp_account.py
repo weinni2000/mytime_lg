@@ -1,3 +1,5 @@
+# pylint: disable=consider-merging-classes-inherited
+
 from odoo import _, api, fields, models
 from odoo.exceptions import ValidationError
 
@@ -7,7 +9,7 @@ class WhatsAppAccount(models.Model):
 
     connection_type = fields.Selection(
         selection=[
-            ("cloud", "Whatsapp Business Cloud API"), #Whatsapp Business Cloud API
+            ("cloud", "Whatsapp Business Cloud API"),  # Whatsapp Business Cloud API
             ("private", "Private WhatsApp"),
         ],
         string="Type",

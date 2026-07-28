@@ -4,11 +4,9 @@ import os
 import subprocess
 import sys
 import time
-from pathlib import Path
 
 from odoo import api, models
 from odoo.tools import plaintext2html
-
 
 _logger = logging.getLogger(__name__)
 
@@ -62,9 +60,7 @@ class WhatsAppAccount(models.Model):
                 os.replace(event_path, processing_path)
                 event = json.loads(processing_path.read_text(encoding="utf-8"))
                 message_id = event["id"]
-                if self.env["whatsapp.message"].sudo().search_count(
-                    [("msg_uid", "=", message_id)], limit=1
-                ):
+                if self.env["whatsapp.message"].sudo().search_count([("msg_uid", "=", message_id)], limit=1):
                     processing_path.unlink(missing_ok=True)
                     continue
                 phone = "+" + "".join(character for character in event["phone"] if character.isdigit())
@@ -102,9 +98,7 @@ class WhatsAppAccount(models.Model):
 
     @api.model
     def _cron_private_whatsapp_listener(self):
-        accounts = self.sudo().search(
-            [("connection_type", "=", "private"), ("active", "=", True)]
-        )
+        accounts = self.sudo().search([("connection_type", "=", "private"), ("active", "=", True)])
         # One linked private session is currently stored per company.
         seen_companies = set()
         for account in accounts:

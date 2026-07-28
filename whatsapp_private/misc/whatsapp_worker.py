@@ -41,10 +41,7 @@ def write_state(directory: Path, status: str, detail: str) -> None:
 
 
 def remove_qr(directory: Path) -> None:
-    try:
-        (directory / "qr.png").unlink()
-    except FileNotFoundError:
-        pass
+    (directory / "qr.png").unlink(missing_ok=True)
 
 
 def save_qr(directory: Path, qr_data: bytes) -> None:
