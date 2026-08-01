@@ -54,6 +54,16 @@
                 <attribute name="required">connection_type == 'cloud'</attribute>
             </field>
 
+            <xpath expr="//div[@id='tocontrol']" position="inside">
+                <setting string="Auto-open Chat on New Message">
+                    <field name="auto_open_chat_window" />
+                    <div class="text-muted">
+                        Disable to keep incoming messages in Discuss without popping
+                        open a chat window (e.g. when you check WhatsApp on your phone).
+                    </div>
+                </setting>
+            </xpath>
+
             <xpath expr="//div[@id='api_setup']" position="after">
                 <div
                     class="o_horizontal_separator mt-4 mb-3 text-uppercase fw-bolder small"

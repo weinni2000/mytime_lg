@@ -50,6 +50,12 @@ class WhatsAppAccount(models.Model):
         string="Private Connection Detail",
         readonly=True,
     )
+    auto_open_chat_window = fields.Boolean(
+        string="Auto-open Chat on New Message",
+        default=True,
+        help="When disabled, incoming WhatsApp messages are still logged in Discuss "
+        "but their chat window will not pop up automatically.",
+    )
 
     @api.depends("connection_type")
     def _compute_is_private_whatsapp(self):

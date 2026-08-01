@@ -1,7 +1,7 @@
 {
     "name": "Private WhatsApp",
     "summary": "Link a private WhatsApp account and send messages to contacts.",
-    "version": "19.0.5.1.0",
+    "version": "19.0.7.2.0",
     "category": "Productivity/Discuss",
     "license": "OPL-1",
     "author": "mytime.click",
@@ -13,11 +13,19 @@
         "data/ir_cron.xml",
         "wizard/whatsapp_composer_views.xml",
         "wizard/whatsapp_send_message_wizard_views.xml",
+        "wizard/whatsapp_contact_sync_wizard_views.xml",
         "views/res_company_views.xml",
         "views/res_partner_views.xml",
         "views/whatsapp_account_views.xml",
         "views/whatsapp_template_views.xml",
     ],
+    "assets": {
+        "web.assets_backend": [
+            "whatsapp_private/static/src/fields/live_qr/live_qr.js",
+            "whatsapp_private/static/src/fields/live_qr/live_qr.xml",
+            "whatsapp_private/static/src/core/common/thread_model_patch.js",
+        ],
+    },
     "installable": True,
     "application": False,
 }

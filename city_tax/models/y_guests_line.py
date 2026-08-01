@@ -6,7 +6,6 @@ _MAIN_GUEST_CHECK_SELECTION = [("na", "NA"), ("ok", "OK"), ("invalid", "Invalid"
 class YGuestsLine(models.Model):
     _name = "y_guests_line"
     _description = "Guests Line"
-
     x_sequence = fields.Integer(string="Sequence", copy=True)
     x_name = fields.Char(string="Description")
     x_sale_order_id = fields.Many2one("sale.order", string="Sale Order")

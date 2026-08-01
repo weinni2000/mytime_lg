@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+    <t
+        t-name="booking_engine_kanban_weekday.KanbanHeader"
+        t-inherit="web.KanbanHeader"
+        t-inherit-mode="primary"
+    >
+        <xpath expr="//t[@t-esc='group.displayName']" position="attributes">
+            <attribute name="t-esc">weekdayDisplayName</attribute>
+        </xpath>
+        <xpath expr="//span[@t-esc='group.displayName']" position="attributes">
+            <attribute name="t-esc">weekdayDisplayName</attribute>
+        </xpath>
+    </t>
+</templates>

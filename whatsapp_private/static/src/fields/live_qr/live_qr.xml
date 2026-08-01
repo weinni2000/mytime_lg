@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+    <t t-name="whatsapp_private.LiveQr">
+        <div class="o_whatsapp_private_live_qr text-center">
+            <t t-if="state.qr">
+                <img
+                    t-att-src="imageSource"
+                    alt="Live WhatsApp QR code"
+                    style="width: 320px; height: 320px; object-fit: contain; image-rendering: pixelated;"
+                />
+                <div class="small text-muted mt-2">
+                    Live QR — automatically refreshed
+                    <t t-if="state.updatedAt">(<t t-esc="state.updatedAt" />)</t>
+                </div>
+            </t>
+            <div t-else="" class="alert alert-info mb-0">
+                No QR code is currently available. Use “Recreate QR Code”.
+            </div>
+            <div t-if="state.detail" class="small mt-1" t-esc="state.detail" />
+        </div>
+    </t>
+</templates>

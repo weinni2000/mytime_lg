@@ -18,6 +18,7 @@
         "views/mail_to_booking_views.xml",
         "views/mail_to_booking_product_mapping_views.xml",
         "views/mail_to_booking_subject_blocklist_views.xml",
+        "views/mail_to_booking_excluded_email_views.xml",
         "views/fetchmail_server_views.xml",
         "views/res_company_views.xml",
         "views/sale_channel_views.xml",

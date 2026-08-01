@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="res_partner_view_form_inherit_id_detection" model="ir.ui.view">
+        <field name="name">res.partner.form.inherit.id_detection</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//notebook[1]" position="inside">
+                <page string="ID Scan" name="id_scan">
+                    <button
+                        name="action_scan_id_documents"
+                        type="object"
+                        string="Scan ID Documents"
+                        class="btn-primary mb-2"
+                        icon="fa-search"
+                        invisible="not x_id_document_front and not x_id_document_back"
+                    />
+                    <group>
+                        <field
+                            name="x_id_document_front"
+                            widget="image"
+                            options="{'size': [0, 240]}"
+                        />
+                        <field
+                            name="x_id_document_back"
+                            widget="image"
+                            options="{'size': [0, 240]}"
+                        />
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+    <record id="booking_engine_orders_kanban_partner_image" model="ir.ui.view">
+        <field name="name">booking.engine.orders.kanban.partner.image</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="booking_engine.booking_engine_orders_kanban" />
+        <field name="arch" type="xml">
+            <field name="partner_id" position="before">
+                <field
+                    name="partner_image_128"
+                    widget="image"
+                    options="{'size': [48, 48]}"
+                    class="rounded-circle me-2 flex-shrink-0"
+                    t-if="record.partner_image_128.raw_value"
+                />
+            </field>
+        </field>
+    </record>
+</odoo>

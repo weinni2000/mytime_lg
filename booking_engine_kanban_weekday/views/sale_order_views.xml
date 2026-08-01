@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="booking_engine_orders_kanban_weekday" model="ir.ui.view">
+        <field name="name">booking.engine.orders.kanban.weekday</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="booking_engine.booking_engine_orders_kanban" />
+        <field name="arch" type="xml">
+            <xpath expr="//kanban" position="attributes">
+                <attribute name="js_class">booking_engine_kanban_weekday</attribute>
+            </xpath>
+            <xpath expr="//t[@t-name='card']/footer" position="after">
+                <div t-if="record.tag_ids.raw_value.length" class="mt-2 w-100">
+                    <field name="tag_ids" widget="many2many_tags" />
+                </div>
+            </xpath>
+        </field>
+    </record>
+</odoo>

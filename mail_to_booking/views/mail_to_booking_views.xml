@@ -4,8 +4,8 @@
         <field name="name">mail.to.booking.list</field>
         <field name="model">mail.to.booking</field>
         <field name="arch" type="xml">
-            <list decoration-danger="state == 'no_product'">
-                <field name="name" />
+            <list editable="bottom" decoration-danger="state == 'no_product'">
+                <field name="name" readonly="1" />
                 <field name="sale_channel_id" />
                 <field name="sender" />
                 <field name="subject" />

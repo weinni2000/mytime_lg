@@ -20,6 +20,8 @@ from ._const import (
 
 _logger = logging.getLogger(__name__)
 
+_STYLE_SCRIPT_RE = re.compile(r"<(style|script)\b[^>]*>.*?</\1>", re.IGNORECASE | re.DOTALL)
+
 
 class MailToBooking(models.Model):
     _name = "mail.to.booking"
@@ -39,7 +41,7 @@ class MailToBooking(models.Model):
     subject = fields.Char(readonly=True)
     mail_body = fields.Text(readonly=True)
     is_booking = fields.Boolean(readonly=True)
-    sale_channel_id = fields.Many2one("sale.channel", readonly=True)
+    sale_channel_id = fields.Many2one("sale.channel")
     booking_code = fields.Char(readonly=True)
     guest_name = fields.Char(readonly=True)
     phone = fields.Char(readonly=True)
@@ -90,7 +92,13 @@ class MailToBooking(models.Model):
         for record in self:
             if record.sale_order_id:
                 record.sale_order_id.unlink()
-            record.write({"sale_order_id": False, "product_id": False})
+            record.write(
+                {
+                    "sale_order_id": False,
+                    "product_id": False,
+                    "mail_body": record._rebuild_mail_body_from_source(),
+                }
+            )
             record._run_extraction(record.mail_body)
         return True
 
@@ -130,10 +138,7 @@ class MailToBooking(models.Model):
     @api.model
     def message_new(self, msg_dict, custom_values=None):
         server_id = self.env["fetchmail.server"].browse(self.env.context.get("default_fetchmail_server_id"))
-        mail_body = html2plaintext(msg_dict.get("body") or "")
-        pdf_text = self._extract_pdf_attachments_text(msg_dict.get("attachments") or [])
-        if pdf_text:
-            mail_body = f"{mail_body}\n\n--- PDF attachment ---\n{pdf_text}"
+        mail_body = self._build_mail_body(msg_dict.get("body") or "", msg_dict.get("attachments") or [])
         values = {
             "name": msg_dict.get("subject") or _("New Booking Mail"),
             "fetchmail_server_id": server_id.id,
@@ -148,6 +153,39 @@ class MailToBooking(models.Model):
         record = self.create(values)
         record._run_extraction(record.mail_body)
         return record
+
+    @staticmethod
+    def _build_mail_body(body_html, attachments):
+        mail_body = MailToBooking._clean_html_body(body_html)
+        pdf_text = MailToBooking._extract_pdf_attachments_text(attachments)
+        if pdf_text:
+            mail_body = f"{mail_body}\n\n--- PDF attachment ---\n{pdf_text}"
+        return mail_body
+
+    def _rebuild_mail_body_from_source(self):
+        # mail_body is a derived, one-shot snapshot taken by message_new. Once
+        # any bug in that derivation is fixed, already-imported records still
+        # carry the old, broken snapshot forever unless it's regenerated from
+        # the original incoming email, which mail.thread keeps in the chatter.
+        self.ensure_one()
+        email_message = (
+            self.message_ids.sudo().filtered(lambda message: message.message_type == "email").sorted("id")
+        )
+        if not email_message:
+            return self.mail_body
+        email_message = email_message[0]
+        attachments = [(attachment.name, attachment.raw) for attachment in email_message.attachment_ids]
+        return self._build_mail_body(email_message.body or "", attachments)
+
+    @staticmethod
+    def _clean_html_body(body_html):
+        # html2plaintext strips tags but not the CSS/JS text inside <style>/
+        # <script> blocks, which some marketing-template emails (e.g. VanSite)
+        # pack with several KB of inline CSS. Left in, that noise pushes the
+        # actual booking details past the DeepSeek truncation cutoff.
+        body_html = _STYLE_SCRIPT_RE.sub("", body_html)
+        text = html2plaintext(body_html)
+        return re.sub(r"\n{3,}", "\n\n", text).strip()
 
     @staticmethod
     def _extract_pdf_attachments_text(attachments):
@@ -490,11 +528,32 @@ class MailToBooking(models.Model):
             }
         )
 
+    def _is_email_excluded(self, email):
+        # A shared/forwarding mailbox (e.g. buchungen@weingartmair.eu) can be
+        # the "email" DeepSeek extracts for many different guests. Matching a
+        # res.partner on that address would silently reassign the booking to
+        # whichever guest happened to be created first (e.g. a "Gina
+        # Andersen" booking landing on an existing "August Schlag" partner),
+        # so such addresses must never drive a reverse partner lookup - only
+        # the guest_name found in the message may.
+        self.ensure_one()
+        return bool(
+            self.env["mail.to.booking.excluded.email"]
+            .sudo()
+            .search_count(
+                [
+                    ("email", "=ilike", email),
+                    ("company_id", "=", self.company_id.id),
+                ],
+                limit=1,
+            )
+        )
+
     def _find_or_create_partner(self):
         self.ensure_one()
         partner_model = self.env["res.partner"].sudo()
         email = (self.email or "").strip()
-        if email:
+        if email and not self._is_email_excluded(email):
             partner_id = partner_model.search([("email", "=ilike", email)], limit=1)
             if partner_id:
                 return partner_id

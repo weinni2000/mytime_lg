@@ -26,6 +26,13 @@
                                 class="btn-primary"
                             />
                             <button
+                                name="action_whatsapp_private_recreate_qr"
+                                type="object"
+                                string="Recreate QR Code"
+                                class="btn-warning"
+                                confirm="This stops the current private WhatsApp connection and removes its linked-device session. Continue?"
+                            />
+                            <button
                                 name="action_whatsapp_private_refresh"
                                 type="object"
                                 string="Refresh Status / QR"
@@ -37,16 +44,71 @@
                                 string="Send Message"
                                 class="btn-primary"
                             />
+                            <separator string="Contact Synchronization" />
+                            <field
+                                name="whatsapp_private_contacts_last_sync"
+                                readonly="1"
+                            />
+                            <field
+                                name="whatsapp_private_contacts_count"
+                                readonly="1"
+                            />
+                            <field
+                                name="whatsapp_private_contacts_sync_detail"
+                                readonly="1"
+                                invisible="not whatsapp_private_contacts_sync_detail"
+                            />
+                            <field name="whatsapp_private_contacts_auto_sync" />
+                            <field
+                                name="whatsapp_private_odoo_contacts_last_sync"
+                                readonly="1"
+                            />
+                            <field
+                                name="whatsapp_private_odoo_contacts_sync_detail"
+                                readonly="1"
+                                invisible="not whatsapp_private_odoo_contacts_sync_detail"
+                            />
+                            <button
+                                name="action_whatsapp_private_push_odoo_contacts"
+                                type="object"
+                                string="Sync Odoo Contacts to WhatsApp"
+                                class="btn-secondary"
+                                confirm="Update linked WhatsApp contact names from all shared and company Odoo contacts with phone numbers?"
+                            />
+                            <button
+                                name="action_whatsapp_private_preview_contacts"
+                                type="object"
+                                string="Synchronize WhatsApp Contacts"
+                                class="btn-primary"
+                            />
                         </group>
                         <group string="Scan with WhatsApp Linked Devices">
                             <field
-                                name="whatsapp_private_qr_code"
-                                widget="image"
+                                name="whatsapp_private_qr_live"
+                                widget="whatsapp_private_live_qr"
                                 readonly="1"
                                 nolabel="1"
-                                options="{'size': [320, 320]}"
-                                invisible="not whatsapp_private_qr_code"
                             />
+                            <separator string="Manual QR image" />
+                            <field
+                                name="whatsapp_private_qr_code"
+                                string="Upload or replace QR image"
+                                widget="image"
+                                nolabel="1"
+                                options="{'size': [320, 320]}"
+                            />
+                            <button
+                                name="action_whatsapp_private_delete_qr"
+                                type="object"
+                                string="Delete QR Code"
+                                class="btn-secondary"
+                                invisible="not whatsapp_private_qr_code"
+                                confirm="Delete the displayed QR image? This does not recreate the WhatsApp session."
+                            />
+                            <p class="text-muted">
+                                You can upload, replace, or remove the displayed QR image.
+                                Use “Recreate QR Code” to reset the actual linked-device session.
+                            </p>
                             <p class="text-muted" invisible="whatsapp_private_qr_code">
                                 Click “Link WhatsApp”, wait a moment, then click
                                 “Refresh Status / QR”.

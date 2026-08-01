@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="account_report_expression_form_hide_temporary" model="ir.ui.view">
+        <field name="name">account.report.expression.form.hide.temporary</field>
+        <field name="model">account.report.expression</field>
+        <field name="inherit_id" ref="account_reports.account_report_expression_form" />
+        <field name="arch" type="xml">
+            <field name="blank_if_zero" position="after">
+                <field name="hide_temporary" />
+            </field>
+        </field>
+    </record>
+</odoo>

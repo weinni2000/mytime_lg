@@ -17,9 +17,27 @@ from pathlib import Path
 import qrcode
 from neonize.aioze.client import ClientFactory, NewAClient
 from neonize.aioze.events import ConnectedEv, MessageEv
+from neonize.proto.Neonize_pb2 import ContactEntry
 from neonize.utils import build_jid
 
 _logger = logging.getLogger(__name__)
+
+
+class OperationAlreadyRunning(RuntimeError):
+    """Raised when another worker already owns the company session."""
+
+
+def user_facing_error(error: BaseException) -> str:
+    """Translate protocol errors into an actionable message for Odoo users."""
+    detail = str(error)
+    if "error 463" in detail.lower():
+        return (
+            "WhatsApp temporarily prevents this linked number from starting a chat "
+            "with a new contact (error 463). Ask the recipient to message this "
+            "WhatsApp number first, or retry later. Reconnecting the QR code will "
+            "not remove this WhatsApp restriction."
+        )
+    return detail
 
 
 def atomic_write(path: Path, data: bytes) -> None:
@@ -59,7 +77,7 @@ def acquire_lock(directory: Path, name: str = "worker.lock"):
     except BlockingIOError:
         lock_file.close()
         _logger.warning("Lock %s in %s is already held by another process.", name, directory)
-        raise RuntimeError("Another WhatsApp operation is already running.") from None
+        raise OperationAlreadyRunning("Another WhatsApp operation is already running.") from None
     return lock_file
 
 
@@ -74,7 +92,7 @@ def message_text(event: MessageEv) -> str:
 
 async def queue_inbound(directory: Path, client: NewAClient, event: MessageEv) -> None:
     source = event.Info.MessageSource
-    sender = source.Sender
+    sender = source.Chat if source.IsFromMe else source.Sender
     if sender.Server == "lid":
         try:
             sender = await client.get_pn_from_lid(sender)
@@ -103,8 +121,20 @@ async def queue_inbound(directory: Path, client: NewAClient, event: MessageEv) -
         event_log.write(json.dumps(audit, ensure_ascii=False) + "\n")
     if sender.Server == "lid":
         return
-    if source.IsFromMe or source.IsGroup:
+    if source.IsGroup:
         return
+    contact_data = {}
+    try:
+        contact_info = await client.contact.get_contact(sender)
+        contact_data = {
+            "first_name": contact_info.FirstName,
+            "full_name": contact_info.FullName,
+            "push_name": contact_info.PushName or event.Info.Pushname,
+            "business_name": contact_info.BusinessName,
+        }
+    except Exception as exc:
+        _logger.debug("Could not enrich inbound WhatsApp contact %s: %s", sender.User, exc)
+        contact_data = {"push_name": event.Info.Pushname}
     text = message_text(event).strip()
     if not text:
         return
@@ -113,14 +143,26 @@ async def queue_inbound(directory: Path, client: NewAClient, event: MessageEv) -
         directory / "inbox" / f"{message_id}.json",
         {
             "id": message_id,
-            "jid": f"{source.Sender.User}@{source.Sender.Server}",
+            "jid": f"{sender.User}@{sender.Server}",
             "phone": sender.User or source.Chat.User,
-            "sender_name": event.Info.Pushname,
+            "from_me": source.IsFromMe,
+            "sender_name": contact_data.get("full_name")
+            or contact_data.get("business_name")
+            or contact_data.get("push_name"),
+            "first_name": contact_data.get("first_name", ""),
+            "full_name": contact_data.get("full_name", ""),
+            "push_name": contact_data.get("push_name", ""),
+            "business_name": contact_data.get("business_name", ""),
             "text": text,
             "timestamp": event.Info.Timestamp,
         },
     )
-    _logger.info("Queued inbound WhatsApp message %s from %s", message_id, sender.User or source.Chat.User)
+    _logger.info(
+        "Queued %s WhatsApp message %s for %s",
+        "linked-device outbound" if source.IsFromMe else "inbound",
+        message_id,
+        sender.User or source.Chat.User,
+    )
 
 
 async def link(directory: Path, timeout: float) -> None:
@@ -141,6 +183,7 @@ async def link(directory: Path, timeout: float) -> None:
 
     _logger.info("Starting WhatsApp linking process in %s (timeout=%ss).", directory, timeout)
     write_state(directory, "starting", "Starting WhatsApp linking process.")
+    atomic_write(directory / "link.pid", str(os.getpid()).encode())
     try:
         await client.connect()
         await asyncio.wait_for(connected.wait(), timeout=timeout)
@@ -149,6 +192,7 @@ async def link(directory: Path, timeout: float) -> None:
         write_state(directory, "timeout", "The QR login timed out. Start linking again.")
         raise
     finally:
+        (directory / "link.pid").unlink(missing_ok=True)
         await client.disconnect()
 
 
@@ -204,8 +248,9 @@ def queued_send(directory: Path, phone: str, message: str, timeout: float) -> No
             continue
         result_path.unlink(missing_ok=True)
         if result.get("error"):
-            _logger.error("WhatsApp send request %s to %s failed: %s", request_id, phone, result["error"])
-            raise RuntimeError(result["error"])
+            detail = user_facing_error(RuntimeError(result["error"]))
+            _logger.error("WhatsApp send request %s to %s failed: %s", request_id, phone, detail)
+            raise RuntimeError(detail)
         _logger.info(
             "WhatsApp send request %s to %s confirmed by the listener (message id: %s).",
             request_id,
@@ -263,6 +308,97 @@ async def outbox_loop(directory: Path, client: NewAClient) -> None:
         await asyncio.sleep(0.2)
 
 
+async def contact_export_loop(directory: Path, client: NewAClient) -> None:
+    """Export the live WhatsApp contact store when requested by Odoo."""
+    request_path = directory / "contact_export.request"
+    while True:
+        if not request_path.exists():
+            await asyncio.sleep(1)
+            continue
+        processing = request_path.with_suffix(".processing")
+        try:
+            os.replace(request_path, processing)
+            request = json.loads(processing.read_text(encoding="utf-8"))
+            exported = {}
+            for contact in await client.contact.get_all_contacts():
+                jid = contact.JID
+                if jid.Server != "s.whatsapp.net" or not jid.User.isdigit():
+                    continue
+                info = contact.Info
+                key = f"{jid.User}@{jid.Server}"
+                exported[key] = {
+                    "jid": key,
+                    "phone": jid.User,
+                    "first_name": info.FirstName,
+                    "full_name": info.FullName,
+                    "push_name": info.PushName,
+                    "business_name": info.BusinessName,
+                }
+            write_json(
+                directory / "contacts_snapshot.json",
+                {
+                    "request_id": request.get("request_id"),
+                    "exported_at": time.time(),
+                    "contacts": list(exported.values()),
+                    "error": "",
+                },
+            )
+            _logger.info("Exported %s WhatsApp contacts in %s.", len(exported), directory)
+        except Exception as exc:
+            _logger.exception("Could not export WhatsApp contacts in %s.", directory)
+            write_json(
+                directory / "contacts_snapshot.json",
+                {"exported_at": time.time(), "contacts": [], "error": str(exc)},
+            )
+        finally:
+            processing.unlink(missing_ok=True)
+        await asyncio.sleep(1)
+
+
+async def contact_update_loop(directory: Path, client: NewAClient) -> None:
+    """Apply Odoo contact names to the linked WhatsApp contact store."""
+    request_path = directory / "contact_update.request"
+    while True:
+        if not request_path.exists():
+            await asyncio.sleep(1)
+            continue
+        processing = request_path.with_suffix(".processing")
+        request = {}
+        try:
+            os.replace(request_path, processing)
+            request = json.loads(processing.read_text(encoding="utf-8"))
+            entries = [
+                ContactEntry(
+                    JID=build_jid(contact["phone"]),
+                    FirstName=contact.get("first_name") or contact["name"].split()[0],
+                    FullName=contact["name"],
+                )
+                for contact in request.get("contacts", [])
+                if contact.get("phone") and contact.get("name")
+            ]
+            if entries:
+                await client.contact.put_all_contact_name(entries)
+            write_json(
+                directory / "contact_update_result.json",
+                {
+                    "request_id": request.get("request_id"),
+                    "updated_at": time.time(),
+                    "count": len(entries),
+                    "error": "",
+                },
+            )
+            _logger.info("Updated %s WhatsApp contact names from Odoo in %s.", len(entries), directory)
+        except Exception as exc:
+            _logger.exception("Could not update WhatsApp contact names in %s.", directory)
+            write_json(
+                directory / "contact_update_result.json",
+                {"request_id": request.get("request_id"), "count": 0, "error": str(exc)},
+            )
+        finally:
+            processing.unlink(missing_ok=True)
+        await asyncio.sleep(1)
+
+
 async def listen(directory: Path) -> None:
     client = ClientFactory(str(directory / "session.db")).new_client(uuid="odoo-private-whatsapp")
     connected = asyncio.Event()
@@ -284,13 +420,20 @@ async def listen(directory: Path) -> None:
         await queue_inbound(directory, client, event)
 
     _logger.info("Starting persistent WhatsApp listener in %s.", directory)
+    atomic_write(directory / "listener.pid", str(os.getpid()).encode())
     try:
         await client.connect()
         await connected.wait()
-        await asyncio.gather(heartbeat_loop(directory), outbox_loop(directory, client))
+        await asyncio.gather(
+            heartbeat_loop(directory),
+            outbox_loop(directory, client),
+            contact_export_loop(directory, client),
+            contact_update_loop(directory, client),
+        )
     finally:
         _logger.info("WhatsApp listener stopping in %s.", directory)
         (directory / "heartbeat").unlink(missing_ok=True)
+        (directory / "listener.pid").unlink(missing_ok=True)
         await client.disconnect()
 
 
@@ -318,7 +461,7 @@ def main() -> int:
                 raise ValueError("Phone and message are required.")
             queued_send(args.directory, args.phone, args.message, args.timeout)
             return 0
-        lock_name = "listener.lock" if args.operation == "listen" else "worker.lock"
+        lock_name = "listener.lock" if args.operation in {"link", "listen"} else "worker.lock"
         lock_file = acquire_lock(args.directory, lock_name)
         with lock_file:
             if args.operation == "link":
@@ -329,9 +472,25 @@ def main() -> int:
                 if not args.phone or not args.message:
                     raise ValueError("Phone and message are required.")
                 asyncio.run(direct_send(args.directory, args.phone, args.message, args.timeout))
+    except OperationAlreadyRunning as exc:
+        _logger.warning(
+            "WhatsApp worker operation %r skipped in %s: %s",
+            args.operation,
+            args.directory,
+            exc,
+        )
+        return 2
     except Exception as exc:
         _logger.exception("WhatsApp worker operation %r failed in %s.", args.operation, args.directory)
-        write_state(args.directory, "error", str(exc))
+        detail = user_facing_error(exc)
+        if args.operation == "send" and listener_alive(args.directory):
+            write_state(
+                args.directory,
+                "connected",
+                f"WhatsApp listener is connected. Last send failed: {detail}",
+            )
+        else:
+            write_state(args.directory, "error", detail)
         return 1
     return 0
 

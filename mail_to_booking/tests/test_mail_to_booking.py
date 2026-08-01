@@ -313,6 +313,38 @@ class TestMailToBooking(TransactionCase):
 
         self.assertEqual(record.sale_channel_id.name, "Direct")
 
+    def test_excluded_email_does_not_reverse_match_existing_partner(self):
+        """A forwarding/shared mailbox address (e.g. buchungen@weingartmair.eu)
+        can be the "email" DeepSeek extracts for many different guests. Once
+        that address is on the excluded-email list, a new booking must get a
+        partner created/matched from guest_name - it must not silently be
+        reassigned to whichever guest previously happened to share that
+        address (the "Gina Andersen booking landing on August Schlag" bug)."""
+        forwarding_email = "buchungen@weingartmair.eu"
+        self.env["mail.to.booking.excluded.email"].create({"email": forwarding_email})
+        self.env["res.partner"].create({"name": "August Schlag", "email": forwarding_email})
+
+        product_id = self.env["product.product"].create(
+            {"name": "Stellplatz Bauernhof (2P)", "rent_ok": True, "sale_ok": True}
+        )
+        channel_id = (
+            self.env["sale.channel"].sudo().create({"name": "Alpacacamping", "company_id": self.env.company.id})
+        )
+        self.env["mail.to.booking.product.mapping"].create(
+            {
+                "sale_channel_id": channel_id.id,
+                "product_hint": "Camping für Gartenliebhaber am Bauernhof",
+                "product_id": product_id.id,
+            }
+        )
+
+        extraction = dict(ALPACACAMPING_EXTRACTION, guest_name="Gina Andersen", email=forwarding_email)
+        record = self._message_new(ALPACACAMPING_MSG_DICT, extraction=extraction)
+
+        self.assertEqual(record.state, "created")
+        self.assertEqual(record.sale_order_id.partner_id.name, "Gina Andersen")
+        self.assertNotEqual(record.sale_order_id.partner_id.name, "August Schlag")
+
     def test_extract_pdf_attachments_text(self):
         pdf_bytes = _make_pdf("Booking code: XYZ123")
         text = self.env["mail.to.booking"]._extract_pdf_attachments_text(

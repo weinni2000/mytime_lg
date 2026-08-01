@@ -20,6 +20,7 @@
         "data/account_report_privat.xml",
         "data/account_report_privataufteilung.xml",
         "views/account_move_line_views.xml",
+        "views/account_report_expression_views.xml",
     ],
     "assets": {
         "web.assets_backend": [

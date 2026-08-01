@@ -1,2 +1,4 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_whatsapp_send_message_wizard_system,whatsapp.send.message.wizard system,model_whatsapp_send_message_wizard,base.group_system,1,1,1,1
+access_whatsapp_contact_sync_wizard_system,whatsapp.contact.sync.wizard system,model_whatsapp_contact_sync_wizard,base.group_system,1,1,1,1
+access_whatsapp_contact_sync_wizard_line_system,whatsapp.contact.sync.wizard.line system,model_whatsapp_contact_sync_wizard_line,base.group_system,1,1,1,1

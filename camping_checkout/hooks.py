@@ -1,0 +1,143 @@
+_CAMPING_WEBSITE_DOMAIN = "https://camping.unternhub.at"
+_CAMPING_STEP_HREF = "/shop/camping"
+_DOG_PRODUCT_NAME = "Hunde"
+_DOG_PRODUCT_XMLID = "product_dog"
+_ADDITIONAL_GUEST_PRODUCT_NAME = "Zusätzliche Personen im Zelt"
+_ADDITIONAL_GUEST_PRODUCT_XMLID = "product_additional_guest"
+_ACCOMMODATION_PRODUCT_NAMES = [
+    "Stellplatz Van (2P)",
+    "Stellplatz Wohnwaagen (2P)",
+    "Zeltplatz (2P)",
+]
+
+
+def post_init_hook(env):
+    _setup_camping_step(env)
+    _setup_dog_product(env)
+    _reorder_cart_step(env)
+    _setup_additional_guest_product(env)
+
+
+def _setup_camping_step(env):
+    website = env["website"].search([("domain", "=", _CAMPING_WEBSITE_DOMAIN)], limit=1)
+    if not website:
+        return
+
+    step = env["website.checkout.step"].search(
+        [
+            ("website_id", "=", website.id),
+            ("step_href", "=", _CAMPING_STEP_HREF),
+        ],
+        limit=1,
+    )
+    if step:
+        return
+
+    checkout_step = env["website.checkout.step"].search(
+        [
+            ("website_id", "=", website.id),
+            ("step_href", "=", "/shop/checkout"),
+        ],
+        limit=1,
+    )
+
+    env["website.checkout.step"].create(
+        {
+            "website_id": website.id,
+            "name": "Camping",
+            "sequence": (checkout_step.sequence or 250) + 10,
+            "step_href": _CAMPING_STEP_HREF,
+            "main_button_label": "Continue",
+            "back_button_label": "Back to camping info",
+            "is_published": True,
+        }
+    )
+
+
+def _reorder_cart_step(env):
+    website = env["website"].search([("domain", "=", _CAMPING_WEBSITE_DOMAIN)], limit=1)
+    if not website:
+        return
+
+    camping_step = env["website.checkout.step"].search(
+        [
+            ("website_id", "=", website.id),
+            ("step_href", "=", _CAMPING_STEP_HREF),
+        ],
+        limit=1,
+    )
+    cart_step = env["website.checkout.step"].search(
+        [
+            ("website_id", "=", website.id),
+            ("step_href", "=", "/shop/cart"),
+        ],
+        limit=1,
+    )
+    if not camping_step or not cart_step:
+        return
+
+    target_sequence = camping_step.sequence + 10
+    if cart_step.sequence != target_sequence:
+        cart_step.sequence = target_sequence
+
+
+def _setup_dog_product(env):
+    existing = env["ir.model.data"].search(
+        [
+            ("module", "=", "camping_checkout"),
+            ("name", "=", _DOG_PRODUCT_XMLID),
+        ],
+        limit=1,
+    )
+    if existing:
+        return
+
+    product = env["product.product"].search([("name", "=", _DOG_PRODUCT_NAME)], limit=1)
+    if not product:
+        return
+
+    env["ir.model.data"].create(
+        {
+            "module": "camping_checkout",
+            "name": _DOG_PRODUCT_XMLID,
+            "model": "product.product",
+            "res_id": product.id,
+            "noupdate": True,
+        }
+    )
+
+
+def _setup_additional_guest_product(env):
+    existing = env["ir.model.data"].search(
+        [
+            ("module", "=", "camping_checkout"),
+            ("name", "=", _ADDITIONAL_GUEST_PRODUCT_XMLID),
+        ],
+        limit=1,
+    )
+    if not existing:
+        product = env["product.product"].search([("name", "=", _ADDITIONAL_GUEST_PRODUCT_NAME)], limit=1)
+        if not product:
+            return
+        env["ir.model.data"].create(
+            {
+                "module": "camping_checkout",
+                "name": _ADDITIONAL_GUEST_PRODUCT_XMLID,
+                "model": "product.product",
+                "res_id": product.id,
+                "noupdate": True,
+            }
+        )
+        existing = env["ir.model.data"].search(
+            [
+                ("module", "=", "camping_checkout"),
+                ("name", "=", _ADDITIONAL_GUEST_PRODUCT_XMLID),
+            ],
+            limit=1,
+        )
+
+    extra_product = env["product.product"].browse(existing.res_id)
+    accommodation_templates = env["product.template"].search([("name", "in", _ACCOMMODATION_PRODUCT_NAMES)])
+    accommodation_templates.filtered(lambda t: not t.x_additional_guest_product_id).write(
+        {"x_additional_guest_product_id": extra_product.id}
+    )

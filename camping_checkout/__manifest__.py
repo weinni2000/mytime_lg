@@ -1,0 +1,28 @@
+{
+    "name": "Camping Checkout",
+    "summary": "Adds camping-specific information to the website checkout.",
+    "version": "19.0.1.0.0",
+    "category": "Website/eCommerce",
+    "license": "OPL-1",
+    "author": "mytime.click",
+    "website": "https://mytime.click",
+    "depends": [
+        "animal",
+        "camping_fleet",
+        "city_tax",
+        "fleet",
+        "id_detection",
+        "website_sale",
+        "website_sale_renting",
+    ],
+    "data": [
+        "data/res_country_data.xml",
+        "data/animal_data.xml",
+        "views/website_sale_templates.xml",
+        "views/camping_step_templates.xml",
+        "views/sale_order_views.xml",
+    ],
+    "post_init_hook": "post_init_hook",
+    "installable": True,
+    "application": False,
+}

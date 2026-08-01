@@ -74,9 +74,6 @@ repos:
         additional_dependencies:
           - "prettier@2.7.1"
           - "@prettier/plugin-xml@2.2.0"
-          - "prettier-plugin-organize-imports"
-        args:
-          - --plugin=prettier-plugin-organize-imports
         files: \.(css|htm|html|js|json|jsx|less|md|scss|toml|ts|xml|yaml|yml)$
   - repo: https://github.com/pre-commit/mirrors-eslint
     rev: v8.24.0 # v9.14.0 #

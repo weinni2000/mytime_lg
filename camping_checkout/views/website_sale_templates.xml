@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <template
+        id="address_form_fields_birthdate"
+        inherit_id="website_sale.address_form_fields"
+        name="Checkout birth date"
+    >
+        <xpath expr="//div[@id='div_phone']" position="after">
+            <div id="div_birthdate" class="col-lg-6 mb-2">
+                <label class="col-form-label" for="o_birthdate">Date of Birth</label>
+                <input
+                    id="o_birthdate"
+                    type="date"
+                    name="x_birthdate"
+                    t-att-value="partner_sudo.x_birthdate"
+                    class="form-control"
+                />
+            </div>
+            <div id="div_id_document_front" class="col-lg-6 mb-2">
+                <label
+                    class="col-form-label label-optional"
+                    for="o_id_document_front"
+                >Passport / ID Photo</label>
+                <input
+                    id="o_id_document_front"
+                    type="file"
+                    name="x_id_document_front"
+                    accept="image/*"
+                    class="form-control"
+                />
+            </div>
+        </xpath>
+    </template>
+
+    <template
+        id="address_form_fields_hide_company_vat_street2"
+        priority="100"
+        inherit_id="website_sale.address_form_fields"
+        name="Checkout: hide company/VAT/apartment fields"
+    >
+        <xpath expr="//div[@id='company_name_div']" position="replace" />
+        <xpath expr="//div[@id='div_vat']" position="replace" />
+        <xpath expr="//div[@id='div_street2']" position="replace" />
+    </template>
+
+    <template
+        id="address_form_fields_priority_countries"
+        priority="100"
+        inherit_id="website_sale.address_form_fields"
+        name="Checkout country shortlist"
+    >
+        <xpath
+            expr="//select[@id='o_country_id']/option[@t-foreach='countries']"
+            position="replace"
+        >
+            <optgroup label="Popular">
+                <option
+                    t-foreach="priority_countries"
+                    t-as="c"
+                    t-att-value="c.id"
+                    t-att-selected="c.id == (country.id if country else partner_sudo.country_id.id)"
+                    t-att-code="c.code"
+                    t-out="c.name"
+                />
+            </optgroup>
+            <optgroup label="All countries">
+                <option
+                    t-foreach="countries"
+                    t-as="c"
+                    t-att-value="c.id"
+                    t-att-selected="c.id == (country.id if country else partner_sudo.country_id.id)"
+                    t-att-code="c.code"
+                    t-out="c.name"
+                />
+            </optgroup>
+        </xpath>
+    </template>
+</odoo>

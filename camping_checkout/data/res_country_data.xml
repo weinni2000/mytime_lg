@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo noupdate="1">
+    <!--
+        Main source markets for this camping site: pinned to the top of the
+        website checkout country dropdown (see
+        views/website_sale_templates.xml#address_form_fields_priority_countries).
+        Edit x_checkout_priority_sequence on res.country to change the
+        shortlist or its order; 0 (the default) keeps a country out of it.
+    -->
+    <record id="base.at" model="res.country">
+        <field name="x_checkout_priority_sequence">10</field>
+    </record>
+    <record id="base.de" model="res.country">
+        <field name="x_checkout_priority_sequence">20</field>
+    </record>
+    <record id="base.nl" model="res.country">
+        <field name="x_checkout_priority_sequence">30</field>
+    </record>
+    <record id="base.be" model="res.country">
+        <field name="x_checkout_priority_sequence">40</field>
+    </record>
+    <record id="base.ch" model="res.country">
+        <field name="x_checkout_priority_sequence">50</field>
+    </record>
+    <record id="base.it" model="res.country">
+        <field name="x_checkout_priority_sequence">60</field>
+    </record>
+    <record id="base.cz" model="res.country">
+        <field name="x_checkout_priority_sequence">70</field>
+    </record>
+</odoo>

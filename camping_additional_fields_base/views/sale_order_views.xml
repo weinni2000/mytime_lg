@@ -1,5 +1,17 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <odoo>
+    <record id="sale_order_form_view_city_tax_left" model="ir.ui.view">
+        <field name="name">sale.order.form.city.tax.left</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale_renting.rental_order_form_view" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='remaining_hours']/parent::div" position="after">
+                <label for="city_tax_left" />
+                <field name="city_tax_left" widget="monetary" />
+            </xpath>
+        </field>
+    </record>
+
     <record id="sale_order_form_view_special_temporary_info" model="ir.ui.view">
         <field name="name">sale.order.form.special.temporary.info</field>
         <field name="model">sale.order</field>
@@ -52,6 +64,8 @@
         <field name="arch" type="xml">
             <field name="is_late" position="after">
                 <field name="is_paid" />
+                <field name="ota_payment" />
+                <field name="planning_role_ids" />
             </field>
             <field name="rental_status" position="after">
                 <span
@@ -60,10 +74,43 @@
                 >
                     <i class="fa fa-check-circle" /> Paid
                 </span>
+                <span
+                    t-elif="record.ota_payment.raw_value"
+                    class="badge text-bg-info ms-1"
+                >
+                    <i class="fa fa-building-o" /> OTA already payed
+                </span>
                 <span t-else="" class="badge text-bg-danger ms-1">
                     <i class="fa fa-exclamation-circle" /> Not Paid
                 </span>
             </field>
+            <xpath expr="//t[@t-name='card']/footer" position="after">
+                <div
+                    t-if="record.planning_role_ids.raw_value.length"
+                    class="mt-2 w-100"
+                >
+                    <span class="text-muted me-1">Role:</span>
+                    <field
+                        name="planning_role_ids"
+                        widget="many2many_tags"
+                        options="{'color_field': 'color'}"
+                    />
+                </div>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="booking_engine_orders_kanban_city_tax_left" model="ir.ui.view">
+        <field name="name">booking.engine.orders.kanban.city.tax.left</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="booking_engine.booking_engine_orders_kanban" />
+        <field name="arch" type="xml">
+            <xpath expr="//t[@t-name='card']/footer" position="after">
+                <div t-if="record.city_tax_left.raw_value" class="mt-2 w-100">
+                    <span class="text-muted me-1">City Tax Left:</span>
+                    <field name="city_tax_left" widget="monetary" />
+                </div>
+            </xpath>
         </field>
     </record>
 </odoo>

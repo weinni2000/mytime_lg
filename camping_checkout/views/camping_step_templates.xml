@@ -1,0 +1,304 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <!-- /shop/camping route -->
+    <template id="camping_step" name="Checkout Camping Info">
+        <t t-call="website_sale.checkout_layout">
+            <t t-set="additional_title">Shop - Camping</t>
+            <t t-set="redirect" t-valuef="/shop/camping" />
+            <t t-set="show_navigation_button" t-value="False" />
+            <div id="shop_camping">
+                <h4 class="mb-3">Camping</h4>
+                <div id="errors" />
+                <form action="/shop/camping/submit" method="post" name="camping_form">
+                    <input
+                        type="hidden"
+                        name="csrf_token"
+                        t-att-value="request.csrf_token()"
+                    />
+
+                    <h5 class="mb-2">Vehicle</h5>
+                    <div class="row mb-4">
+                        <div class="col-lg-6 mb-2">
+                            <label
+                                class="col-form-label label-optional"
+                                for="o_vehicle_license_plate"
+                            >
+                                License Plate
+                            </label>
+                            <input
+                                id="o_vehicle_license_plate"
+                                type="text"
+                                name="x_vehicle_license_plate"
+                                t-att-value="vehicle.license_plate"
+                                class="form-control"
+                            />
+                        </div>
+                        <div class="col-lg-6 mb-2">
+                            <label class="col-form-label" for="o_vehicle_category_id">
+                                Vehicle Category
+                            </label>
+                            <select
+                                id="o_vehicle_category_id"
+                                name="x_vehicle_category_id"
+                                class="form-select"
+                                required="required"
+                            >
+                                <option value="">Select...</option>
+                                <option
+                                    t-foreach="vehicle_categories"
+                                    t-as="cat"
+                                    t-att-value="cat.id"
+                                    t-att-selected="cat.id == vehicle.category_id.id"
+                                    t-out="cat.name"
+                                />
+                            </select>
+                        </div>
+                    </div>
+
+                    <h5 class="mb-2">Dogs</h5>
+                    <div class="mb-4">
+                        <div class="form-check mb-2">
+                            <input
+                                id="o_with_dogs"
+                                type="checkbox"
+                                name="x_with_dogs"
+                                class="form-check-input"
+                                t-att-checked="'checked' if dogs else None"
+                            />
+                            <label class="form-check-label" for="o_with_dogs">
+                                With dogs
+                            </label>
+                        </div>
+
+                        <div
+                            id="dog_fields"
+                            t-attf-class="{{'' if dogs else 'd-none'}}"
+                        >
+                            <div id="dog_rows">
+                                <t t-foreach="dogs or [None]" t-as="dog">
+                                    <div class="dog-row row align-items-end mb-2">
+                                        <div class="col-10">
+                                            <label
+                                                class="col-form-label"
+                                            >Category</label>
+                                            <select
+                                                name="x_dog_breed_id"
+                                                class="form-select"
+                                                t-att-required="'required' if dogs else None"
+                                            >
+                                                <option value="">Select...</option>
+                                                <option
+                                                    t-foreach="dog_breeds"
+                                                    t-as="breed"
+                                                    t-att-value="breed.id"
+                                                    t-att-selected="dog and breed.id == dog.breed_id.id"
+                                                    t-out="breed.name"
+                                                />
+                                            </select>
+                                        </div>
+                                        <div class="col-2">
+                                            <button
+                                                type="button"
+                                                class="btn btn-outline-danger btn-sm dog-row-remove"
+                                                aria-label="Remove dog"
+                                            >×</button>
+                                        </div>
+                                    </div>
+                                </t>
+                            </div>
+                            <button
+                                type="button"
+                                id="dog_row_add"
+                                class="btn btn-outline-secondary btn-sm mt-1"
+                            >
+                                <i class="fa fa-plus me-1" />Add dog
+                            </button>
+                        </div>
+
+                        <template id="dog_row_tpl">
+                            <div class="dog-row row align-items-end mb-2">
+                                <div class="col-10">
+                                    <label class="col-form-label">Category</label>
+                                    <select
+                                        name="x_dog_breed_id"
+                                        class="form-select"
+                                        required="required"
+                                    >
+                                        <option value="">Select...</option>
+                                        <option
+                                            t-foreach="dog_breeds"
+                                            t-as="breed"
+                                            t-att-value="breed.id"
+                                            t-out="breed.name"
+                                        />
+                                    </select>
+                                </div>
+                                <div class="col-2">
+                                    <button
+                                        type="button"
+                                        class="btn btn-outline-danger btn-sm dog-row-remove"
+                                        aria-label="Remove dog"
+                                    >×</button>
+                                </div>
+                            </div>
+                        </template>
+
+                        <script type="text/javascript">
+                            <![CDATA[
+                            document.addEventListener("DOMContentLoaded", function () {
+                                var withDogs = document.getElementById("o_with_dogs");
+                                var dogFields = document.getElementById("dog_fields");
+                                var rowsContainer = document.getElementById("dog_rows");
+                                var rowTpl = document.getElementById("dog_row_tpl");
+                                var addBtn = document.getElementById("dog_row_add");
+
+                                function setRowsState(enabled) {
+                                    dogFields.classList.toggle("d-none", !enabled);
+                                    rowsContainer.querySelectorAll("select[name='x_dog_breed_id']").forEach(function (select) {
+                                        select.disabled = !enabled;
+                                        select.required = enabled;
+                                    });
+                                }
+
+                                withDogs.addEventListener("change", function () {
+                                    setRowsState(this.checked);
+                                });
+
+                                addBtn.addEventListener("click", function () {
+                                    rowsContainer.appendChild(rowTpl.content.cloneNode(true));
+                                });
+
+                                rowsContainer.addEventListener("click", function (ev) {
+                                    if (ev.target.classList.contains("dog-row-remove")) {
+                                        var rows = rowsContainer.querySelectorAll(".dog-row");
+                                        if (rows.length > 1) {
+                                            ev.target.closest(".dog-row").remove();
+                                        }
+                                    }
+                                });
+
+                                setRowsState(withDogs.checked);
+                            });
+                            ]]>
+                        </script>
+                    </div>
+
+                    <h5 class="mb-2">Guests</h5>
+                    <div class="mb-4">
+                        <div id="guest_rows">
+                            <t t-foreach="guest_rows" t-as="guest">
+                                <div class="guest-row row align-items-end mb-2">
+                                    <div class="col-6">
+                                        <label class="col-form-label">Name</label>
+                                        <input
+                                            type="text"
+                                            name="x_guest_name"
+                                            class="form-control"
+                                            t-att-value="guest['name']"
+                                        />
+                                    </div>
+                                    <div class="col-4">
+                                        <label class="col-form-label">Age</label>
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            step="1"
+                                            name="x_guest_age"
+                                            class="form-control"
+                                            t-att-value="guest['age']"
+                                        />
+                                    </div>
+                                    <div class="col-2">
+                                        <button
+                                            type="button"
+                                            class="btn btn-outline-danger btn-sm guest-row-remove"
+                                            aria-label="Remove guest"
+                                        >×</button>
+                                    </div>
+                                </div>
+                            </t>
+                        </div>
+                        <button
+                            type="button"
+                            id="guest_row_add"
+                            class="btn btn-outline-secondary btn-sm mt-1"
+                        >
+                            <i class="fa fa-plus me-1" />Add guest
+                        </button>
+
+                        <template id="guest_row_tpl">
+                            <div class="guest-row row align-items-end mb-2">
+                                <div class="col-6">
+                                    <label class="col-form-label">Name</label>
+                                    <input
+                                        type="text"
+                                        name="x_guest_name"
+                                        class="form-control"
+                                    />
+                                </div>
+                                <div class="col-4">
+                                    <label class="col-form-label">Age</label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        step="1"
+                                        name="x_guest_age"
+                                        class="form-control"
+                                    />
+                                </div>
+                                <div class="col-2">
+                                    <button
+                                        type="button"
+                                        class="btn btn-outline-danger btn-sm guest-row-remove"
+                                        aria-label="Remove guest"
+                                    >×</button>
+                                </div>
+                            </div>
+                        </template>
+
+                        <script type="text/javascript">
+                            <![CDATA[
+                            document.addEventListener("DOMContentLoaded", function () {
+                                var rowsContainer = document.getElementById("guest_rows");
+                                var rowTpl = document.getElementById("guest_row_tpl");
+                                var addBtn = document.getElementById("guest_row_add");
+
+                                addBtn.addEventListener("click", function () {
+                                    rowsContainer.appendChild(rowTpl.content.cloneNode(true));
+                                });
+
+                                rowsContainer.addEventListener("click", function (ev) {
+                                    if (ev.target.classList.contains("guest-row-remove")) {
+                                        var rows = rowsContainer.querySelectorAll(".guest-row");
+                                        if (rows.length > 1) {
+                                            ev.target.closest(".guest-row").remove();
+                                        }
+                                    }
+                                });
+                            });
+                            ]]>
+                        </script>
+                    </div>
+
+                    <div
+                        class="d-flex flex-column flex-md-row align-items-center justify-content-between mt32 mb32"
+                    >
+                        <a
+                            role="button"
+                            t-att-href="previous_website_checkout_step.step_href or '/shop/checkout'"
+                            class="btn btn-outline-secondary w-100 w-md-auto order-md-1 order-3"
+                        >
+                            <i class="fw-light fa fa-angle-left me-2" />Back
+                        </a>
+                        <button
+                            type="submit"
+                            class="btn btn-primary w-100 w-md-auto order-1 order-md-3"
+                        >
+                            Continue<i class="fw-light fa fa-angle-right ms-2" />
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </t>
+    </template>
+</odoo>

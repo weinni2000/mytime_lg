@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="animal_breed_dog_generic" model="animal.breed">
+        <field name="name">Other</field>
+        <field name="species_id" ref="animal.dog" />
+    </record>
+</odoo>

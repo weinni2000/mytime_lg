@@ -1,4 +1,4 @@
-from odoo import api, fields, models
+from odoo import _, api, fields, models
 from odoo.tools import html2plaintext, plaintext2html
 
 
@@ -18,6 +18,25 @@ class WhatsappComposer(models.TransientModel):
         readonly=False,
         store=True,
     )
+
+    @api.model
+    def default_get(self, fields_list):
+        values = super().default_get(fields_list)
+        model = values.get("res_model") or self.env.context.get("active_model")
+        if model and not self.env.context.get("default_wa_template_id"):
+            private_template = self.env["whatsapp.template"].search(
+                [
+                    ("model", "=", model),
+                    ("status", "=", "approved"),
+                    ("wa_account_id.connection_type", "=", "private"),
+                    ("wa_account_id.private_company_id", "=", self.env.company.id),
+                ],
+                order="id",
+                limit=1,
+            )
+            if private_template:
+                values["wa_template_id"] = private_template.id
+        return values
 
     @api.depends("wa_template_id")
     def _compute_is_private_whatsapp(self):
@@ -51,3 +70,27 @@ class WhatsappComposer(models.TransientModel):
         if self.is_individual and self.individual_message:
             return plaintext2html(self.individual_message)
         return super()._get_html_preview_whatsapp(rec=rec)
+
+    def action_send_whatsapp_template(self):
+        result = super().action_send_whatsapp_template()
+        if (
+            self.is_private_whatsapp
+            and result
+            and getattr(result, "_name", None) == "whatsapp.message"
+            and any(message.state == "error" for message in result)
+        ):
+            return {
+                "type": "ir.actions.client",
+                "tag": "display_notification",
+                "params": {
+                    "title": _("WhatsApp message was not sent"),
+                    "message": _(
+                        "The private WhatsApp connection failed. A note with the error and "
+                        "reconnect link was added to the chatter."
+                    ),
+                    "type": "danger",
+                    "sticky": True,
+                    "next": {"type": "ir.actions.act_window_close"},
+                },
+            }
+        return result

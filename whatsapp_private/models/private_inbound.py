@@ -5,7 +5,7 @@ import subprocess
 import sys
 import time
 
-from odoo import api, models
+from odoo import api, fields, models
 from odoo.tools import plaintext2html
 
 _logger = logging.getLogger(__name__)
@@ -20,7 +20,8 @@ class WhatsAppAccount(models.Model):
         try:
             return time.time() - heartbeat.stat().st_mtime < 20
         except OSError:
-            return False
+            _logger.debug("WhatsApp heartbeat file is unavailable for account %s", self.id)
+        return bool(self.private_company_id._whatsapp_private_worker_pids())
 
     def _start_private_listener(self):
         self.ensure_one()
@@ -72,19 +73,52 @@ class WhatsAppAccount(models.Model):
                 if not channel:
                     raise RuntimeError(f"Could not create a WhatsApp channel for {phone}.")
                 partner = channel.whatsapp_partner_id
-                if partner and event.get("jid"):
-                    partner.sudo().whatsapp_private_jid = event["jid"]
+                if partner:
+                    contact_values = {
+                        "whatsapp_private_jid": event.get("jid"),
+                        "whatsapp_private_company_id": self.private_company_id.id,
+                        "whatsapp_private_first_name": event.get("first_name"),
+                        "whatsapp_private_full_name": event.get("full_name"),
+                        "whatsapp_private_push_name": event.get("push_name"),
+                        "whatsapp_private_business_name": event.get("business_name"),
+                        "whatsapp_private_last_sync": fields.Datetime.now(),
+                        "whatsapp_private_sync_source": "inbound",
+                    }
+                    if (not partner.name or partner.name.strip() in {"/", "Unknown"}) and event.get("sender_name"):
+                        contact_values["name"] = event["sender_name"]
+                    partner.sudo().write(
+                        {key: value for key, value in contact_values.items() if value is not None}
+                    )
                 body = plaintext2html(event["text"])
-                channel.message_post(
-                    whatsapp_inbound_msg_uid=message_id,
-                    message_type="whatsapp_message",
-                    author_id=partner.id,
-                    body=body,
-                    subtype_xmlid="mail.mt_comment",
-                )
+                if event.get("from_me"):
+                    author = self.private_company_id.partner_id
+                    mail_message = channel.message_post(
+                        message_type="comment",
+                        author_id=author.id,
+                        body=body,
+                        subtype_xmlid="mail.mt_comment",
+                    )
+                    self.env["whatsapp.message"].sudo().create(
+                        {
+                            "mail_message_id": mail_message.id,
+                            "message_type": "outbound",
+                            "mobile_number": phone,
+                            "msg_uid": message_id,
+                            "state": "sent",
+                            "wa_account_id": self.id,
+                        }
+                    )
+                else:
+                    channel.message_post(
+                        whatsapp_inbound_msg_uid=message_id,
+                        message_type="whatsapp_message",
+                        author_id=(self.private_company_id.partner_id.id if event.get("from_me") else partner.id),
+                        body=body,
+                        subtype_xmlid="mail.mt_comment",
+                    )
                 if partner:
                     partner.sudo().message_post(
-                        author_id=partner.id,
+                        author_id=(self.private_company_id.partner_id.id if event.get("from_me") else partner.id),
                         body=body,
                         message_type="comment",
                         subtype_xmlid="mail.mt_note",
