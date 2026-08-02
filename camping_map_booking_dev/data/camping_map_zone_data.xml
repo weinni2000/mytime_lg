@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo noupdate="1">
+    <!--
+        Same placeholder polygons as camping_map_booking's demo data, seeded here as real
+        data so they exist on install regardless of demo mode. Recalibrate the points once
+        the real map image is in place, see readme/CONFIGURE.md.
+    -->
+    <record id="camping_map_zone_data_1" model="camping.map.zone">
+        <field name="name">Bereich A - Beim Hof</field>
+        <field name="sequence">10</field>
+        <field name="points">370,620 760,620 760,1080 370,1080</field>
+    </record>
+
+    <record id="camping_map_zone_data_2" model="camping.map.zone">
+        <field name="name">Bereich B - Straßenseite</field>
+        <field name="sequence">20</field>
+        <field name="points">760,620 1140,620 1140,1150 760,1150</field>
+    </record>
+
+    <record id="camping_map_zone_data_3" model="camping.map.zone">
+        <field name="name">Bereich C - Wiese</field>
+        <field name="sequence">30</field>
+        <field name="points">370,1150 1140,1150 1140,1950 370,1950</field>
+    </record>
+</odoo>

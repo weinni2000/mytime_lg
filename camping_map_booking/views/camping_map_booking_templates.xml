@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <template id="map_page" name="Camping Map">
+        <t t-call="website.layout">
+            <div id="wrap">
+                <div class="container py-4">
+                    <h1>Camping Map</h1>
+                    <p class="text-muted">
+                        Click an area on the map to see and book its pitches.
+                    </p>
+                    <div
+                        class="o_camping_map_booking"
+                        t-att-data-zones="zones_json"
+                        t-att-data-map-image="map_image_url"
+                    >
+                        <div class="o_camping_map_mount" />
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+</odoo>

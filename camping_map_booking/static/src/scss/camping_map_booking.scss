@@ -1,0 +1,88 @@
+.o_camping_map_booking {
+    position: relative;
+}
+
+.o_camping_map_backend_preview {
+    max-width: 700px;
+}
+
+.o_camping_map_overlay {
+    position: relative;
+}
+
+.o_camping_map_img {
+    display: block;
+}
+
+.o_camping_map_svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.o_camping_map_zone {
+    fill: rgba(0, 128, 0, 0.15);
+    stroke: rgba(0, 128, 0, 0.6);
+    stroke-width: 3;
+    cursor: pointer;
+    transition: fill 0.15s ease-in-out;
+}
+
+.o_camping_map_zone_hover {
+    fill: rgba(0, 128, 0, 0.35);
+}
+
+.o_camping_map_zone_selected {
+    fill: rgba(0, 128, 0, 0.5);
+    stroke-width: 5;
+}
+
+.o_camping_map_tooltip {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    padding: 0.25rem 0.75rem;
+    background: rgba(0, 0, 0, 0.75);
+    color: #fff;
+    border-radius: 0.25rem;
+    pointer-events: none;
+}
+
+.o_camping_map_panel {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 320px;
+    max-width: 90%;
+    background: #fff;
+    box-shadow: -2px 0 8px rgba(0, 0, 0, 0.2);
+    overflow-y: auto;
+    padding: 1rem;
+}
+
+.o_camping_map_panel_header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+
+.o_camping_map_pitch {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #eee;
+    color: inherit;
+    text-decoration: none;
+
+    &:hover {
+        color: var(--bs-primary);
+    }
+}
+
+.o_camping_map_pitch_price {
+    font-weight: bold;
+}

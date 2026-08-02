@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo noupdate="1">
+    <record id="product_template_data_pitch_a" model="product.template">
+        <field name="name">Pitch A1</field>
+        <field name="type">service</field>
+        <field name="list_price">25.0</field>
+        <field name="purchase_ok" eval="False" />
+        <field name="rent_ok" eval="True" />
+        <field name="service_type">manual</field>
+        <field name="invoice_policy">order</field>
+        <field name="website_published" eval="True" />
+        <field name="camping_map_zone_id" ref="camping_map_zone_data_1" />
+    </record>
+
+    <record id="product_template_data_pitch_b" model="product.template">
+        <field name="name">Pitch B1</field>
+        <field name="type">service</field>
+        <field name="list_price">28.0</field>
+        <field name="purchase_ok" eval="False" />
+        <field name="rent_ok" eval="True" />
+        <field name="service_type">manual</field>
+        <field name="invoice_policy">order</field>
+        <field name="website_published" eval="True" />
+        <field name="camping_map_zone_id" ref="camping_map_zone_data_2" />
+    </record>
+
+    <record id="product_template_data_pitch_c" model="product.template">
+        <field name="name">Pitch C1</field>
+        <field name="type">service</field>
+        <field name="list_price">22.0</field>
+        <field name="purchase_ok" eval="False" />
+        <field name="rent_ok" eval="True" />
+        <field name="service_type">manual</field>
+        <field name="invoice_policy">order</field>
+        <field name="website_published" eval="True" />
+        <field name="camping_map_zone_id" ref="camping_map_zone_data_3" />
+    </record>
+</odoo>
