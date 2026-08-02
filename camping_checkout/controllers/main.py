@@ -3,12 +3,14 @@ from datetime import date
 
 from odoo.http import request, route
 
+from odoo.addons.website_sale.controllers.cart import Cart
 from odoo.addons.website_sale.controllers.main import WebsiteSale
 
 CAMPING_STEP_HREF = "/shop/camping"
 DOG_SPECIES_XMLID = "animal.dog"
 DOG_PRODUCT_XMLID = "camping_checkout.product_dog"
 ADDITIONAL_GUEST_PRODUCT_XMLID = "camping_checkout.product_additional_guest"
+LOCAL_TAX_MIN_AGE = 16
 
 
 class WebsiteSaleCampingCheckout(WebsiteSale):
@@ -49,6 +51,7 @@ class WebsiteSaleCampingCheckout(WebsiteSale):
             "vehicle": order_sudo.vehicle_ids[:1],
             "vehicle_categories": request.env["fleet.vehicle.model.category"].sudo().search([]),
             "dogs": order_sudo.animal_ids,
+            "with_electricity": self._has_camping_electricity(order_sudo),
             "dog_breeds": sudo_env["animal.breed"].search(
                 [("species_id", "=", dog_species.id)] if dog_species else []
             ),
@@ -101,8 +104,10 @@ class WebsiteSaleCampingCheckout(WebsiteSale):
                 )
 
         self._update_camping_dogs(order_sudo, post)
-        guest_count = self._update_camping_guests(order_sudo)
+        self._update_electricity_product(order_sudo, post.get("x_with_electricity") == "on")
+        guest_count, adult_guest_count = self._update_camping_guests(order_sudo)
         self._update_additional_guest_product(order_sudo, guest_count)
+        self._update_local_tax_product(order_sudo, adult_guest_count)
 
         current_step = request.website._get_checkout_step(CAMPING_STEP_HREF)
         next_step = current_step._get_next_checkout_step(request.website._get_allowed_steps_domain())
@@ -150,12 +155,32 @@ class WebsiteSaleCampingCheckout(WebsiteSale):
                 end_date=order_sudo.rental_return_date,
             )
 
+    @staticmethod
+    def _get_camping_electricity_product(order_sudo):
+        accommodation_lines = order_sudo.order_line.filtered(
+            lambda line: line.product_id.product_tmpl_id.x_electricity_product_id
+        )
+        return accommodation_lines.product_id.product_tmpl_id.x_electricity_product_id[:1]
+
+    def _has_camping_electricity(self, order_sudo):
+        electricity_product = self._get_camping_electricity_product(order_sudo)
+        return bool(
+            electricity_product
+            and order_sudo._cart_find_product_line(electricity_product.id, uom_id=electricity_product.uom_id.id)
+        )
+
+    def _update_electricity_product(self, order_sudo, selected):
+        electricity_product = self._get_camping_electricity_product(order_sudo)
+        if electricity_product:
+            self._set_camping_product_quantity(order_sudo, electricity_product, int(selected))
+
     def _update_camping_guests(self, order_sudo):
-        """Save the submitted guest rows and return the total guest count.
+        """Save the submitted guest rows and return (total_guests, adult_guests).
 
         The first row always represents the ordering customer: it's only ever
         used to make sure a main guest line exists, never to rename/edit the
         actual billing contact. Remaining rows are saved as companion guests.
+        Age is required on every row, so every counted guest has a known age.
         """
         names = request.httprequest.form.getlist("x_guest_name")
         ages = request.httprequest.form.getlist("x_guest_age")
@@ -171,6 +196,10 @@ class WebsiteSaleCampingCheckout(WebsiteSale):
                 }
             )
 
+        guest_ages = []
+        if ages and ages[0].isdigit():
+            guest_ages.append(int(ages[0]))
+
         guest_vals = []
         for name, age in zip(names[1:], ages[1:], strict=False):
             name = (name or "").strip()
@@ -178,7 +207,9 @@ class WebsiteSaleCampingCheckout(WebsiteSale):
                 continue
             vals = {"name": name}
             if age.isdigit():
-                vals["x_birthdate"] = self._birthdate_from_age(int(age))
+                age_int = int(age)
+                vals["x_birthdate"] = self._birthdate_from_age(age_int)
+                guest_ages.append(age_int)
             guest_vals.append(vals)
 
         order_sudo.x_guest_line_ids.filtered(lambda g: not g.x_main_guest).sudo().unlink()
@@ -193,7 +224,9 @@ class WebsiteSaleCampingCheckout(WebsiteSale):
                 }
             )
 
-        return 1 + len(guest_vals)
+        total_guests = 1 + len(guest_vals)
+        adult_guests = sum(1 for age in guest_ages if age >= LOCAL_TAX_MIN_AGE)
+        return total_guests, adult_guests
 
     def _update_additional_guest_product(self, order_sudo, guest_count):
         sudo_env = request.env(su=True)
@@ -211,6 +244,19 @@ class WebsiteSaleCampingCheckout(WebsiteSale):
         extra_qty = max(guest_count - max_guest_total, 0)
         self._set_camping_product_quantity(order_sudo, extra_product, extra_qty)
 
+    def _update_local_tax_product(self, order_sudo, adult_guest_count):
+        tax_product = order_sudo.company_id.x_local_tax_product_id
+        if not tax_product:
+            return
+        nights = 0
+        if order_sudo.rental_start_date and order_sudo.rental_return_date:
+            # Camping stays run evening check-in to morning check-out, e.g. 20:00 to
+            # 07:00 the next day: barely 11 elapsed hours, but a full night's stay.
+            # duration_days (raw elapsed time) would round that down to 0 nights, so
+            # nights are counted by calendar date instead.
+            nights = (order_sudo.rental_return_date.date() - order_sudo.rental_start_date.date()).days
+        self._set_camping_product_quantity(order_sudo, tax_product, adult_guest_count * max(nights, 0))
+
     @staticmethod
     def _birthdate_from_age(age):
         today = date.today()
@@ -219,3 +265,15 @@ class WebsiteSaleCampingCheckout(WebsiteSale):
         except ValueError:
             # today is Feb 29 and the birth year isn't a leap year
             return today.replace(year=today.year - age, day=28)
+
+
+class WebsiteSaleCampingCart(Cart):
+    def cart(self, *args, **kwargs):
+        # The "Address" step was moved before "Cart" (see hooks._reorder_cart_step), so a
+        # customer who reaches /shop/cart via the header cart icon or the "View Cart" add-to-cart
+        # notification before ever filling in an address should be sent there first.
+        order_sudo = request.cart
+        if order_sudo and order_sudo._is_anonymous_cart():
+            return request.redirect("/shop/address")
+
+        return super().cart(*args, **kwargs)

@@ -8,6 +8,7 @@
     "website": "https://mytime.click",
     "depends": [
         "animal",
+        "booking_engine",
         "camping_fleet",
         "city_tax",
         "fleet",
@@ -18,6 +19,8 @@
     "data": [
         "data/res_country_data.xml",
         "data/animal_data.xml",
+        "views/product_template_views.xml",
+        "views/res_company_views.xml",
         "views/website_sale_templates.xml",
         "views/camping_step_templates.xml",
         "views/sale_order_views.xml",

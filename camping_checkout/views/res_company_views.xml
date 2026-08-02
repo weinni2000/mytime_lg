@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="res_company_view_form_inherit_camping_checkout" model="ir.ui.view">
+        <field name="name">res.company.form.inherit.camping_checkout</field>
+        <field name="model">res.company</field>
+        <field name="inherit_id" ref="base.view_company_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page name="camping" string="Camping">
+                    <group>
+                        <field name="x_local_tax_product_id" />
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

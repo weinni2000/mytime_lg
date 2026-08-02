@@ -9,6 +9,8 @@ _ACCOMMODATION_PRODUCT_NAMES = [
     "Stellplatz Wohnwaagen (2P)",
     "Zeltplatz (2P)",
 ]
+_LOCAL_TAX_PRODUCT_NAME = "City Tax"
+_ELECTRICITY_PRODUCT_TEMPLATE_ID = 2898
 
 
 def post_init_hook(env):
@@ -16,6 +18,8 @@ def post_init_hook(env):
     _setup_dog_product(env)
     _reorder_cart_step(env)
     _setup_additional_guest_product(env)
+    _setup_local_tax_product(env)
+    _setup_electricity_product(env)
 
 
 def _setup_camping_step(env):
@@ -140,4 +144,29 @@ def _setup_additional_guest_product(env):
     accommodation_templates = env["product.template"].search([("name", "in", _ACCOMMODATION_PRODUCT_NAMES)])
     accommodation_templates.filtered(lambda t: not t.x_additional_guest_product_id).write(
         {"x_additional_guest_product_id": extra_product.id}
+    )
+
+
+def _setup_local_tax_product(env):
+    website = env["website"].search([("domain", "=", _CAMPING_WEBSITE_DOMAIN)], limit=1)
+    if not website or not website.company_id or website.company_id.x_local_tax_product_id:
+        return
+
+    product = env["product.product"].search([("name", "=", _LOCAL_TAX_PRODUCT_NAME)], limit=1)
+    if not product:
+        return
+
+    website.company_id.x_local_tax_product_id = product.id
+
+
+def _setup_electricity_product(env):
+    electricity_product = (
+        env["product.template"].browse(_ELECTRICITY_PRODUCT_TEMPLATE_ID).exists().product_variant_id
+    )
+    if not electricity_product:
+        return
+
+    accommodation_templates = env["product.template"].search([("name", "in", _ACCOMMODATION_PRODUCT_NAMES)])
+    accommodation_templates.filtered(lambda t: not t.x_electricity_product_id).write(
+        {"x_electricity_product_id": electricity_product.id}
     )
