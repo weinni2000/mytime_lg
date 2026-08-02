@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+    <t t-name="camping_map_booking.CampingMap">
+        <div class="o_camping_map_overlay">
+            <img
+                t-att-src="props.mapImageUrl"
+                class="o_camping_map_img img-fluid w-100"
+                t-on-load="onImageLoad"
+                alt="Camping map"
+            />
+            <svg
+                t-if="state.naturalWidth"
+                class="o_camping_map_svg"
+                t-attf-viewBox="0 0 {{state.naturalWidth}} {{state.naturalHeight}}"
+                preserveAspectRatio="none"
+            >
+                <t t-foreach="props.zones" t-as="zone" t-key="zone.id">
+                    <polygon
+                        t-att-points="zone.points"
+                        t-att-class="zoneClass(zone)"
+                        t-on-mouseenter="() => this.onZoneHover(zone.id)"
+                        t-on-mouseleave="() => this.onZoneHover(null)"
+                        t-on-click="() => this.onZoneClick(zone.id)"
+                    />
+                </t>
+            </svg>
+            <div
+                t-if="hoveredZone"
+                class="o_camping_map_tooltip"
+                t-esc="hoveredZone.name"
+            />
+            <div t-if="selectedZone" class="o_camping_map_panel">
+                <div class="o_camping_map_panel_header">
+                    <h4 t-esc="selectedZone.name" />
+                    <button
+                        type="button"
+                        class="btn-close"
+                        aria-label="Close"
+                        t-on-click="closePanel"
+                    />
+                </div>
+                <div class="o_camping_map_panel_body">
+                    <t t-if="selectedZone.products.length">
+                        <a
+                            t-foreach="selectedZone.products"
+                            t-as="product"
+                            t-key="product.id"
+                            t-att-href="product.url"
+                            class="o_camping_map_pitch"
+                        >
+                            <span t-esc="product.name" />
+                            <span
+                                class="o_camping_map_pitch_price"
+                                t-esc="product.price"
+                            />
+                        </a>
+                    </t>
+                    <p t-else="" class="text-muted mb-0">
+                        No pitches available in this area yet.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </t>
+</templates>
