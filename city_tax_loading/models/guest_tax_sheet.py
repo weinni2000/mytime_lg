@@ -2,12 +2,12 @@ import base64
 import csv
 import io
 import re
-from datetime import date, datetime
+from datetime import date, datetime, time, timedelta
 
 import openpyxl
 import requests
 
-from odoo import fields, models
+from odoo import Command, fields, models
 from odoo.exceptions import UserError
 
 from odoo.addons.city_tax.models._const import (
@@ -19,6 +19,7 @@ _SHEET_ID_RE = re.compile(r"/d/([a-zA-Z0-9-_]+)")
 _GID_RE = re.compile(r"[#&?]gid=(\d+)")
 _CHECKIN_DATE_FORMATS = ["%m/%d/%Y", "%Y-%m-%d"]
 _DOB_DATE_FORMATS = ["%m/%d/%Y", "%Y-%m-%d"]
+_TINY_AWAY_CHANNEL_NAME = "Tiny Away"
 
 _GENDER_TO_ANREDE = {"male": _DESKLINE_SALUTATION_HERR, "female": _DESKLINE_SALUTATION_FRAU}
 _COUNTRY_ALIASES = {
@@ -130,7 +131,19 @@ class GuestTaxSheet(models.Model):
         string="Month",
         help="Any day within the target month — only the year and month are used.",
     )
+    x_product_id = fields.Many2one(
+        "product.product",
+        string="Rental Product",
+        domain="[('rent_ok', '=', True)]",
+        help="Rental product added to sale orders created for this sheet.",
+    )
     x_guest_tax_message_ids = fields.One2many("guest.tax.message", "x_sheet_id", string="Guest Tax Messages")
+
+    def _get_tiny_away_sale_channel(self):
+        sale_order_model = self.env["sale.order"]
+        if "sale_channel_id" not in sale_order_model._fields or "sale.channel" not in self.env:
+            return self.env["sale.channel"]
+        return self.env["sale.channel"].search([("name", "=", _TINY_AWAY_CHANNEL_NAME)], limit=1)
 
     def action_load_month(self):
         self.ensure_one()
@@ -237,7 +250,10 @@ class GuestTaxSheet(models.Model):
 
             email = (row.get("email") or "").strip()
             import_key = f"{email}|{checkin.isoformat()}"
-            if guest_tax_message.search_count([("x_import_key", "=", import_key)]):
+            existing_message = guest_tax_message.search([("x_import_key", "=", import_key)], limit=1)
+            if existing_message:
+                self._refresh_guest_countries(row)
+                self._ensure_sale_order(existing_message)
                 skipped_count += 1
                 continue
 
@@ -252,6 +268,7 @@ class GuestTaxSheet(models.Model):
                 }
             )
             self._create_guest_lines(message, row, email)
+            self._ensure_sale_order(message)
             created_count += 1
 
         message = self.env._(
@@ -266,19 +283,114 @@ class GuestTaxSheet(models.Model):
         }
 
     def _create_guest_lines(self, message, row, main_email):
-        y_guests_line = self.env["y_guests_line"]
+        guest_lines = self.env["x_guests_line"]
         for guest in _row_to_guests(row):
             if not guest.get("name"):
                 continue
             partner = self._find_or_create_partner(guest, main_email if guest["is_main"] else None)
-            y_guests_line.create(
+            guest_line = guest_lines.create(
                 {
-                    "x_group_id": message.id,
+                    "x_arrival_date_manual": message.x_arrival_date,
+                    "x_departure_date_manual": message.x_departure_date,
                     "x_guest_partner_id": partner.id,
                     "x_main_guest": guest["is_main"],
                     "x_save_as_contact": guest["is_main"],
                 }
             )
+            message.write({"x_guest_line_ids": [Command.link(guest_line.id)]})
+
+    def _ensure_sale_order(self, message):
+        """Link the imported stay to an order and ensure its rental line."""
+        sale_order = message.x_sale_order_id
+        tiny_away_channel = self._get_tiny_away_sale_channel()
+        if not sale_order:
+            main_guest_line = message.x_guest_line_ids.filtered("x_main_guest")[:1]
+            partner = main_guest_line.x_guest_partner_id
+            if not partner or not message.x_arrival_date or not message.x_departure_date:
+                return self.env["sale.order"]
+
+            rental_start = datetime.combine(message.x_arrival_date, time(hour=16))
+            rental_return = datetime.combine(message.x_departure_date, time(hour=7))
+            sale_order_model = self.env["sale.order"].with_company(message.company_id)
+            sale_order = sale_order_model.search(
+                [
+                    ("company_id", "=", message.company_id.id),
+                    ("partner_id", "=", partner.id),
+                    ("rental_start_date", ">=", datetime.combine(message.x_arrival_date, time.min)),
+                    (
+                        "rental_start_date",
+                        "<",
+                        datetime.combine(message.x_arrival_date + timedelta(days=1), time.min),
+                    ),
+                    ("rental_return_date", ">=", datetime.combine(message.x_departure_date, time.min)),
+                    (
+                        "rental_return_date",
+                        "<",
+                        datetime.combine(message.x_departure_date + timedelta(days=1), time.min),
+                    ),
+                    ("state", "!=", "cancel"),
+                ],
+                limit=1,
+            )
+            if not sale_order:
+                order_vals = {
+                    "company_id": message.company_id.id,
+                    "partner_id": partner.id,
+                    "rental_start_date": rental_start,
+                    "rental_return_date": rental_return,
+                }
+                if tiny_away_channel:
+                    order_vals["sale_channel_id"] = tiny_away_channel.id
+                sale_order = sale_order_model.create(order_vals)
+
+            message.x_sale_order_id = sale_order
+            message.x_guest_line_ids.write({"x_sale_order_id": sale_order.id})
+
+        if tiny_away_channel and sale_order.sale_channel_id != tiny_away_channel:
+            sale_order.sale_channel_id = tiny_away_channel
+
+        if (
+            sale_order.company_id != message.company_id
+            and sale_order.state in ("draft", "sent")
+            and not sale_order.order_line
+        ):
+            warehouse = self.env["stock.warehouse"].search([("company_id", "=", message.company_id.id)], limit=1)
+            sale_order.write(
+                {
+                    "company_id": message.company_id.id,
+                    "warehouse_id": warehouse.id,
+                    "rental_start_date": datetime.combine(message.x_arrival_date, time(hour=16)),
+                    "rental_return_date": datetime.combine(message.x_departure_date, time(hour=7)),
+                }
+            )
+
+        product = self.x_product_id
+        if product and not sale_order.order_line.filtered(lambda line: line.product_id == product):
+            self.env["sale.order.line"].with_company(sale_order.company_id).create(
+                {
+                    "order_id": sale_order.id,
+                    "product_id": product.id,
+                    "product_uom_qty": 1,
+                    "is_rental": True,
+                }
+            )
+        return sale_order
+
+    def _refresh_guest_countries(self, row):
+        """Re-resolve and overwrite country/nationality for every guest in the
+        row. A message that was already imported is otherwise never touched
+        again by a later reimport, so this is the only way to fix a guest
+        whose country a prior (buggy or incomplete) import got wrong."""
+        partner_model = self.env["res.partner"]
+        for guest in _row_to_guests(row):
+            if not guest.get("name"):
+                continue
+            country = self._find_country(guest.get("country"))
+            if not country:
+                continue
+            partner = partner_model.search([("name", "=ilike", guest["name"])], limit=1)
+            if partner:
+                partner.write({"country_id": country.id, "x_nationality": country.id})
 
     def _find_or_create_partner(self, guest, email):
         partner_model = self.env["res.partner"]
@@ -292,10 +404,6 @@ class GuestTaxSheet(models.Model):
         anrede = _GENDER_TO_ANREDE.get((guest.get("gender") or "").strip().lower())
         if anrede:
             vals["x_anrede"] = anrede
-        country = self._find_country(guest.get("country"))
-        if country:
-            vals["country_id"] = country.id
-            vals["x_nationality"] = country.id
         if guest.get("street"):
             vals["street"] = guest["street"]
         if guest.get("city"):
@@ -303,16 +411,23 @@ class GuestTaxSheet(models.Model):
         if guest.get("zip"):
             vals["zip"] = str(guest["zip"])
         if guest.get("dob"):
-            vals["x_birthdate"] = guest["dob"]
+            vals["birthdate_date"] = guest["dob"]
+
+        country = self._find_country(guest.get("country"))
+        country_vals = {"country_id": country.id, "x_nationality": country.id} if country else {}
 
         if partner:
             # Enrich only fields the existing partner doesn't already have —
-            # never overwrite data that's already there.
+            # never overwrite data that's already there. Country/nationality
+            # is the exception: always refresh it on reimport, since a prior
+            # import can have left it blank or wrong (e.g. a lookup bug).
             blank_vals = {key: value for key, value in vals.items() if not partner[key]}
+            blank_vals.update(country_vals)
             if blank_vals:
                 partner.write(blank_vals)
             return partner
 
+        vals.update(country_vals)
         vals["name"] = guest["name"]
         if email:
             vals["email"] = email
@@ -324,17 +439,23 @@ class GuestTaxSheet(models.Model):
         name = name.strip()
         if not name:
             return None
-        country = self.env["res.country"].search([("name", "=ilike", name)], limit=1)
+        # The sheet always gives English country names, regardless of the
+        # importing user's own language — search against the English
+        # translation, not whatever `res.country.name` resolves to in the
+        # current context (e.g. "Czech Republic" wouldn't match under a
+        # de_DE session, since that resolves to "Tschechische Republik").
+        country_model = self.env["res.country"].with_context(lang="en_US")
+        country = country_model.search([("name", "=ilike", name)], limit=1)
         if country:
             return country
         alias = _COUNTRY_ALIASES.get(name.lower())
         if alias:
-            country = self.env["res.country"].search([("name", "=ilike", alias)], limit=1)
+            country = country_model.search([("name", "=ilike", alias)], limit=1)
             if country:
                 return country
         # Fall back to a substring match for short/partial forms not covered by
         # the alias table (e.g. "Czech" for "Czech Republic").
-        return self.env["res.country"].search([("name", "ilike", name)], limit=1)
+        return country_model.search([("name", "ilike", name)], limit=1)
 
     @classmethod
     def _to_date(cls, value, formats):

@@ -13,6 +13,7 @@
                 class="o_camping_map_svg"
                 t-attf-viewBox="0 0 {{state.naturalWidth}} {{state.naturalHeight}}"
                 preserveAspectRatio="none"
+                t-on-click="onMapClick"
             >
                 <t t-foreach="props.zones" t-as="zone" t-key="zone.id">
                     <polygon
@@ -20,9 +21,45 @@
                         t-att-class="zoneClass(zone)"
                         t-on-mouseenter="() => this.onZoneHover(zone.id)"
                         t-on-mouseleave="() => this.onZoneHover(null)"
-                        t-on-click="() => this.onZoneClick(zone.id)"
+                        t-on-click="() => this.onZoneClick(zone)"
                     />
+                    <foreignObject
+                        t-if="zone.code"
+                        t-att-x="zoneLabelPosition(zone).x - 25"
+                        t-att-y="zoneLabelPosition(zone).y - 50"
+                        width="50"
+                        height="50"
+                        class="o_camping_map_zone_marker"
+                    >
+                        <div
+                            xmlns="http://www.w3.org/1999/xhtml"
+                            class="o_camping_map_zone_marker_badge"
+                        >
+                            <i t-if="zone.symbol" t-attf-class="fa {{zone.symbol}}" />
+                            <span t-esc="zone.code" />
+                        </div>
+                    </foreignObject>
+                    <!--
+                    <foreignObject
+                        t-att-x="zoneLabelPosition(zone).x - 90"
+                        t-att-y="zoneLabelPosition(zone).y - 15"
+                        width="180"
+                        height="30"
+                        class="o_camping_map_zone_label"
+                    >
+                        <div
+                            xmlns="http://www.w3.org/1999/xhtml"
+                            class="badge rounded-pill text-bg-dark"
+                            t-esc="zone.name"
+                        />
+                    </foreignObject>
+                    -->
                 </t>
+                <polyline
+                    t-if="props.draftPoints"
+                    t-att-points="props.draftPoints"
+                    class="o_camping_map_zone_draft"
+                />
             </svg>
             <div
                 t-if="hoveredZone"
@@ -41,19 +78,26 @@
                 </div>
                 <div class="o_camping_map_panel_body">
                     <t t-if="selectedZone.products.length">
-                        <a
+                        <t
                             t-foreach="selectedZone.products"
                             t-as="product"
                             t-key="product.id"
-                            t-att-href="product.url"
-                            class="o_camping_map_pitch"
                         >
-                            <span t-esc="product.name" />
-                            <span
-                                class="o_camping_map_pitch_price"
-                                t-esc="product.price"
-                            />
-                        </a>
+                            <a
+                                t-if="product.url"
+                                t-att-href="product.url"
+                                class="o_camping_map_pitch"
+                            >
+                                <span t-esc="product.name" />
+                                <span
+                                    class="o_camping_map_pitch_price"
+                                    t-esc="product.price"
+                                />
+                            </a>
+                            <div t-else="" class="o_camping_map_pitch">
+                                <span t-esc="product.name" />
+                            </div>
+                        </t>
                     </t>
                     <p t-else="" class="text-muted mb-0">
                         No pitches available in this area yet.

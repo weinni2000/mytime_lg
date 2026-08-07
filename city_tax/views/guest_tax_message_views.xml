@@ -72,7 +72,7 @@
     <menuitem
         id="menu_guest_tax_message"
         name="Guest Tax Messages"
-        parent="booking_engine.menu_availability_steering"
+        parent="menu_city_tax_root"
         action="guest_tax_message_action"
         sequence="32"
     />

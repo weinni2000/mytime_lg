@@ -8,5 +8,6 @@
         <field name="interval_type">hours</field>
         <field name="active" eval="True" />
         <field name="user_id" ref="base.user_root" />
+        <field name="tag_ids" eval="[(4, ref('camping_base.ir_cron_tag_camping'))]" />
     </record>
 </odoo>

@@ -8,6 +8,26 @@
                     <p class="text-muted">
                         Click an area on the map to see and book its pitches.
                     </p>
+                    <form method="get" class="mb-3" style="max-width: 320px;">
+                        <label class="form-label" for="o_camping_map_vehicle_type">
+                            Vehicle
+                        </label>
+                        <select
+                            id="o_camping_map_vehicle_type"
+                            name="vehicle_type_id"
+                            class="form-select"
+                            onchange="this.form.submit()"
+                        >
+                            <option value="">Any vehicle</option>
+                            <t t-foreach="vehicle_types" t-as="vehicle_type">
+                                <option
+                                    t-att-value="vehicle_type.id"
+                                    t-att-selected="vehicle_type.id == selected_vehicle_type_id or None"
+                                    t-esc="vehicle_type.name"
+                                />
+                            </t>
+                        </select>
+                    </form>
                     <div
                         class="o_camping_map_booking"
                         t-att-data-zones="zones_json"

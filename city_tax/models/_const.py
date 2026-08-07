@@ -14,10 +14,10 @@ _X_ANREDE_SELECTION = [
     ("84cd0088-e889-470c-a164-5856655ed625", "Keine Angabe (Keine Angabe)"),
     ("9ad626ef-1c63-42c1-b769-3bd66588be6b", "Herr mit Namen (Herr)"),
     ("d05b9943-5b7a-42ea-b848-88a1dbfd80b0", "Frau mit Namen (Frau)"),
-    ("220eae5c-764e-4ae7-ae9f-0f4906160d92", "An"),
-    ("17ebc4f7-908c-4f17-a56f-d28095f8cc30", "Familie"),
-    ("dc5bb920-f649-4ad9-91b2-8456af076789", "Herr und Frau"),
-    ("918ed87e-05fd-46e5-9ce7-a93de4be4378", "Firma"),
+    ("220eae5c-764e-4ae7-ae9f-0f4906160d92", " (An)"),
+    ("17ebc4f7-908c-4f17-a56f-d28095f8cc30", " (Familie)"),
+    ("dc5bb920-f649-4ad9-91b2-8456af076789", " (Herr und Frau)"),
+    ("918ed87e-05fd-46e5-9ce7-a93de4be4378", " (Firma)"),
     ("4b48a876-b28d-469d-b9ed-d74ea6a555f6", "Herr Dr. mit Namen (Herr Dr.)"),
     ("c1df69cd-536b-4deb-b927-d60a64b7edba", "Frau Dr. mit Namen (Frau Dr.)"),
     ("01b6e7ae-164c-4bdd-8ad0-5b6ae6fbf368", "Herr Ing. mit Namen (Herr Ing.)"),
@@ -33,7 +33,7 @@ _X_ANREDE_SELECTION = [
     ("8981d674-d9c9-4dda-843d-f08032396db3", "Herr Prof. mit Namen (Herr Prof.)"),
     ("beb92c5b-2df1-4b0f-8c10-7bfaa9a6d1d6", "Frau Prof. mit Namen (Frau Prof.)"),
     ("02549dc1-9b34-47ab-b9ad-8a8090d39a9e", "ohne Anrede (ohne Anrede)"),
-    ("43853f54-8eb1-427d-a513-aaedfd33182e", "Reisebüro"),
+    ("43853f54-8eb1-427d-a513-aaedfd33182e", " (Reisebüro)"),
 ]
 
 # Handy names for the entries above that are referenced individually elsewhere
@@ -41,6 +41,7 @@ _X_ANREDE_SELECTION = [
 _DESKLINE_SALUTATION_UNSET = _X_ANREDE_SELECTION[0][0]
 _DESKLINE_SALUTATION_HERR = _X_ANREDE_SELECTION[1][0]
 _DESKLINE_SALUTATION_FRAU = _X_ANREDE_SELECTION[2][0]
+_DESKLINE_SALUTATION_DAMEN_UND_HERREN = _X_ANREDE_SELECTION[3][0]
 _DESKLINE_SALUTATION_OHNE = _X_ANREDE_SELECTION[30][0]
 
 # Guest-registration completeness: "light" applies to accompanying guests,

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+    <t t-name="camping_map_booking.CampsiteMapPreviewField">
+        <div class="o_camping_map_booking o_camping_map_backend_preview">
+            <div class="d-flex align-items-end gap-2 mb-3">
+                <div class="flex-grow-1">
+                    <label class="form-label">Zone</label>
+                    <select class="form-select" t-on-change="onZoneChange">
+                        <option value="">Select a zone...</option>
+                        <option
+                            t-foreach="state.zones"
+                            t-as="zone"
+                            t-key="zone.id"
+                            t-att-value="zone.id"
+                            t-esc="zone.name"
+                        />
+                    </select>
+                </div>
+                <button
+                    type="button"
+                    class="btn btn-secondary"
+                    t-on-click="undoPoint"
+                    t-att-disabled="!state.draftPoints.length"
+                >Undo</button>
+                <button
+                    type="button"
+                    class="btn btn-secondary"
+                    t-on-click="clearPoints"
+                    t-att-disabled="!state.draftPoints.length"
+                >Clear</button>
+                <button
+                    type="button"
+                    class="btn btn-primary"
+                    t-on-click="saveZone"
+                >Save Zone</button>
+            </div>
+            <p class="text-muted" t-if="state.selectedZoneId">
+                Click around the boundary of the zone. The zone closes automatically when saved.
+            </p>
+            <CampingMap
+                t-if="mapImageUrl"
+                zones="zones"
+                mapImageUrl="mapImageUrl"
+                editable="true"
+                draftPoints="draftPoints"
+                onMapClick.bind="addPoint"
+            />
+        </div>
+    </t>
+</templates>

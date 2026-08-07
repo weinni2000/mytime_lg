@@ -15,8 +15,10 @@
                 />
                 <field name="x_guest_check_warning" optional="show" />
                 <field name="x_arrival_date" />
+                <field name="x_arrival_date_manual" optional="show" />
                 <field name="x_planned_departure_date" optional="show" />
                 <field name="x_departure_date" />
+                <field name="x_departure_date_manual" optional="show" />
                 <field name="x_guest_name" />
                 <field name="x_anrede" optional="show" />
                 <field name="x_guest_title_id" string="Gender" optional="show" />
@@ -74,9 +76,17 @@
                         <field name="x_guest_check_warning" nolabel="1" readonly="1" />
                     </div>
                     <group string="Aufenthalt">
-                        <field name="x_arrival_date" />
+                        <field
+                            name="x_arrival_date"
+                            readonly="bool(x_arrival_date_manual)"
+                        />
+                        <field name="x_arrival_date_manual" />
                         <field name="x_planned_departure_date" />
-                        <field name="x_departure_date" />
+                        <field
+                            name="x_departure_date"
+                            readonly="bool(x_departure_date_manual)"
+                        />
+                        <field name="x_departure_date_manual" />
                     </group>
                     <group string="Gast">
                         <group>
@@ -122,7 +132,7 @@
     <menuitem
         id="menu_x_guests_line"
         name="Guest Lines"
-        parent="booking_engine.menu_availability_steering"
+        parent="menu_city_tax_root"
         action="x_guests_line_action"
         sequence="30"
     />

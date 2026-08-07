@@ -6,7 +6,7 @@
     "license": "OPL-1",
     "author": "mytime.click",
     "website": "https://mytime.click",
-    "depends": ["whatsapp"],
+    "depends": ["camping_base", "whatsapp"],
     "external_dependencies": {"python": ["neonize", "qrcode"]},
     "data": [
         "security/ir.model.access.csv",

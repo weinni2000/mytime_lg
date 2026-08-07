@@ -15,9 +15,20 @@ export class CampingMapPreviewAction extends Component {
             const zones = await this.orm.searchRead(
                 "camping.map.zone",
                 [],
-                ["name", "points"]
+                ["name", "code", "symbol", "points", "availability_state"]
             );
-            this.state.zones = zones.map((zone) => ({...zone, products: []}));
+            this.state.zones = zones
+                .filter((zone) => zone.points)
+                .map((zone) => ({
+                    id: `zone-${zone.id}`,
+                    zone_id: zone.id,
+                    name: zone.name,
+                    code: zone.code,
+                    symbol: zone.symbol,
+                    points: zone.points,
+                    products: [],
+                    state: zone.availability_state,
+                }));
         });
     }
 }

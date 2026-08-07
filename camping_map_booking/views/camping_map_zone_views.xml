@@ -15,6 +15,9 @@
                 </header>
                 <field name="sequence" widget="handle" />
                 <field name="name" />
+                <field name="code" />
+                <field name="symbol" />
+                <field name="map_id" />
                 <field name="product_count" />
                 <field name="active" column_invisible="True" />
             </list>
@@ -35,19 +38,51 @@
                     />
                     <group>
                         <field name="name" />
+                        <field name="code" />
+                        <field name="symbol" />
+                        <field name="map_id" />
+                        <field name="pitch_source" widget="radio" />
                         <field name="sequence" />
                         <field name="active" invisible="1" />
                         <field name="points" />
                     </group>
                     <notebook>
                         <page name="pitches" string="Pitches">
-                            <field name="product_template_ids">
-                                <list>
-                                    <field name="name" />
-                                    <field name="list_price" />
-                                    <field name="website_published" />
-                                </list>
-                            </field>
+                            <group>
+                                <field
+                                    name="product_template_ids"
+                                    string="Rental Products"
+                                    widget="many2many_tags"
+                                    domain="[('rent_ok', '=', True)]"
+                                    options="{'no_create': True}"
+                                    invisible="pitch_source != 'product'"
+                                />
+                                <field
+                                    name="resource_ids"
+                                    string="Resources"
+                                    widget="many2many_tags"
+                                    context="{'active_test': False}"
+                                    options="{'no_create': True}"
+                                    invisible="pitch_source != 'resource'"
+                                />
+                                <field
+                                    name="availability_check_datetime"
+                                    invisible="pitch_source != 'resource'"
+                                />
+                                <field
+                                    name="vehicle_type_id"
+                                    options="{'no_create': True}"
+                                    invisible="pitch_source != 'resource'"
+                                />
+                                <field
+                                    name="availability_state"
+                                    widget="badge"
+                                    decoration-success="availability_state == 'free'"
+                                    decoration-warning="availability_state == 'occupied'"
+                                    decoration-danger="availability_state == 'not_suitable'"
+                                    invisible="pitch_source != 'resource'"
+                                />
+                            </group>
                         </page>
                     </notebook>
                 </sheet>
@@ -62,10 +97,17 @@
     </record>
 
     <menuitem
+        id="camping_maps_menu"
+        name="Maps"
+        parent="booking_engine.booking_engine_rooms_menu"
+        sequence="3"
+    />
+
+    <menuitem
         id="camping_map_zone_menu"
         name="Camping Map Zones"
         action="camping_map_zone_action"
-        parent="sale.menu_sale_config"
-        sequence="60"
+        parent="camping_maps_menu"
+        sequence="10"
     />
 </odoo>

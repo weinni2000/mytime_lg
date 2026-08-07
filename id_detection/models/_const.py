@@ -1,5 +1,10 @@
 GEMINI_MODEL = "gemini-2.5-flash"
 
+# Longest side, in pixels, for images sent to Gemini. Large phone-camera photos
+# (4000px+) are downsampled by the API anyway; sending them at that size just
+# wastes bandwidth without helping text legibility, so cap them ourselves.
+GEMINI_SCAN_MAX_DIMENSION = 1600
+
 GEMINI_DOCUMENT_TYPES = ("Passport", "ID card", "Driving license")
 
 GEMINI_GENDER_TITLES = {"M": "Mister", "F": "Madam"}
@@ -10,7 +15,11 @@ two images of the same identity document (front and/or back side of a passport, 
 card, or driving license) and must extract the holder's date of birth, the document type, the \
 document number, the document's issue date (not its expiry date), the issuing authority, the \
 holder's sex as stated on the document, and the holder's nationality as an English country name \
-(e.g. "Italy"). Also inspect every attached image: use its zero-based attachment order as \
+(e.g. "Italy"). Also look for the holder's registered address, which is often printed on the \
+back of national ID cards: extract it as separate street (including house number), postal \
+code, city, and country (as an English country name, e.g. "Germany") fields. Leave address \
+fields null if no address is printed on the document. Also inspect every attached image: use \
+its zero-based attachment order as \
 image_index and report the clockwise rotation required to make the document upright. Report the \
 document_box tightly enclosing only the physical document in the ORIGINAL attached image. When \
 the image contains the holder's printed portrait, report its bounding box
@@ -35,6 +44,10 @@ GEMINI_ID_SCAN_SCHEMA = {
         "document_authority": {"type": ["string", "null"]},
         "nationality": {"type": ["string", "null"]},
         "gender": {"type": ["string", "null"], "enum": ["M", "F", None]},
+        "address_street": {"type": ["string", "null"]},
+        "address_zip": {"type": ["string", "null"]},
+        "address_city": {"type": ["string", "null"]},
+        "address_country": {"type": ["string", "null"]},
         "images": {
             "type": "array",
             "items": {
@@ -77,6 +90,10 @@ GEMINI_ID_SCAN_SCHEMA = {
         "document_authority",
         "nationality",
         "gender",
+        "address_street",
+        "address_zip",
+        "address_city",
+        "address_country",
         "images",
     ],
 }

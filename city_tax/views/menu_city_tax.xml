@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <menuitem
+        id="menu_city_tax_root"
+        name="City Tax"
+        parent="booking_engine.menu_availability_steering"
+        sequence="30"
+    />
+</odoo>

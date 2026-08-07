@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <odoo>
     <!-- x_guests_line is a Studio/manual model (no Python base class), so its
-         fields can only be added via ir.model.fields data, not Python _inherit.
-         res.partner's new fields (x_document_date, x_birthdate, ...) live in
+         fields can only be added via ir.model.fields data, not Python _inherit
+         (confirmed: a plain `_inherit = "x_guests_line"` class never gets merged in,
+         since the manual model class is only created by _add_manual_models() after
+         all addon-declared Python models are already registered).
+         res.partner's new fields (x_document_date, x_manual_age, ...) live in
          models/res_partner.py, since res.partner is a real Python model. -->
     <record id="model_x_guests_line_x_main_guest" model="ir.model.fields">
         <field name="ttype">boolean</field>
@@ -20,15 +23,34 @@
         <field name="model_id" ref="booking_engine.x_model_guests_line" />
         <field name="name">x_refresh</field>
     </record>
+    <record id="model_x_guests_line_x_arrival_date_manual" model="ir.model.fields">
+        <field name="ttype">date</field>
+        <field name="field_description">Arrival (Manual)</field>
+        <field name="help">Overrides the sale order or grouping arrival date.</field>
+        <field name="model_id" ref="booking_engine.x_model_guests_line" />
+        <field name="name">x_arrival_date_manual</field>
+    </record>
+    <record id="model_x_guests_line_x_departure_date_manual" model="ir.model.fields">
+        <field name="ttype">date</field>
+        <field name="field_description">Departure (Manual)</field>
+        <field name="help">Overrides the sale order or grouping departure date.</field>
+        <field name="model_id" ref="booking_engine.x_model_guests_line" />
+        <field name="name">x_departure_date_manual</field>
+    </record>
     <record id="model_x_guests_line_x_arrival_date" model="ir.model.fields">
         <field name="ttype">date</field>
         <field
             name="compute"
         ><![CDATA[for record in self:
-    start = record.x_sale_order_id.rental_start_date
-    record['x_arrival_date'] = start.date() if start else False
+    if record.x_arrival_date_manual:
+        record['x_arrival_date'] = record.x_arrival_date_manual
+    else:
+        start = record.x_sale_order_id.rental_start_date
+        record['x_arrival_date'] = start.date() if start else False
 ]]></field>
-        <field name="depends">x_refresh, x_sale_order_id.rental_start_date</field>
+        <field
+            name="depends"
+        >x_refresh, x_arrival_date_manual, x_sale_order_id.rental_start_date</field>
         <field name="field_description">Arrival</field>
         <field name="model_id" ref="booking_engine.x_model_guests_line" />
         <field name="name">x_arrival_date</field>
@@ -46,10 +68,15 @@
         <field
             name="compute"
         ><![CDATA[for record in self:
-    end = record.x_sale_order_id.rental_return_date
-    record['x_departure_date'] = end.date() if end else False
+    if record.x_departure_date_manual:
+        record['x_departure_date'] = record.x_departure_date_manual
+    else:
+        end = record.x_sale_order_id.rental_return_date
+        record['x_departure_date'] = end.date() if end else False
 ]]></field>
-        <field name="depends">x_refresh, x_sale_order_id.rental_return_date</field>
+        <field
+            name="depends"
+        >x_refresh, x_departure_date_manual, x_sale_order_id.rental_return_date</field>
         <field name="field_description">Departure</field>
         <field name="model_id" ref="booking_engine.x_model_guests_line" />
         <field name="name">x_departure_date</field>
@@ -86,7 +113,7 @@
 ]]></field>
         <field
             name="depends"
-        >x_main_guest, x_refresh, x_arrival_date, x_departure_date, x_guest_partner_id.x_guest_data_check, x_guest_partner_id.x_guest_full_data_check</field>
+        >x_main_guest, x_refresh, x_arrival_date, x_departure_date, x_guest_partner_id.x_guest_data_check, x_guest_partner_id.x_guest_full_data_check, x_guest_partner_id.x_anrede_calc_refresh</field>
         <field name="field_description">Guest Check</field>
         <field name="model_id" ref="booking_engine.x_model_guests_line" />
         <field name="name">x_main_guest_check</field>
@@ -151,7 +178,7 @@
 ]]></field>
         <field
             name="depends"
-        >x_main_guest, x_refresh, x_arrival_date, x_departure_date, x_guest_partner_id.x_guest_data_warning, x_guest_partner_id.x_guest_full_data_warning</field>
+        >x_main_guest, x_refresh, x_arrival_date, x_departure_date, x_guest_partner_id.x_guest_data_warning, x_guest_partner_id.x_guest_full_data_warning, x_guest_partner_id.x_anrede_calc_refresh</field>
         <field name="field_description">Guest Check Warning</field>
         <field name="model_id" ref="booking_engine.x_model_guests_line" />
         <field name="name">x_guest_check_warning</field>
@@ -166,14 +193,174 @@
         <field name="name">x_save_as_contact</field>
     </record>
 
-    <!-- related pass-through fields onto the guest partner, mirroring the
-         existing x_guest_identity_check related field from booking_engine -->
+    <!-- Override the Booking Engine identity badge so the company can make
+         document checks optional. -->
+    <record
+        id="booking_engine.x_model_guests_line_x_guest_identity_check"
+        model="ir.model.fields"
+    >
+        <field name="related" eval="False" />
+        <field
+            name="compute"
+        ><![CDATA[for record in self:
+    company = record.x_sale_order_id.company_id or record.env.company
+    if not company.identity_check_necessary:
+        record['x_guest_identity_check'] = 'ok'
+    else:
+        record['x_guest_identity_check'] = record.x_guest_partner_id.x_identity_check or 'na'
+]]></field>
+        <field
+            name="depends"
+        >x_guest_partner_id.x_identity_check, x_sale_order_id.company_id.identity_check_necessary</field>
+        <field name="readonly" eval="True" />
+        <field name="store" eval="False" />
+    </record>
+
+    <record
+        id="model_x_guests_line_x_guest_identity_check_selection_na"
+        model="ir.model.fields.selection"
+    >
+        <field name="name">NA</field>
+        <field
+            name="field_id"
+            ref="booking_engine.x_model_guests_line_x_guest_identity_check"
+        />
+        <field name="value">na</field>
+    </record>
+    <record
+        id="model_x_guests_line_x_guest_identity_check_selection_ok"
+        model="ir.model.fields.selection"
+    >
+        <field name="name">OK</field>
+        <field
+            name="field_id"
+            ref="booking_engine.x_model_guests_line_x_guest_identity_check"
+        />
+        <field name="value">ok</field>
+    </record>
+    <record
+        id="model_x_guests_line_x_guest_identity_check_selection_invalid"
+        model="ir.model.fields.selection"
+    >
+        <field name="name">Invalid</field>
+        <field
+            name="field_id"
+            ref="booking_engine.x_model_guests_line_x_guest_identity_check"
+        />
+        <field name="value">invalid</field>
+    </record>
+
+    <!-- Whether the guest line has what's required to submit to Feratel (Deskline):
+         a name for every guest, plus country/nationality and address for the main guest. -->
+    <record id="model_x_guests_line_x_tourist_tax_check" model="ir.model.fields">
+        <field name="ttype">selection</field>
+        <field
+            name="compute"
+        ><![CDATA[for record in self:
+    if not record.x_guest_partner_id:
+        record['x_tourist_tax_check'] = 'na'
+        record['x_tourist_tax_warning'] = False
+        continue
+    missing = []
+    if not record.x_guest_name:
+        missing.append('Name')
+    if record.x_main_guest:
+        if not (record.x_calc_nationality_id or record.x_guest_country_id):
+            missing.append('Country/Nationality')
+        if not record.x_guest_street:
+            missing.append('Street')
+        if not record.x_guest_zip:
+            missing.append('Zip')
+        if not record.x_guest_city:
+            missing.append('City')
+    if missing:
+        record['x_tourist_tax_check'] = 'invalid'
+        record['x_tourist_tax_warning'] = 'Missing: ' + ', '.join(missing)
+    else:
+        record['x_tourist_tax_check'] = 'ok'
+        record['x_tourist_tax_warning'] = False
+]]></field>
+        <field
+            name="depends"
+        >x_main_guest, x_refresh, x_guest_name, x_calc_nationality_id, x_guest_country_id, x_guest_street, x_guest_zip, x_guest_city</field>
+        <field name="field_description">Tourist Tax Check</field>
+        <field name="model_id" ref="booking_engine.x_model_guests_line" />
+        <field name="name">x_tourist_tax_check</field>
+        <field name="readonly" eval="True" />
+        <field name="selectable" eval="False" />
+        <field name="store" eval="False" />
+    </record>
+    <record
+        id="model_x_guests_line_x_tourist_tax_check_selection_na"
+        model="ir.model.fields.selection"
+    >
+        <field name="name">NA</field>
+        <field name="field_id" ref="model_x_guests_line_x_tourist_tax_check" />
+        <field name="value">na</field>
+    </record>
+    <record
+        id="model_x_guests_line_x_tourist_tax_check_selection_ok"
+        model="ir.model.fields.selection"
+    >
+        <field name="name">OK</field>
+        <field name="field_id" ref="model_x_guests_line_x_tourist_tax_check" />
+        <field name="value">ok</field>
+    </record>
+    <record
+        id="model_x_guests_line_x_tourist_tax_check_selection_invalid"
+        model="ir.model.fields.selection"
+    >
+        <field name="name">Invalid</field>
+        <field name="field_id" ref="model_x_guests_line_x_tourist_tax_check" />
+        <field name="value">invalid</field>
+    </record>
+    <record id="model_x_guests_line_x_tourist_tax_warning" model="ir.model.fields">
+        <field name="ttype">char</field>
+        <field
+            name="compute"
+        ><![CDATA[for record in self:
+    if not record.x_guest_partner_id:
+        record['x_tourist_tax_check'] = 'na'
+        record['x_tourist_tax_warning'] = False
+        continue
+    missing = []
+    if not record.x_guest_name:
+        missing.append('Name')
+    if record.x_main_guest:
+        if not (record.x_calc_nationality_id or record.x_guest_country_id):
+            missing.append('Country/Nationality')
+        if not record.x_guest_street:
+            missing.append('Street')
+        if not record.x_guest_zip:
+            missing.append('Zip')
+        if not record.x_guest_city:
+            missing.append('City')
+    if missing:
+        record['x_tourist_tax_check'] = 'invalid'
+        record['x_tourist_tax_warning'] = 'Missing: ' + ', '.join(missing)
+    else:
+        record['x_tourist_tax_check'] = 'ok'
+        record['x_tourist_tax_warning'] = False
+]]></field>
+        <field
+            name="depends"
+        >x_main_guest, x_refresh, x_guest_name, x_calc_nationality_id, x_guest_country_id, x_guest_street, x_guest_zip, x_guest_city</field>
+        <field name="field_description">Tourist Tax Warning</field>
+        <field name="model_id" ref="booking_engine.x_model_guests_line" />
+        <field name="name">x_tourist_tax_warning</field>
+        <field name="readonly" eval="True" />
+        <field name="store" eval="False" />
+    </record>
+
+    <!-- related pass-through fields onto the guest partner -->
     <record id="model_x_guests_line_x_guest_name" model="ir.model.fields">
         <field name="ttype">char</field>
         <field name="related">x_guest_partner_id.name</field>
         <field name="field_description">Name</field>
         <field name="model_id" ref="booking_engine.x_model_guests_line" />
         <field name="name">x_guest_name</field>
+        <field name="readonly" eval="True" />
+        <field name="store" eval="False" />
     </record>
     <record id="model_x_guests_line_x_guest_title_id" model="ir.model.fields">
         <field name="ttype">many2one</field>
@@ -182,13 +369,17 @@
         <field name="field_description">Title</field>
         <field name="model_id" ref="booking_engine.x_model_guests_line" />
         <field name="name">x_guest_title_id</field>
+        <field name="readonly" eval="True" />
+        <field name="store" eval="False" />
     </record>
     <record id="model_x_guests_line_x_anrede" model="ir.model.fields">
         <field name="ttype">selection</field>
-        <field name="related">x_guest_partner_id.x_anrede</field>
+        <field name="related">x_guest_partner_id.x_anrede_calc</field>
         <field name="field_description">Anrede</field>
         <field name="model_id" ref="booking_engine.x_model_guests_line" />
         <field name="name">x_anrede</field>
+        <field name="readonly" eval="True" />
+        <field name="store" eval="False" />
     </record>
     <record id="model_x_guests_line_x_guest_lang" model="ir.model.fields">
         <field name="ttype">selection</field>
@@ -196,6 +387,8 @@
         <field name="field_description">Language</field>
         <field name="model_id" ref="booking_engine.x_model_guests_line" />
         <field name="name">x_guest_lang</field>
+        <field name="readonly" eval="True" />
+        <field name="store" eval="False" />
     </record>
     <record id="model_x_guests_line_x_guest_country_id" model="ir.model.fields">
         <field name="ttype">many2one</field>
@@ -204,14 +397,18 @@
         <field name="field_description">Country</field>
         <field name="model_id" ref="booking_engine.x_model_guests_line" />
         <field name="name">x_guest_country_id</field>
+        <field name="readonly" eval="True" />
+        <field name="store" eval="False" />
     </record>
     <record id="model_x_guests_line_x_guest_nationality" model="ir.model.fields">
         <field name="ttype">many2one</field>
-        <field name="related">x_guest_partner_id.x_nationality</field>
+        <field name="related">x_guest_partner_id.x_calc_nationality_id</field>
         <field name="relation">res.country</field>
         <field name="field_description">Nationality</field>
         <field name="model_id" ref="booking_engine.x_model_guests_line" />
         <field name="name">x_guest_nationality</field>
+        <field name="readonly" eval="True" />
+        <field name="store" eval="False" />
     </record>
     <record id="model_x_guests_line_x_calc_nationality_id" model="ir.model.fields">
         <field name="ttype">many2one</field>
@@ -220,6 +417,8 @@
         <field name="field_description">Calculated Nationality</field>
         <field name="model_id" ref="booking_engine.x_model_guests_line" />
         <field name="name">x_calc_nationality_id</field>
+        <field name="readonly" eval="True" />
+        <field name="store" eval="False" />
     </record>
     <record id="model_x_guests_line_x_guest_zip" model="ir.model.fields">
         <field name="ttype">char</field>
@@ -227,6 +426,8 @@
         <field name="field_description">Zip</field>
         <field name="model_id" ref="booking_engine.x_model_guests_line" />
         <field name="name">x_guest_zip</field>
+        <field name="readonly" eval="True" />
+        <field name="store" eval="False" />
     </record>
     <record id="model_x_guests_line_x_guest_city" model="ir.model.fields">
         <field name="ttype">char</field>
@@ -234,6 +435,8 @@
         <field name="field_description">City</field>
         <field name="model_id" ref="booking_engine.x_model_guests_line" />
         <field name="name">x_guest_city</field>
+        <field name="readonly" eval="True" />
+        <field name="store" eval="False" />
     </record>
     <record id="model_x_guests_line_x_guest_street" model="ir.model.fields">
         <field name="ttype">char</field>
@@ -241,6 +444,8 @@
         <field name="field_description">Street</field>
         <field name="model_id" ref="booking_engine.x_model_guests_line" />
         <field name="name">x_guest_street</field>
+        <field name="readonly" eval="True" />
+        <field name="store" eval="False" />
     </record>
     <record id="model_x_guests_line_x_guest_document_type" model="ir.model.fields">
         <field name="ttype">selection</field>
@@ -248,6 +453,8 @@
         <field name="field_description">Document Type</field>
         <field name="model_id" ref="booking_engine.x_model_guests_line" />
         <field name="name">x_guest_document_type</field>
+        <field name="readonly" eval="True" />
+        <field name="store" eval="False" />
     </record>
     <record id="model_x_guests_line_x_guest_document_number" model="ir.model.fields">
         <field name="ttype">char</field>
@@ -255,6 +462,8 @@
         <field name="field_description">Document Number</field>
         <field name="model_id" ref="booking_engine.x_model_guests_line" />
         <field name="name">x_guest_document_number</field>
+        <field name="readonly" eval="True" />
+        <field name="store" eval="False" />
     </record>
     <record id="model_x_guests_line_x_guest_document_date" model="ir.model.fields">
         <field name="ttype">date</field>
@@ -262,6 +471,8 @@
         <field name="field_description">Document Date</field>
         <field name="model_id" ref="booking_engine.x_model_guests_line" />
         <field name="name">x_guest_document_date</field>
+        <field name="readonly" eval="True" />
+        <field name="store" eval="False" />
     </record>
     <record id="model_x_guests_line_x_guest_document_authority" model="ir.model.fields">
         <field name="ttype">char</field>
@@ -269,13 +480,17 @@
         <field name="field_description">Document Authority</field>
         <field name="model_id" ref="booking_engine.x_model_guests_line" />
         <field name="name">x_guest_document_authority</field>
+        <field name="readonly" eval="True" />
+        <field name="store" eval="False" />
     </record>
     <record id="model_x_guests_line_x_guest_birthdate" model="ir.model.fields">
         <field name="ttype">date</field>
-        <field name="related">x_guest_partner_id.x_birthdate</field>
+        <field name="related">x_guest_partner_id.birthdate_date</field>
         <field name="field_description">Birthdate</field>
         <field name="model_id" ref="booking_engine.x_model_guests_line" />
         <field name="name">x_guest_birthdate</field>
+        <field name="readonly" eval="True" />
+        <field name="store" eval="False" />
     </record>
     <record id="model_x_guests_line_x_guest_age" model="ir.model.fields">
         <field name="ttype">integer</field>
@@ -286,11 +501,22 @@
         <field name="readonly" eval="True" />
         <field name="store" eval="False" />
     </record>
+    <record id="model_x_guests_line_x_guest_taxable" model="ir.model.fields">
+        <field name="ttype">boolean</field>
+        <field name="related">x_guest_partner_id.x_taxable</field>
+        <field name="field_description">Taxable</field>
+        <field name="model_id" ref="booking_engine.x_model_guests_line" />
+        <field name="name">x_guest_taxable</field>
+        <field name="readonly" eval="True" />
+        <field name="store" eval="False" />
+    </record>
     <record id="model_x_guests_line_x_guest_marketing_consent" model="ir.model.fields">
         <field name="ttype">boolean</field>
         <field name="related">x_guest_partner_id.x_marketing_consent</field>
         <field name="field_description">Marketing Consent</field>
         <field name="model_id" ref="booking_engine.x_model_guests_line" />
         <field name="name">x_guest_marketing_consent</field>
+        <field name="readonly" eval="True" />
+        <field name="store" eval="False" />
     </record>
 </odoo>

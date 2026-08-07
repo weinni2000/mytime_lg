@@ -39,7 +39,9 @@ class MailToBookingProductMappingWizard(models.TransientModel):
                     "default_product_id": self.product_id.id,
                 }
             )
-        else:
+        elif self.product_hint:
+            # Without a hint there is nothing to key a mapping row on, so
+            # only save one for future automatic matches when a hint exists.
             self.env["mail.to.booking.product.mapping"].create(
                 {
                     "sale_channel_id": self.sale_channel_id.id,
@@ -48,5 +50,5 @@ class MailToBookingProductMappingWizard(models.TransientModel):
                     "company_id": self.mail_to_booking_id.company_id.id,
                 }
             )
-        self.mail_to_booking_id.action_process()
+        self.mail_to_booking_id.action_process(product_id=self.product_id)
         return True

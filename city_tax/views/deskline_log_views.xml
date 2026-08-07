@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="deskline_log_list_view" model="ir.ui.view">
+        <field name="name">deskline.log.list</field>
+        <field name="model">deskline.log</field>
+        <field name="arch" type="xml">
+            <list default_order="id desc" create="false" edit="false">
+                <field name="create_date" string="Date" />
+                <field name="name" />
+                <field name="company_id" />
+                <field
+                    name="success"
+                    widget="boolean_toggle"
+                    readonly="1"
+                    decoration-success="success"
+                    decoration-danger="not success"
+                />
+                <field name="response_status" />
+            </list>
+        </field>
+    </record>
+
+    <record id="deskline_log_form_view" model="ir.ui.view">
+        <field name="name">deskline.log.form</field>
+        <field name="model">deskline.log</field>
+        <field name="arch" type="xml">
+            <form create="false" edit="false">
+                <sheet>
+                    <group>
+                        <field name="name" />
+                        <field name="company_id" />
+                        <field name="success" widget="boolean_toggle" readonly="1" />
+                        <field name="response_status" />
+                        <field name="request_url" />
+                    </group>
+                    <notebook>
+                        <page string="Request" name="request">
+                            <field name="request_body" widget="text" />
+                        </page>
+                        <page string="Response" name="response">
+                            <field name="response_body" widget="text" />
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="deskline_log_action" model="ir.actions.act_window">
+        <field name="name">Deskline Logs</field>
+        <field name="res_model">deskline.log</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem
+        id="menu_deskline_log"
+        name="Deskline Logs"
+        parent="menu_city_tax_root"
+        action="deskline_log_action"
+        sequence="34"
+    />
+</odoo>

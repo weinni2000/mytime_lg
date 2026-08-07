@@ -1,32 +1,27 @@
 import json
 
-from odoo import http
+from odoo import fields, http
 from odoo.http import request
 
 
 class CampingMapBookingController(http.Controller):
     @http.route("/camping/map", type="http", auth="public", website=True, sitemap=True)
-    def camping_map(self, **kwargs):
-        zones = request.env["camping.map.zone"].sudo().search([])
-        zones_data = [
-            {
-                "id": zone.id,
-                "name": zone.name,
-                "points": zone.points,
-                "products": [
-                    {
-                        "id": product.id,
-                        "name": product.name,
-                        "price": product.list_price,
-                        "url": product.website_url,
-                    }
-                    for product in zone.product_template_ids.filtered("website_published")
-                ],
-            }
-            for zone in zones
-        ]
+    def camping_map(self, vehicle_type_id=None, **kwargs):
+        zones = request.env["camping.map.zone"].sudo().search([("points", "!=", False)])
+        vehicle_type = None
+        if vehicle_type_id and vehicle_type_id.isdigit():
+            vehicle_type = request.env["camping.vehicle.type"].sudo().browse(int(vehicle_type_id))
+            if not vehicle_type.exists():
+                vehicle_type = None
+        now = fields.Datetime.now()
+        shapes = []
+        for zone in zones:
+            state = zone._get_availability_state(vehicle_type, now)
+            shapes += zone._get_map_shapes(state)
         values = {
-            "zones_json": json.dumps(zones_data),
+            "zones_json": json.dumps(shapes),
             "map_image_url": "/camping_map_booking/static/src/img/camping_map.png",
+            "vehicle_types": request.env["camping.vehicle.type"].sudo().search([]),
+            "selected_vehicle_type_id": vehicle_type.id if vehicle_type else False,
         }
         return request.render("camping_map_booking.map_page", values)

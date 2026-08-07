@@ -7,6 +7,7 @@
     "author": "mytime.click",
     "website": "https://mytime.click",
     "depends": [
+        "camping_base",
         "product",
         "sale",
         "sale_brand",

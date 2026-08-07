@@ -135,6 +135,19 @@
                         />". Use "Choose Product" to map it and create the booking.
                     </div>
                     <div
+                        invisible="not product_match_log or state == 'created'"
+                        class="alert alert-info"
+                        role="alert"
+                    >
+                        <strong>Product match log:</strong>
+                        <field
+                            name="product_match_log"
+                            nolabel="1"
+                            readonly="1"
+                            class="oe_inline"
+                        />
+                    </div>
+                    <div
                         invisible="not confirm_warning"
                         class="alert alert-warning"
                         role="alert"

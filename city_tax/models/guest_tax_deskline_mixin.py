@@ -18,7 +18,7 @@ class GuestTaxDesklineMixin(models.AbstractModel):
     x_deskline_master_sub_type = fields.Integer(string="Deskline Reference Sub Type", readonly=True, copy=False)
 
     def _get_deskline_guest_lines(self):
-        """Return the guest-line recordset (x_guests_line or y_guests_line) to submit."""
+        """Return the x_guests_line records to submit."""
         raise NotImplementedError
 
     def _get_deskline_company(self):

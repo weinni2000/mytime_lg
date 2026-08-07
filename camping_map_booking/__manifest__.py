@@ -7,15 +7,23 @@
     "author": "mytime.click",
     "website": "https://mytime.click",
     "depends": [
+        "booking_engine",
+        "campsite",
+        "planning",
         "product",
+        "resource",
         "website_sale_renting",
     ],
     "data": [
         "security/ir.model.access.csv",
         "views/camping_map_zone_views.xml",
+        "views/camping_vehicle_type_views.xml",
+        "views/resource_resource_views.xml",
+        "views/campsite_map_views.xml",
         "views/product_template_views.xml",
         "views/camping_map_booking_templates.xml",
         "data/website_menu.xml",
+        "data/camping_vehicle_type_data.xml",
     ],
     "demo": [
         "demo/camping_map_zone_demo.xml",

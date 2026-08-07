@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo noupdate="1">
+    <record id="ir_cron_tag_camping" model="ir.cron.tag">
+        <field name="name">Camping</field>
+        <field name="color">10</field>
+    </record>
+</odoo>

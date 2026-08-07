@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <odoo noupdate="1">
-    <record id="seq_y_guests_line_group" model="ir.sequence">
+    <record id="seq_x_guests_line_group" model="ir.sequence">
         <field name="name">Guests Line (Y): Standalone Grouping</field>
-        <field name="code">y_guests_line.group</field>
+        <field name="code">x_guests_line.group</field>
         <field name="prefix">G</field>
         <field name="padding">5</field>
         <field name="company_id" eval="False" />

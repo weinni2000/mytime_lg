@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="campsite_map_view_list" model="ir.ui.view">
+        <field name="name">campsite.map.list</field>
+        <field name="model">campsite.map</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name" />
+                <field name="zone_ids" widget="many2many_tags" />
+                <field name="active" column_invisible="True" />
+            </list>
+        </field>
+    </record>
+
+    <record id="campsite_map_view_form" model="ir.ui.view">
+        <field name="name">campsite.map.form</field>
+        <field name="model">campsite.map</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <widget
+                        name="web_ribbon"
+                        title="Archived"
+                        bg_color="text-bg-danger"
+                        invisible="active"
+                    />
+                    <group>
+                        <field name="name" />
+                        <field name="active" invisible="1" />
+                        <field name="image" widget="image" />
+                    </group>
+                    <notebook>
+                        <page name="zones" string="Zones">
+                            <field name="zone_ids">
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle" />
+                                    <field name="name" />
+                                    <field name="points" />
+                                    <field name="product_count" />
+                                    <button
+                                        name="action_open_form"
+                                        type="object"
+                                        string="Open"
+                                        icon="fa-external-link"
+                                    />
+                                </list>
+                            </field>
+                        </page>
+                        <page name="map_preview" string="Map Preview">
+                            <field
+                                name="preview_data"
+                                widget="campsite_map_preview"
+                                nolabel="1"
+                            />
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="campsite_map_action" model="ir.actions.act_window">
+        <field name="name">Campsite Maps</field>
+        <field name="res_model">campsite.map</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem
+        id="campsite_map_menu"
+        name="Campsite Maps"
+        action="campsite_map_action"
+        parent="camping_maps_menu"
+        sequence="5"
+    />
+</odoo>

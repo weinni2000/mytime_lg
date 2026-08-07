@@ -9,6 +9,7 @@
         <field name="interval_type">minutes</field>
         <field name="active" eval="True" />
         <field name="user_id" ref="base.user_root" />
+        <field name="tag_ids" eval="[(4, ref('camping_base.ir_cron_tag_camping'))]" />
     </record>
     <record id="ir_cron_private_whatsapp_contact_sync" model="ir.cron">
         <field name="name">Private WhatsApp: Synchronize Contacts</field>
@@ -19,5 +20,6 @@
         <field name="interval_type">days</field>
         <field name="active" eval="True" />
         <field name="user_id" ref="base.user_root" />
+        <field name="tag_ids" eval="[(4, ref('camping_base.ir_cron_tag_camping'))]" />
     </record>
 </odoo>

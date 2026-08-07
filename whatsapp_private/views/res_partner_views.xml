@@ -14,15 +14,25 @@
                     string="Sync to WhatsApp"
                 />
             </xpath>
-            <xpath expr="//div[hasclass('o_address_format')]" position="after">
-                <field name="whatsapp_private_jid" />
-                <field name="whatsapp_private_company_id" />
-                <field name="whatsapp_private_full_name" />
-                <field name="whatsapp_private_business_name" />
-                <field name="whatsapp_private_push_name" />
-                <field name="whatsapp_private_last_sync" readonly="1" />
-                <field name="whatsapp_private_outbound_last_sync" readonly="1" />
-                <field name="whatsapp_private_outbound_sync_status" readonly="1" />
+            <xpath expr="//notebook" position="inside">
+                <page name="whatsapp_private" string="Whatsapp">
+                    <group>
+                        <field name="whatsapp_private_jid" />
+                        <field name="whatsapp_private_company_id" />
+                        <field name="whatsapp_private_full_name" />
+                        <field name="whatsapp_private_business_name" />
+                        <field name="whatsapp_private_push_name" />
+                        <field name="whatsapp_private_last_sync" readonly="1" />
+                        <field
+                            name="whatsapp_private_outbound_last_sync"
+                            readonly="1"
+                        />
+                        <field
+                            name="whatsapp_private_outbound_sync_status"
+                            readonly="1"
+                        />
+                    </group>
+                </page>
             </xpath>
         </field>
     </record>

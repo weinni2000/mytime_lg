@@ -7,8 +7,18 @@
         <field name="arch" type="xml">
             <xpath expr="//group[@name='personal_information_group']" position="inside">
                 <field name="x_anrede" />
+                <field name="x_anrede_calc" />
+                <field name="x_anrede_calc_refresh" widget="boolean_toggle" />
                 <field name="x_nationality" />
                 <field name="x_calc_nationality_id" />
+            </xpath>
+            <xpath expr="//group[@name='personal_information_group']" position="after">
+                <group name="city_tax_age_group" string="Age">
+                    <field name="birthdate_date" />
+                    <field name="x_manual_age" />
+                    <field name="x_age" />
+                    <field name="x_underage" />
+                </group>
             </xpath>
         </field>
     </record>

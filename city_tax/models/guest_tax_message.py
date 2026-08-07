@@ -11,7 +11,13 @@ class GuestTaxMessage(models.Model):
         "res.company", string="Company", required=True, default=lambda self: self.env.company
     )
     x_sale_order_id = fields.Many2one("sale.order", string="Sale Order")
-    x_guest_line_ids = fields.One2many("y_guests_line", "x_group_id", string="Guests")
+    x_guest_line_ids = fields.Many2many(
+        "x_guests_line",
+        "guest_tax_message_x_guests_line_rel",
+        "message_id",
+        "guest_line_id",
+        string="Guests",
+    )
     x_arrival_date = fields.Date(
         string="Arrival",
         help="Check-in date for the whole stay — used by all guests in this "
@@ -40,7 +46,7 @@ class GuestTaxMessage(models.Model):
 
     @api.model
     def _create_standalone(self):
-        name = self.env["ir.sequence"].next_by_code("y_guests_line.group")
+        name = self.env["ir.sequence"].next_by_code("x_guests_line.group")
         return self.create({"name": name})
 
     def _get_deskline_guest_lines(self):

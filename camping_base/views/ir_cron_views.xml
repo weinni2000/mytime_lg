@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="ir_cron_view_form" model="ir.ui.view">
+        <field name="name">ir.cron.view.form.camping.base</field>
+        <field name="model">ir.cron</field>
+        <field name="inherit_id" ref="base.ir_cron_view_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='usage']" position="attributes">
+                <attribute name="invisible">0</attribute>
+            </xpath>
+            <xpath expr="//page[@name='usage']" position="inside">
+                <group>
+                    <field
+                        name="tag_ids"
+                        widget="many2many_tags"
+                        options="{'color_field': 'color'}"
+                    />
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="ir_cron_view_list" model="ir.ui.view">
+        <field name="name">ir.cron.view.list.camping.base</field>
+        <field name="model">ir.cron</field>
+        <field name="inherit_id" ref="base.ir_cron_view_tree" />
+        <field name="arch" type="xml">
+            <field name="name" position="after">
+                <field name="tag_ids" widget="many2many_tags" optional="show" />
+            </field>
+        </field>
+    </record>
+
+    <record id="ir_cron_view_search" model="ir.ui.view">
+        <field name="name">ir.cron.view.search.camping.base</field>
+        <field name="model">ir.cron</field>
+        <field name="inherit_id" ref="base.ir_cron_view_search" />
+        <field name="arch" type="xml">
+            <field name="name" position="after">
+                <field name="tag_ids" />
+            </field>
+        </field>
+    </record>
+
+    <record id="ir_cron_camping_action" model="ir.actions.act_window">
+        <field name="name">Crons</field>
+        <field name="res_model">ir.cron</field>
+        <field name="view_mode">list,form,calendar</field>
+        <field name="domain" eval="[('tag_ids', 'in', [ref('ir_cron_tag_camping')])]" />
+        <field name="context">{'search_default_all': 1}</field>
+    </record>
+
+    <menuitem
+        id="menu_ir_cron_camping"
+        name="Crons"
+        parent="booking_engine.menu_availability_steering"
+        action="ir_cron_camping_action"
+        sequence="90"
+        groups="base.group_system"
+    />
+</odoo>

@@ -70,6 +70,7 @@ class MailToBooking(models.Model):
     )
     error_message = fields.Text(readonly=True)
     confirm_warning = fields.Text(readonly=True)
+    product_match_log = fields.Text(readonly=True)
 
     def action_view_sale_order(self):
         self.ensure_one()
@@ -102,9 +103,9 @@ class MailToBooking(models.Model):
             record._run_extraction(record.mail_body)
         return True
 
-    def action_process(self):
+    def action_process(self, product_id=None):
         for record in self:
-            record._create_booking()
+            record._create_booking(product_id=product_id)
         return True
 
     def action_remove_booking(self):
@@ -290,14 +291,26 @@ class MailToBooking(models.Model):
             "message": extraction.get("message") or "",
             "state": "draft",
             "error_message": False,
+            "product_match_log": False,
         }
         if is_booking:
             values["sale_channel_id"] = self._find_or_create_sale_channel(extraction.get("platform")).id
         self.write(values)
 
-    def _create_booking(self):
+    def _create_booking(self, product_id=None):
         self.ensure_one()
-        product_id = self._find_product()
+        # An explicit product_id (from the "Choose Product" wizard) is the
+        # user's direct instruction for this specific record and must be used
+        # as-is - it must never be re-derived via _find_product(), which
+        # keys off product_hint and bails out immediately when the email had
+        # no hint at all, silently ignoring the manual choice.
+        if product_id:
+            self.product_match_log = _(
+                "Product %(product)s was assigned manually via the product mapping wizard.",
+                product=product_id.display_name,
+            )
+        else:
+            product_id = self._find_product()
         if not product_id:
             self.write(
                 {
@@ -315,6 +328,54 @@ class MailToBooking(models.Model):
             )
             return self.env["sale.order"]
 
+        # A failure anywhere in here (partner/order creation, constraints,
+        # etc.) must not propagate: an uncaught exception rolls back this
+        # entire transaction, including any product mapping the user just
+        # created via the "Choose Product" wizard in the same request, so the
+        # record silently reverts to "no_product" with no trace of why.
+        try:
+            with self.env.cr.savepoint():
+                order_id = self._create_sale_order(product_id)
+                order_id.message_post(
+                    body=self._mail_chatter_body(),
+                    subject=self.subject or _("Imported booking mail"),
+                )
+                confirm_warning = self._confirm_sale_order(order_id)
+        except Exception as error:  # noqa: BLE001
+            self.write(
+                {
+                    "sale_order_id": False,
+                    "product_id": product_id.id,
+                    "state": "error",
+                    "error_message": str(error),
+                    "confirm_warning": False,
+                }
+            )
+            _logger.exception("Mail to Booking could not create sale order for %s.", self.display_name)
+            self._notify_warning(_("Booking could not be created: %(error)s", error=str(error)))
+            return self.env["sale.order"]
+
+        self.write(
+            {
+                "sale_order_id": order_id.id,
+                "product_id": product_id.id,
+                "state": "created",
+                "error_message": False,
+                "confirm_warning": confirm_warning,
+            }
+        )
+        if confirm_warning:
+            self._notify_warning(
+                _(
+                    "Booking %(order)s was created but could not be confirmed: %(error)s",
+                    order=order_id.display_name,
+                    error=confirm_warning,
+                )
+            )
+        return order_id
+
+    def _create_sale_order(self, product_id):
+        self.ensure_one()
         partner_id = self._find_or_create_partner()
         is_rental = bool(self.checkin_date and self.checkout_date)
         order_values = {
@@ -344,30 +405,7 @@ class MailToBooking(models.Model):
         if self.price_unit:
             line_values["price_unit"] = self.price_unit
         order_values["order_line"] = [(0, 0, line_values)]
-
-        order_id = self.env["sale.order"].sudo().with_company(self.company_id).create(order_values)
-        order_id.message_post(
-            body=self._mail_chatter_body(),
-            subject=self.subject or _("Imported booking mail"),
-        )
-        confirm_warning = self._confirm_sale_order(order_id)
-        self.write(
-            {
-                "sale_order_id": order_id.id,
-                "product_id": product_id.id,
-                "state": "created",
-                "confirm_warning": confirm_warning,
-            }
-        )
-        if confirm_warning:
-            self._notify_warning(
-                _(
-                    "Booking %(order)s was created but could not be confirmed: %(error)s",
-                    order=order_id.display_name,
-                    error=confirm_warning,
-                )
-            )
-        return order_id
+        return self.env["sale.order"].sudo().with_company(self.company_id).create(order_values)
 
     def _confirm_sale_order(self, order_id):
         self.ensure_one()
@@ -447,6 +485,14 @@ class MailToBooking(models.Model):
         )
         if channel_id:
             return channel_id
+        normalized_name = name.strip().casefold()
+        channel_ids = channel_model.search([("company_id", "in", [False, self.company_id.id])])
+        for candidate_id in channel_ids:
+            synonyms = (candidate_id.synonyms or "").replace(",", "\n").replace(";", "\n")
+            if normalized_name in {
+                synonym.strip().casefold() for synonym in synonyms.splitlines() if synonym.strip()
+            }:
+                return candidate_id
         sender_emails = email_split(self.sender or "")
         return channel_model.create(
             {
@@ -458,9 +504,31 @@ class MailToBooking(models.Model):
 
     def _find_product(self):
         self.ensure_one()
-        if self.sale_channel_id.force_single_product and self.sale_channel_id.default_product_id:
-            return self.sale_channel_id.default_product_id
+        log_lines = []
+        product_id = self._find_product_with_log(log_lines)
+        self.product_match_log = "\n".join(log_lines)
+        return product_id
+
+    def _find_product_with_log(self, log_lines):
+        self.ensure_one()
+        if self.sale_channel_id.force_single_product:
+            if self.sale_channel_id.default_product_id:
+                log_lines.append(
+                    _(
+                        'Channel "%(channel)s" is set to always use its default product: %(product)s.',
+                        channel=self.sale_channel_id.name,
+                        product=self.sale_channel_id.default_product_id.display_name,
+                    )
+                )
+                return self.sale_channel_id.default_product_id
+            log_lines.append(
+                _(
+                    'Channel "%(channel)s" is set to always use a default product, but none is configured.',
+                    channel=self.sale_channel_id.name,
+                )
+            )
         if not self.product_hint:
+            log_lines.append(_("No product hint was extracted from the email."))
             return self.env["product.product"]
 
         mapping_model = self.env["mail.to.booking.product.mapping"].sudo()
@@ -472,14 +540,29 @@ class MailToBooking(models.Model):
             limit=1,
         )
         if mapping_id:
+            log_lines.append(
+                _(
+                    'Hint "%(hint)s" matched product %(product)s via an existing mapping.',
+                    hint=self.product_hint,
+                    product=mapping_id.product_id.display_name,
+                )
+            )
             return mapping_id.product_id
+        log_lines.append(
+            _(
+                'No product mapping found for hint "%(hint)s" on channel "%(channel)s".',
+                hint=self.product_hint,
+                channel=self.sale_channel_id.name or _("(none)"),
+            )
+        )
 
         allowed_product_ids = self.fetchmail_server_id.allowed_product_ids
         if allowed_product_ids:
-            product_id = self._match_allowed_product(allowed_product_ids)
+            product_id = self._match_allowed_product(allowed_product_ids, log_lines)
             if product_id:
                 self._create_product_mapping(product_id)
             return product_id
+        log_lines.append(_("No allowed product list is configured on the mail server to try an automatic match."))
 
         candidate_ids = (
             self.env["product.product"]
@@ -495,13 +578,27 @@ class MailToBooking(models.Model):
             )
         )
         if len(candidate_ids) != 1:
+            log_lines.append(
+                _(
+                    'Name search for hint "%(hint)s" found %(count)s product(s); need exactly one to auto-match.',
+                    hint=self.product_hint,
+                    count=len(candidate_ids),
+                )
+            )
             return self.env["product.product"]
 
         product_id = candidate_ids[0]
+        log_lines.append(
+            _(
+                'Hint "%(hint)s" matched product %(product)s by unique name search.',
+                hint=self.product_hint,
+                product=product_id.display_name,
+            )
+        )
         self._create_product_mapping(product_id)
         return product_id
 
-    def _match_allowed_product(self, allowed_product_ids):
+    def _match_allowed_product(self, allowed_product_ids, log_lines):
         self.ensure_one()
         candidates = "\n".join(
             f"{index}. {product_id.display_name}" for index, product_id in enumerate(allowed_product_ids, start=1)
@@ -512,10 +609,25 @@ class MailToBooking(models.Model):
             match_index = result.get("match_index")
         except (UserError, requests.RequestException, ValueError, KeyError, IndexError) as error:
             _logger.warning("Mail to Booking product match failed for %s: %s", self.display_name, error)
+            log_lines.append(_("Automatic product match via DeepSeek failed: %(error)s", error=str(error)))
             return self.env["product.product"]
         if not isinstance(match_index, int) or not (1 <= match_index <= len(allowed_product_ids)):
+            log_lines.append(
+                _(
+                    'DeepSeek could not confidently match hint "%(hint)s" to any allowed product.',
+                    hint=self.product_hint,
+                )
+            )
             return self.env["product.product"]
-        return allowed_product_ids[match_index - 1]
+        product_id = allowed_product_ids[match_index - 1]
+        log_lines.append(
+            _(
+                'Hint "%(hint)s" matched product %(product)s via DeepSeek against the allowed product list.',
+                hint=self.product_hint,
+                product=product_id.display_name,
+            )
+        )
+        return product_id
 
     def _create_product_mapping(self, product_id):
         self.ensure_one()

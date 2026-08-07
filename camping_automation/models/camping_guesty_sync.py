@@ -165,6 +165,7 @@ class CampingGuestySync(models.Model):
                 "sale_channel_id": config["sale_channel_id"],
                 "client_order_ref": guesty_id,
                 "x_order_involves_room": True,
+                "is_rental_order": True,
                 "rental_start_date": check_in,
                 "rental_return_date": check_out,
                 "order_line": [

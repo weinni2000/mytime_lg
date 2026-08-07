@@ -208,7 +208,7 @@ class WebsiteSaleCampingCheckout(WebsiteSale):
             vals = {"name": name}
             if age.isdigit():
                 age_int = int(age)
-                vals["x_birthdate"] = self._birthdate_from_age(age_int)
+                vals["birthdate_date"] = self._birthdate_from_age(age_int)
                 guest_ages.append(age_int)
             guest_vals.append(vals)
 

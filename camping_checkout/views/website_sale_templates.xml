@@ -11,8 +11,8 @@
                 <input
                     id="o_birthdate"
                     type="date"
-                    name="x_birthdate"
-                    t-att-value="partner_sudo.x_birthdate"
+                    name="birthdate_date"
+                    t-att-value="partner_sudo.birthdate_date"
                     class="form-control"
                 />
             </div>

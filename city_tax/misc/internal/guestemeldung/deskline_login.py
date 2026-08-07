@@ -375,7 +375,7 @@ def submit_meldezettel(main_guest, additional_guests=None, dry_run=False):
             "Phone": guest.get("phone", ""),
             "SaveInGuestAddresses": guest.get("saveInAddresses", True),
             "GuestDataProcessingAgreement": False,
-            "HasDeparture": False,
+            "HasDeparture": True,
             "PersonGroups": build_person_groups(),
             "PersonGroup": guest.get("personGroup", "98d0fd41-ae19-4e8d-a1a3-f5476069f967"),
             "PersonGroupString": guest.get("personGroupString", "Pflichtig"),

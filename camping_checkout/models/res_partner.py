@@ -7,6 +7,6 @@ class ResPartner(models.Model):
     @api.model
     def _get_frontend_writable_fields(self):
         return super()._get_frontend_writable_fields() | {
-            "x_birthdate",
+            "birthdate_date",
             "x_id_document_front",
         }

@@ -13,8 +13,14 @@
                             <field name="x_deskline_password" password="True" />
                         </group>
                         <group string="Property">
+                            <field name="identity_check_necessary" />
                             <field name="x_deskline_property_id" />
                             <field name="x_deskline_db_ov" />
+                        </group>
+                        <group string="Request">
+                            <field name="x_deskline_base_url" />
+                            <field name="x_deskline_header_type" />
+                            <field name="x_deskline_sub_type" />
                         </group>
                     </group>
                     <group string="Session">

@@ -210,6 +210,27 @@ class TestMailToBooking(TransactionCase):
         self.assertEqual(record.adults, 2)
         self.assertEqual(record.product_hint, "Van")
 
+    def test_sale_channel_is_found_by_synonym(self):
+        channel_id = (
+            self.env["sale.channel"]
+            .sudo()
+            .create(
+                {
+                    "name": "Alpacacamping",
+                    "synonyms": "Alpaca Camping\nAlpaca-Camping",
+                    "company_id": self.env.company.id,
+                }
+            )
+        )
+        extraction = dict(ALPACACAMPING_EXTRACTION, platform="alpaca camping")
+
+        record = self._message_new(ALPACACAMPING_MSG_DICT, extraction=extraction)
+
+        self.assertEqual(record.sale_channel_id, channel_id)
+        self.assertFalse(
+            self.env["sale.channel"].search([("name", "=ilike", "alpaca camping"), ("id", "!=", channel_id.id)])
+        )
+
     def test_allowed_products_matched_without_mapping_when_confident(self):
         """When the server restricts matching to a fixed allowed_product_ids
         list, a product can be resolved straight away - without a

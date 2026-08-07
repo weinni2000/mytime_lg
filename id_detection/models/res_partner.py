@@ -24,6 +24,7 @@ from ._const import (
     GEMINI_ID_SCAN_SCHEMA,
     GEMINI_ID_SCAN_USER_PROMPT,
     GEMINI_MODEL,
+    GEMINI_SCAN_MAX_DIMENSION,
 )
 
 _logger = logging.getLogger(__name__)
@@ -99,7 +100,9 @@ class ResPartner(models.Model):
         files = []
         images = images or self._prepare_id_scan_images()
         for image_data in images:
-            raw = self._encode_pil_image(image_data["image"])
+            scan_image = image_data["image"].copy()
+            scan_image.thumbnail((GEMINI_SCAN_MAX_DIMENSION, GEMINI_SCAN_MAX_DIMENSION), Image.Resampling.LANCZOS)
+            raw = self._encode_pil_image(scan_image)
             files.append({"mimetype": "image/jpeg", "value": base64.b64encode(raw).decode("ascii")})
 
         service = LLMApiService(self.env, provider="google")
@@ -181,13 +184,12 @@ class ResPartner(models.Model):
             values["image_1920"] = base64.b64encode(self._encode_pil_image(portrait))
         self.write(values)
 
-    def _apply_id_scan_extraction(self, extraction):
+    def _apply_id_scan_extraction(self, extraction):  # noqa: C901
         self.ensure_one()
         values = {}
 
         birth_date = _parse_extracted_date(extraction.get("birth_date"))
         if birth_date:
-            values["x_birthdate"] = birth_date
             values["birthdate_date"] = birth_date
 
         document_type = extraction.get("document_type")
@@ -211,6 +213,24 @@ class ResPartner(models.Model):
             country = self.env["res.country"].search([("name", "=ilike", nationality)], limit=1)
             if country:
                 values["x_nationality"] = country.id
+
+        address_street = extraction.get("address_street")
+        if address_street:
+            values["street"] = address_street
+
+        address_zip = extraction.get("address_zip")
+        if address_zip:
+            values["zip"] = address_zip
+
+        address_city = extraction.get("address_city")
+        if address_city:
+            values["city"] = address_city
+
+        address_country = extraction.get("address_country")
+        if address_country:
+            country = self.env["res.country"].search([("name", "=ilike", address_country)], limit=1)
+            if country:
+                values["country_id"] = country.id
 
         gender_code = extraction.get("gender")
 

@@ -35,12 +35,21 @@
                 <field name="x_main_guest" optional="show" />
                 <field
                     name="x_main_guest_check"
-                    optional="show"
+                    optional="hide"
                     widget="badge"
                     readonly="1"
                     decoration-success="x_main_guest_check == 'ok'"
                     decoration-warning="x_main_guest_check == 'na'"
                     decoration-danger="x_main_guest_check == 'invalid'"
+                />
+                <field
+                    name="x_tourist_tax_check"
+                    optional="show"
+                    widget="badge"
+                    readonly="1"
+                    decoration-success="x_tourist_tax_check == 'ok'"
+                    decoration-warning="x_tourist_tax_check == 'na'"
+                    decoration-danger="x_tourist_tax_check == 'invalid'"
                 />
             </xpath>
             <xpath
@@ -49,48 +58,25 @@
             >
                 <field name="x_arrival_date" optional="show" readonly="1" />
                 <field name="x_departure_date" optional="show" readonly="1" />
-                <field name="x_guest_street" optional="show" readonly="0" />
-                <field name="x_guest_zip" optional="show" readonly="0" />
-                <field name="x_guest_city" optional="show" readonly="0" />
-                <field name="x_guest_country_id" optional="show" readonly="0" />
-                <field name="x_calc_nationality_id" optional="show" readonly="0" />
-                <field name="x_anrede" optional="show" readonly="0" />
+                <field name="x_guest_birthdate" optional="show" />
+                <field name="x_guest_street" optional="show" />
+                <field name="x_guest_zip" optional="show" />
+                <field name="x_guest_city" optional="show" />
+                <field name="x_guest_country_id" optional="show" />
+                <field name="x_calc_nationality_id" optional="show" />
+                <field name="x_anrede" optional="show" />
+                <field
+                    name="x_guest_taxable"
+                    optional="show"
+                    readonly="1"
+                    widget="boolean_toggle"
+                />
                 <field name="x_guest_check_warning" optional="show" />
+                <field name="x_tourist_tax_warning" optional="show" />
                 <field name="x_refresh" optional="show" widget="boolean_toggle" />
             </xpath>
             <xpath expr="//field[@name='x_guest_line_ids']/list" position="attributes">
                 <attribute name="open_form_view">1</attribute>
-            </xpath>
-            <xpath expr="//field[@name='x_guest_line_ids']" position="after">
-                <field name="y_guest_line_ids">
-                    <list editable="bottom" open_form_view="1">
-                        <field name="x_main_guest" />
-                        <field
-                            name="x_main_guest_check"
-                            widget="badge"
-                            readonly="1"
-                            decoration-success="x_main_guest_check == 'ok'"
-                            decoration-warning="x_main_guest_check == 'na'"
-                            decoration-danger="x_main_guest_check == 'invalid'"
-                        />
-                        <field name="x_arrival_date" readonly="1" />
-                        <field name="x_departure_date" readonly="1" />
-                        <field name="x_guest_partner_id" widget="many2one_avatar" />
-                        <field name="x_anrede" optional="show" />
-                        <field name="x_guest_nationality" optional="show" />
-                        <field name="x_calc_nationality_id" optional="show" />
-                        <field name="x_guest_street" optional="show" />
-                        <field name="x_guest_zip" optional="show" />
-                        <field name="x_guest_city" optional="show" />
-                        <field name="x_room_resource_id" />
-                        <field name="x_guest_check_warning" optional="show" />
-                        <field
-                            name="x_refresh"
-                            optional="show"
-                            widget="boolean_toggle"
-                        />
-                    </list>
-                </field>
             </xpath>
         </field>
         <field name="inherit_id" ref="booking_engine.rental_order_view" />
@@ -100,4 +86,248 @@
         <field name="type">form</field>
         <field name="active" eval="True" />
     </record>
+
+    <record id="sale_order_view_guests_city_tax" model="ir.ui.view">
+        <field name="name">sale.order.form.guests.city.tax</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//sheet/notebook" position="before">
+                <field name="x_order_involves_room" invisible="1" />
+            </xpath>
+            <xpath expr="//sheet/notebook" position="inside">
+                <page
+                    string="Guests"
+                    name="city_tax_guests"
+                    invisible="not x_order_involves_room"
+                >
+                    <group>
+
+                    <button
+                            string="Add Customer as Guest"
+                            type="object"
+                            name="action_add_partner_as_guest"
+                            invisible="not partner_id"
+                            class="btn-secondary mb-2"
+                        />
+                    <button
+                            string="Send to Deskline"
+                            type="object"
+                            name="action_send_to_deskline"
+                            invisible="not x_guest_line_ids"
+                            confirm="Submit all guests of this order to Deskline?"
+                            class="btn-secondary mb-2"
+                        />
+                    </group>
+                    <group>
+                    <field
+                            name="x_transferred_to_deskline"
+                            readonly="1"
+                            widget="boolean_toggle"
+                        />
+                    <field name="x_data_valid" readonly="1" widget="boolean_toggle" />
+                    </group>
+                    <group>
+                    <field name="x_guest_line_ids">
+                        <list
+                                default_order="x_sequence asc,id desc"
+                                editable="bottom"
+                                open_form_view="1"
+                            >
+                            <field name="x_sequence" widget="handle" />
+                            <field name="x_guest_partner_id" required="1" />
+                            <field name="x_main_guest" optional="show" />
+                            <field
+                                    name="x_main_guest_check"
+                                    optional="hide"
+                                    widget="badge"
+                                    decoration-success="x_main_guest_check == 'ok'"
+                                    decoration-warning="x_main_guest_check == 'na'"
+                                    decoration-danger="x_main_guest_check == 'invalid'"
+                                />
+                            <field
+                                    name="x_guest_identity_check"
+                                    optional="hide"
+                                    widget="badge"
+                                    decoration-success="x_guest_identity_check == 'ok'"
+                                    decoration-warning="x_guest_identity_check == 'na'"
+                                    decoration-danger="x_guest_identity_check == 'invalid'"
+                                />
+                            <field
+                                    name="x_tourist_tax_check"
+                                    optional="show"
+                                    widget="badge"
+                                    decoration-success="x_tourist_tax_check == 'ok'"
+                                    decoration-warning="x_tourist_tax_check == 'na'"
+                                    decoration-danger="x_tourist_tax_check == 'invalid'"
+                                />
+                            <field name="x_room_resource_id" optional="show" />
+                            <field name="x_arrival_date" optional="show" />
+                            <field name="x_departure_date" optional="show" />
+                            <field name="x_guest_birthdate" optional="show" />
+                            <field name="x_guest_street" optional="show" />
+                            <field name="x_guest_zip" optional="show" />
+                            <field name="x_guest_city" optional="show" />
+                            <field name="x_guest_country_id" optional="show" />
+                            <field name="x_guest_nationality" optional="show" />
+                            <field
+                                    name="x_guest_taxable"
+                                    optional="show"
+                                    readonly="1"
+                                    widget="boolean_toggle"
+                                />
+                            <field name="x_guest_check_warning" optional="show" />
+                            <field name="x_tourist_tax_warning" optional="show" />
+                            <field name="x_anrede" optional="show" />
+                            <field
+                                    name="x_refresh"
+                                    optional="show"
+                                    widget="boolean_toggle"
+                                />
+                        </list>
+                    </field>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="sale_order_view_list_city_tax" model="ir.ui.view">
+        <field name="name">sale.order.list.city.tax</field>
+        <field name="model">sale.order</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name" />
+                <field
+                    name="state"
+                    widget="badge"
+                    decoration-info="state == 'draft'"
+                    decoration-success="state == 'sale'"
+                    decoration-danger="state == 'cancel'"
+                />
+                <field name="partner_id" />
+                <field name="company_id" groups="base.group_multi_company" />
+                <field name="sale_channel_id" />
+                <field name="rental_start_date" />
+                <field name="rental_return_date" />
+                <field name="x_guest_line_ids" widget="many2many_tags" />
+                <field
+                    name="x_transferred_to_deskline"
+                    widget="boolean_toggle"
+                    readonly="1"
+                />
+                <field name="x_data_valid" widget="boolean_toggle" readonly="1" />
+                <field name="x_deskline_master_id" optional="hide" />
+                <field name="refresh" optional="show" />
+                <button
+                    name="action_send_to_deskline"
+                    type="object"
+                    string="Send to Deskline"
+                    icon="fa-paper-plane"
+                    confirm="Submit all guests of this order to Deskline?"
+                />
+            </list>
+        </field>
+    </record>
+
+    <record
+        id="sale_order_view_search_inherit_sale_channel_city_tax"
+        model="ir.ui.view"
+    >
+        <field name="name">sale.order.search.inherit.sale_channel.city_tax</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_sales_order_filter" />
+        <field name="arch" type="xml">
+            <field name="team_id" position="after">
+                <field name="sale_channel_id" />
+            </field>
+            <filter name="preferred_payment_method_line_groupby" position="after">
+                <filter
+                    name="group_by_sale_channel"
+                    string="Sales Channel"
+                    context="{'group_by': 'sale_channel_id'}"
+                />
+            </filter>
+        </field>
+    </record>
+
+    <record id="sale_order_view_search_city_tax" model="ir.ui.view">
+        <field name="name">sale.order.search.city.tax</field>
+        <field name="model">sale.order</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name" />
+                <field name="partner_id" />
+                <field name="sale_channel_id" />
+                <field name="rental_start_date" />
+                <field name="state" />
+
+                <group name="groupby">
+                    <filter
+                        name="group_by_state"
+                        string="Status"
+                        context="{'group_by': 'state'}"
+                    />
+                    <filter
+                        name="group_by_sale_channel"
+                        string="Sales Channel"
+                        context="{'group_by': 'sale_channel_id'}"
+                    />
+                    <filter
+                        name="group_by_company"
+                        string="Company"
+                        context="{'group_by': 'company_id'}"
+                        groups="base.group_multi_company"
+                    />
+                    <filter
+                        name="group_by_rental_start_date"
+                        string="Arrival"
+                        context="{'group_by': 'rental_start_date'}"
+                    />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="sale_order_action_city_tax" model="ir.actions.act_window">
+        <field name="name">Room Orders</field>
+        <field name="res_model">sale.order</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('x_order_involves_room', '=', True)]</field>
+        <field name="search_view_id" ref="sale_order_view_search_city_tax" />
+    </record>
+
+    <!-- Without pinning these explicitly, ir.actions.act_window falls back to
+         whichever sale.order list/form view has the lowest priority app-wide,
+         which turned out to be industry_real_estate's own rental form,
+         exposing its unrelated (and here, wrongly-required) subscription
+         fields instead of the Booking Engine's rental order form used
+         everywhere else in the app. -->
+    <record
+        id="sale_order_action_city_tax_view_list"
+        model="ir.actions.act_window.view"
+    >
+        <field name="sequence" eval="1" />
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="sale_order_view_list_city_tax" />
+        <field name="act_window_id" ref="sale_order_action_city_tax" />
+    </record>
+
+    <record
+        id="sale_order_action_city_tax_view_form"
+        model="ir.actions.act_window.view"
+    >
+        <field name="sequence" eval="2" />
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="booking_engine.rental_order_view" />
+        <field name="act_window_id" ref="sale_order_action_city_tax" />
+    </record>
+
+    <menuitem
+        id="menu_sale_order_city_tax"
+        name="Room Orders"
+        parent="menu_city_tax_root"
+        action="sale_order_action_city_tax"
+        sequence="29"
+    />
 </odoo>
