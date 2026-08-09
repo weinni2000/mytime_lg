@@ -18,7 +18,7 @@
         "security/ir.model.access.csv",
         "views/camping_map_zone_views.xml",
         "views/camping_vehicle_type_views.xml",
-        "views/resource_resource_views.xml",
+        "views/planning_role_views.xml",
         "views/campsite_map_views.xml",
         "views/product_template_views.xml",
         "views/camping_map_booking_templates.xml",

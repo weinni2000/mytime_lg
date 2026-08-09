@@ -27,9 +27,36 @@
                     <group>
                         <field name="name" />
                         <field name="active" invisible="1" />
-                        <field name="image" widget="image" />
+                        <field name="image" /> <!-- widget="image"-->
                     </group>
                     <notebook>
+                        <page name="map_preview" string="Map Preview">
+                            <field
+                                name="preview_data"
+                                widget="campsite_map_preview"
+                                nolabel="1"
+                            />
+                        </page>
+                        <page name="testing" string="Testing">
+                            <group>
+                                <field name="refresh" />
+                                <field
+                                    name="availability_check_start"
+                                    string="Stay (nights)"
+                                    widget="daterange"
+                                    options="{'end_date_field': 'availability_check_end'}"
+                                />
+                                <field
+                                    name="vehicle_type_id"
+                                    options="{'no_create': True}"
+                                />
+                            </group>
+                            <field
+                                name="test_preview_data"
+                                widget="camping_zone_map"
+                                nolabel="1"
+                            />
+                        </page>
                         <page name="zones" string="Zones">
                             <field name="zone_ids">
                                 <list editable="bottom">
@@ -46,13 +73,7 @@
                                 </list>
                             </field>
                         </page>
-                        <page name="map_preview" string="Map Preview">
-                            <field
-                                name="preview_data"
-                                widget="campsite_map_preview"
-                                nolabel="1"
-                            />
-                        </page>
+
                     </notebook>
                 </sheet>
             </form>

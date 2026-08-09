@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="id_scan_guest_wizard_form" model="ir.ui.view">
+        <field name="name">id.scan.guest.wizard.form</field>
+        <field name="model">id.scan.guest.wizard</field>
+        <field name="arch" type="xml">
+            <form string="New Guest from Passport">
+                <sheet>
+                    <field name="order_id" invisible="1" />
+                    <p class="text-muted">
+                        Upload the front and (optionally) back image of the guest's
+                        passport or ID. A new guest is created and the document is
+                        scanned automatically.
+                    </p>
+                    <group>
+                        <field
+                            name="x_id_document_front"
+                            widget="image"
+                            options="{'size': [0, 240]}"
+                        />
+                        <field
+                            name="x_id_document_back"
+                            widget="image"
+                            options="{'size': [0, 240]}"
+                        />
+                    </group>
+                </sheet>
+                <footer>
+                    <button
+                        string="Create Guest &amp; Scan"
+                        name="action_create_guest"
+                        type="object"
+                        class="btn-primary"
+                        invisible="not x_id_document_front and not x_id_document_back"
+                    />
+                    <button string="Cancel" class="btn-secondary" special="cancel" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="id_scan_guest_wizard_action" model="ir.actions.act_window">
+        <field name="name">New Guest from Passport</field>
+        <field name="res_model">id.scan.guest.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="context">{'default_order_id': active_id}</field>
+    </record>
+
+    <record id="sale_order_view_guests_from_passport" model="ir.ui.view">
+        <field name="name">sale.order.form.guests.from.passport</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="city_tax.sale_order_view_guests_city_tax" />
+        <field name="arch" type="xml">
+            <xpath
+                expr="//page[@name='city_tax_guests']//button[@name='action_add_partner_as_guest']"
+                position="after"
+            >
+                <button
+                    string="New Guest from Passport"
+                    type="action"
+                    name="%(id_scan_guest_wizard_action)d"
+                    class="btn-secondary mb-2"
+                />
+            </xpath>
+        </field>
+    </record>
+</odoo>

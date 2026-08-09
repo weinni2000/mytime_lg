@@ -13,7 +13,9 @@
         "partner_contact_gender",
     ],
     "data": [
+        "security/ir.model.access.csv",
         "views/res_partner_views.xml",
+        "views/id_scan_guest_wizard_views.xml",
     ],
     "installable": True,
     "application": False,

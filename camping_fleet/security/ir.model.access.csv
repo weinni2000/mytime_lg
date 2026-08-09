@@ -1,2 +1,3 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_camping_fleet_vehicle_salesman,camping.fleet.vehicle salesman,model_camping_fleet_vehicle,sales_team.group_sale_salesman,1,1,1,1
+access_camping_vehicle_type_salesman,camping.vehicle.type salesman,camping_map_booking.model_camping_vehicle_type,sales_team.group_sale_salesman,1,0,0,0

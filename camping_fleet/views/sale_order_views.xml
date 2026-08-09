@@ -23,31 +23,4 @@
             </xpath>
         </field>
     </record>
-    <record id="fleet_vehicle_model_category_view_form_archivable" model="ir.ui.view">
-        <field name="name">fleet.vehicle.model.category.form.archivable</field>
-        <field name="model">fleet.vehicle.model.category</field>
-        <field name="inherit_id" ref="fleet.fleet_vehicle_model_category_view_form" />
-        <field name="arch" type="xml">
-            <xpath expr="//sheet" position="inside">
-                <field name="active" invisible="1" />
-                <widget
-                    name="web_ribbon"
-                    text="Archived"
-                    bg_color="text-bg-danger"
-                    invisible="active"
-                />
-            </xpath>
-        </field>
-    </record>
-
-    <record id="fleet_vehicle_model_category_view_list_archivable" model="ir.ui.view">
-        <field name="name">fleet.vehicle.model.category.list.archivable</field>
-        <field name="model">fleet.vehicle.model.category</field>
-        <field name="inherit_id" ref="fleet.fleet_vehicle_model_category_view_tree" />
-        <field name="arch" type="xml">
-            <field name="name" position="before">
-                <field name="active" column_invisible="True" />
-            </field>
-        </field>
-    </record>
 </odoo>

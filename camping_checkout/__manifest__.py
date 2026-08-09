@@ -11,7 +11,6 @@
         "booking_engine",
         "camping_fleet",
         "city_tax",
-        "fleet",
         "id_detection",
         "website_sale",
         "website_sale_renting",

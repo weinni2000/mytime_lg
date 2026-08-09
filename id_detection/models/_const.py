@@ -12,12 +12,15 @@ GEMINI_GENDER_SELECTION = {"M": "male", "F": "female"}
 
 GEMINI_ID_SCAN_PROMPT = """You are an identity document reading assistant. You receive one or \
 two images of the same identity document (front and/or back side of a passport, national ID \
-card, or driving license) and must extract the holder's date of birth, the document type, the \
-document number, the document's issue date (not its expiry date), the issuing authority, the \
-holder's sex as stated on the document, and the holder's nationality as an English country name \
-(e.g. "Italy"). Also look for the holder's registered address, which is often printed on the \
-back of national ID cards: extract it as separate street (including house number), postal \
-code, city, and country (as an English country name, e.g. "Germany") fields. Leave address \
+card, or driving license) and must extract the holder's given name(s) and surname as separate \
+first_name and last_name fields (a passport labels these "Given names"/"Surname"; keep any \
+middle names with the first_name and never merge the two into one field), the date of birth, \
+the document type, the document number, the document's issue date (not its expiry date), the \
+issuing authority, the holder's sex as stated on the document, and the holder's nationality as \
+an ISO 3166-1 alpha-2 country code (e.g. "IT" for Italy). Also look for the holder's registered \
+address, which is often printed on the back of national ID cards: extract it as separate street \
+(including house number), postal code, city, and country (as an ISO 3166-1 alpha-2 country \
+code, e.g. "DE" for Germany) fields. Leave address \
 fields null if no address is printed on the document. Also inspect every attached image: use \
 its zero-based attachment order as \
 image_index and report the clockwise rotation required to make the document upright. Report the \
@@ -37,6 +40,8 @@ GEMINI_ID_SCAN_USER_PROMPT = "Extract the identity document data from the attach
 GEMINI_ID_SCAN_SCHEMA = {
     "type": "object",
     "properties": {
+        "first_name": {"type": ["string", "null"]},
+        "last_name": {"type": ["string", "null"]},
         "birth_date": {"type": ["string", "null"]},
         "document_type": {"type": "string", "enum": list(GEMINI_DOCUMENT_TYPES)},
         "document_number": {"type": ["string", "null"]},
@@ -83,6 +88,8 @@ GEMINI_ID_SCAN_SCHEMA = {
         },
     },
     "required": [
+        "first_name",
+        "last_name",
         "birth_date",
         "document_type",
         "document_number",

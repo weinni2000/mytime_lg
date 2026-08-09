@@ -15,7 +15,12 @@
                 preserveAspectRatio="none"
                 t-on-click="onMapClick"
             >
-                <t t-foreach="props.zones" t-as="zone" t-key="zone.id">
+                <t
+                    t-if="!isDrafting"
+                    t-foreach="props.zones"
+                    t-as="zone"
+                    t-key="zone.id"
+                >
                     <polygon
                         t-att-points="zone.points"
                         t-att-class="zoneClass(zone)"
@@ -23,10 +28,21 @@
                         t-on-mouseleave="() => this.onZoneHover(null)"
                         t-on-click="() => this.onZoneClick(zone)"
                     />
+                    <g
+                        t-if="props.editable and props.onRemoveZone"
+                        class="o_camping_map_zone_remove"
+                        t-att-transform="'translate(' + zoneTopRight(zone).x + ',' + zoneTopRight(zone).y + ')'"
+                        t-on-click.stop="() => this.onRemoveZoneClick(zone)"
+                    >
+                        <title>Remove polygon</title>
+                        <circle r="12" />
+                        <line x1="-5" y1="-5" x2="5" y2="5" />
+                        <line x1="-5" y1="5" x2="5" y2="-5" />
+                    </g>
                     <foreignObject
                         t-if="zone.code"
                         t-att-x="zoneLabelPosition(zone).x - 25"
-                        t-att-y="zoneLabelPosition(zone).y - 50"
+                        t-att-y="zoneLabelPosition(zone).y - 25"
                         width="50"
                         height="50"
                         class="o_camping_map_zone_marker"

@@ -46,24 +46,6 @@ class CampingMapZone(models.Model):
     )
     resource_ids = fields.Many2many("resource.resource", string="Resources")
     product_count = fields.Integer(compute="_compute_product_count")
-    availability_check_datetime = fields.Datetime(
-        string="Check Availability At",
-        default=fields.Datetime.now,
-    )
-    vehicle_type_id = fields.Many2one(
-        "camping.vehicle.type",
-        string="Check Vehicle",
-        help="Vehicle type to check resource suitability for. Leave empty to ignore vehicle suitability.",
-    )
-    availability_state = fields.Selection(
-        [
-            ("free", "Free"),
-            ("occupied", "Occupied"),
-            ("not_suitable", "Not Suitable"),
-        ],
-        string="Availability",
-        compute="_compute_availability_state",
-    )
 
     @api.depends("pitch_source", "product_template_ids", "resource_ids")
     def _compute_product_count(self):
@@ -72,43 +54,37 @@ class CampingMapZone(models.Model):
                 record.product_template_ids if record.pitch_source == "product" else record.resource_ids
             )
 
-    @api.depends(
-        "resource_ids",
-        "resource_ids.vehicle_type_ids",
-        "availability_check_datetime",
-        "vehicle_type_id",
-    )
-    def _compute_availability_state(self):
-        for zone in self:
-            zone.availability_state = (
-                zone._get_availability_state(zone.vehicle_type_id, zone.availability_check_datetime)
-                if zone.availability_check_datetime
-                else False
-            )
-
-    def _get_availability_state(self, vehicle_type=None, at=None):
+    def _get_availability_state(self, vehicle_type=None, start=None, end=None):
         self.ensure_one()
         if not self.resource_ids:
             return False
-        at = at or fields.Datetime.now()
-        states = {self._get_resource_state(resource, vehicle_type, at) for resource in self.resource_ids}
+        start = start or fields.Datetime.now()
+        states = {self._get_resource_state(resource, vehicle_type, start, end) for resource in self.resource_ids}
         if "free" in states:
             return "free"
         return "occupied" if "occupied" in states else "not_suitable"
 
-    def _get_resource_state(self, resource, vehicle_type, at):
-        if vehicle_type and resource.vehicle_type_ids and vehicle_type not in resource.vehicle_type_ids:
+    def _get_resource_state(self, resource, vehicle_type, start, end=None):
+        if vehicle_type and not self._is_vehicle_allowed(resource, vehicle_type):
             return "not_suitable"
-        return "free" if self.is_resource_free(resource, at) else "occupied"
+        return "free" if self.is_resource_free(resource, start, end) else "occupied"
 
-    def is_resource_free(self, resource, at):
-        return not self.env["planning.slot"].search_count(
-            [
-                ("resource_id", "=", resource.id),
-                ("start_datetime", "<=", at),
-                ("end_datetime", ">", at),
-            ]
-        )
+    def _is_vehicle_allowed(self, resource, vehicle_type):
+        # Vehicle suitability comes from the resource's planning role(s)
+        # (allowed_vehicle_type_ids). An empty list means "allow any"; a
+        # non-empty list must contain the checked vehicle.
+        role_allowed = resource.role_ids.allowed_vehicle_type_ids
+        return not role_allowed or vehicle_type in role_allowed
+
+    def is_resource_free(self, resource, start, end=None):
+        # Range check when an end is given (stay across nights), otherwise a
+        # single-instant check. Two intervals overlap iff each starts before the
+        # other ends: slot.start < end and slot.end > start.
+        if end and end > start:
+            overlap = [("start_datetime", "<", end), ("end_datetime", ">", start)]
+        else:
+            overlap = [("start_datetime", "<=", start), ("end_datetime", ">", start)]
+        return not self.env["planning.slot"].search_count([("resource_id", "=", resource.id), *overlap])
 
     def _get_map_shapes(self, state=False):
         self.ensure_one()

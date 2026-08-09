@@ -8,6 +8,7 @@ export class CampingMap extends Component {
         editable: {type: Boolean, optional: true},
         draftPoints: {type: String, optional: true},
         onMapClick: {type: Function, optional: true},
+        onRemoveZone: {type: Function, optional: true},
     };
 
     setup() {
@@ -17,6 +18,10 @@ export class CampingMap extends Component {
             hoveredZoneId: null,
             selectedZoneId: null,
         });
+    }
+
+    get isDrafting() {
+        return Boolean(this.props.draftPoints);
     }
 
     get hoveredZone() {
@@ -60,11 +65,15 @@ export class CampingMap extends Component {
         });
     }
 
-    zoneLabelPosition(zone) {
-        const points = zone.points
+    zonePoints(zone) {
+        return zone.points
             .split(/\s+/)
             .filter(Boolean)
             .map((point) => point.split(",").map(Number));
+    }
+
+    zoneLabelPosition(zone) {
+        const points = this.zonePoints(zone);
         const total = points.reduce(
             (position, [x, y]) => ({
                 x: position.x + x,
@@ -73,6 +82,20 @@ export class CampingMap extends Component {
             {x: 0, y: 0}
         );
         return {x: total.x / points.length, y: total.y / points.length};
+    }
+
+    zoneTopRight(zone) {
+        const points = this.zonePoints(zone);
+        return {
+            x: Math.max(...points.map(([x]) => x)),
+            y: Math.min(...points.map(([, y]) => y)),
+        };
+    }
+
+    onRemoveZoneClick(zone) {
+        if (this.props.onRemoveZone) {
+            this.props.onRemoveZone(zone);
+        }
     }
 
     closePanel() {

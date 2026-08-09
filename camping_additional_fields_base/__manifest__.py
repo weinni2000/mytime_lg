@@ -15,10 +15,12 @@
         "sale_renting",
         "website_sale",
         "booking_engine",
+        "planning",
     ],
     "data": [
         "data/ir_cron.xml",
         "views/booking_engine_menu_views.xml",
+        "views/planning_role_menu_views.xml",
         "views/planning_slot_views.xml",
         "views/product_template_views.xml",
         "views/res_company_views.xml",

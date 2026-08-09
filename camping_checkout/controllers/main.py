@@ -49,7 +49,7 @@ class WebsiteSaleCampingCheckout(WebsiteSale):
             "website_sale_order": order_sudo,
             "order": order_sudo,
             "vehicle": order_sudo.vehicle_ids[:1],
-            "vehicle_categories": request.env["fleet.vehicle.model.category"].sudo().search([]),
+            "vehicle_categories": request.env["camping.vehicle.type"].sudo().search([]),
             "dogs": order_sudo.animal_ids,
             "with_electricity": self._has_camping_electricity(order_sudo),
             "dog_breeds": sudo_env["animal.breed"].search(

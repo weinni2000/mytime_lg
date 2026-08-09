@@ -109,6 +109,17 @@ export class CampsiteMapPreviewField extends Component {
         this.clearPoints();
         this.notification.add(_t("The zone was saved."), {type: "success"});
     }
+
+    async removeZone(zone) {
+        await this.orm.write("camping.map.zone", [zone.zone_id], {points: false});
+        this.state.shapes = this.state.shapes.filter(
+            ({zone_id: zoneId}) => zoneId !== zone.zone_id
+        );
+        if (this.state.selectedZoneId === zone.zone_id) {
+            this.clearPoints();
+        }
+        this.notification.add(_t("The zone outline was removed."), {type: "success"});
+    }
 }
 
 registry.category("fields").add("campsite_map_preview", {

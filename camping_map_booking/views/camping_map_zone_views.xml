@@ -65,23 +65,6 @@
                                     options="{'no_create': True}"
                                     invisible="pitch_source != 'resource'"
                                 />
-                                <field
-                                    name="availability_check_datetime"
-                                    invisible="pitch_source != 'resource'"
-                                />
-                                <field
-                                    name="vehicle_type_id"
-                                    options="{'no_create': True}"
-                                    invisible="pitch_source != 'resource'"
-                                />
-                                <field
-                                    name="availability_state"
-                                    widget="badge"
-                                    decoration-success="availability_state == 'free'"
-                                    decoration-warning="availability_state == 'occupied'"
-                                    decoration-danger="availability_state == 'not_suitable'"
-                                    invisible="pitch_source != 'resource'"
-                                />
                             </group>
                         </page>
                     </notebook>

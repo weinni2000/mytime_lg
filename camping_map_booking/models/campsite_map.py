@@ -1,3 +1,5 @@
+from datetime import datetime, time, timedelta
+
 from odoo import api, fields, models
 
 
@@ -11,6 +13,33 @@ class CampsiteMap(models.Model):
     image = fields.Binary(required=True, attachment=True)
     zone_ids = fields.One2many("camping.map.zone", "map_id", string="Zones")
     preview_data = fields.Json(compute="_compute_preview_data")
+    refresh = fields.Boolean(help="Toggle to force the tested availability to recompute.")
+    availability_check_start = fields.Date(
+        string="Check-in",
+        default=fields.Date.context_today,
+    )
+    availability_check_end = fields.Date(
+        string="Check-out",
+        default=lambda self: fields.Date.context_today(self) + timedelta(days=1),
+    )
+    vehicle_type_id = fields.Many2one(
+        "camping.vehicle.type",
+        string="Check Vehicle",
+        help="Vehicle type to check pitch suitability for. Leave empty to ignore vehicle suitability.",
+    )
+    test_preview_data = fields.Json(compute="_compute_test_preview_data")
+
+    def _image_url(self):
+        self.ensure_one()
+        # For a saved map (image is required), always serve the stored image from
+        # the DB. Don't gate on `self.image`: during an onchange (e.g. switching
+        # the checked vehicle) the web client omits the binary, which would
+        # otherwise flip the URL back to the generic fallback image.
+        if not isinstance(self.id, int):
+            return "/camping_map_booking/static/src/img/camping_map.png"
+        url = f"/web/image/campsite.map/{self.id}/image"
+        # Cache-buster so a newly uploaded image isn't served stale by the browser.
+        return f"{url}?unique={self.write_date.isoformat()}" if self.write_date else url
 
     @api.depends(
         "image",
@@ -18,23 +47,20 @@ class CampsiteMap(models.Model):
         "zone_ids.code",
         "zone_ids.symbol",
         "zone_ids.points",
-        "zone_ids.availability_state",
     )
     def _compute_preview_data(self):
         for record in self:
             map_id = record.id if isinstance(record.id, int) else False
-            available_zones = self.env["camping.map.zone"].search([])
-            image_url = (
-                f"/web/image/campsite.map/{record.id}/image"
-                if record.id and record.image
-                else "/camping_map_booking/static/src/img/camping_map.png"
-            )
+            # Only this map's own zones — not every zone globally, otherwise
+            # zones belonging to another map (or orphan/demo zones with points)
+            # would render on top of this map's preview.
+            zones = record.zone_ids
             shapes = []
-            for zone in available_zones:
-                shapes += zone._get_map_shapes(zone.availability_state)
+            for zone in zones:
+                shapes += zone._get_map_shapes()
             record.preview_data = {
                 "map_id": map_id,
-                "image_url": image_url,
+                "image_url": record._image_url(),
                 "zones": [
                     {
                         "id": zone.id,
@@ -43,7 +69,41 @@ class CampsiteMap(models.Model):
                         "symbol": zone.symbol,
                         "map_id": zone.map_id.id,
                     }
-                    for zone in available_zones
+                    for zone in zones
                 ],
+                "shapes": shapes,
+            }
+
+    @api.depends(
+        "image",
+        "zone_ids",
+        "zone_ids.points",
+        "zone_ids.resource_ids",
+        "zone_ids.resource_ids.role_ids.allowed_vehicle_type_ids",
+        "availability_check_start",
+        "availability_check_end",
+        "vehicle_type_id",
+        "refresh",
+    )
+    def _compute_test_preview_data(self):
+        for record in self:
+            # Color every pitch on this map from the map's test parameters
+            # (checked vehicle + stay range), reusing the per-zone availability logic.
+            # Nights only: a night spans [date 00:00, next date 00:00), so the stay
+            # covers [check-in 00:00, check-out 00:00) and the check-out day is not
+            # itself a booked night.
+            start = record.availability_check_start
+            end = record.availability_check_end
+            start_dt = datetime.combine(start, time.min) if start else False
+            end_dt = datetime.combine(end, time.min) if end else False
+            shapes = []
+            for zone in record.zone_ids:
+                state = (
+                    zone._get_availability_state(record.vehicle_type_id, start_dt, end_dt) if start_dt else False
+                )
+                shapes += zone._get_map_shapes(state)
+            record.test_preview_data = {
+                "map_id": record.id if isinstance(record.id, int) else False,
+                "image_url": record._image_url(),
                 "shapes": shapes,
             }

@@ -184,9 +184,31 @@ class ResPartner(models.Model):
             values["image_1920"] = base64.b64encode(self._encode_pil_image(portrait))
         self.write(values)
 
+    def _find_country_by_code(self, code):
+        """Look up a country by its ISO 3166-1 alpha-2 code.
+
+        ``res.country.name`` is translated, so matching Gemini's output against it
+        fails for non-English users (e.g. "Italy" never matches "Italien"). The
+        ``code`` field is language-independent, so we match on that instead.
+        """
+        if not code or not isinstance(code, str):
+            return False
+        return self.env["res.country"].search([("code", "=", code.strip().upper())], limit=1)
+
     def _apply_id_scan_extraction(self, extraction):  # noqa: C901
         self.ensure_one()
         values = {}
+
+        first_name = (extraction.get("first_name") or "").strip()
+        last_name = (extraction.get("last_name") or "").strip()
+        if first_name or last_name:
+            if "firstname" in self._fields and "lastname" in self._fields:
+                if first_name:
+                    values["firstname"] = first_name
+                if last_name:
+                    values["lastname"] = last_name
+            else:
+                values["name"] = " ".join(part for part in (first_name, last_name) if part)
 
         birth_date = _parse_extracted_date(extraction.get("birth_date"))
         if birth_date:
@@ -208,11 +230,9 @@ class ResPartner(models.Model):
         if document_authority:
             values["x_document_authority"] = document_authority
 
-        nationality = extraction.get("nationality")
+        nationality = self._find_country_by_code(extraction.get("nationality"))
         if nationality:
-            country = self.env["res.country"].search([("name", "=ilike", nationality)], limit=1)
-            if country:
-                values["x_nationality"] = country.id
+            values["x_nationality"] = nationality.id
 
         address_street = extraction.get("address_street")
         if address_street:
@@ -226,11 +246,9 @@ class ResPartner(models.Model):
         if address_city:
             values["city"] = address_city
 
-        address_country = extraction.get("address_country")
+        address_country = self._find_country_by_code(extraction.get("address_country"))
         if address_country:
-            country = self.env["res.country"].search([("name", "=ilike", address_country)], limit=1)
-            if country:
-                values["country_id"] = country.id
+            values["country_id"] = address_country.id
 
         gender_code = extraction.get("gender")
 

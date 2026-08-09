@@ -44,6 +44,7 @@
                 editable="true"
                 draftPoints="draftPoints"
                 onMapClick.bind="addPoint"
+                onRemoveZone.bind="removeZone"
             />
         </div>
     </t>

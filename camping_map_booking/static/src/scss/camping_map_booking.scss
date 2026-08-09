@@ -52,28 +52,28 @@
 }
 
 .o_camping_map_zone_state_occupied {
-    fill: rgba(255, 193, 7, 0.25);
-    stroke: rgba(255, 193, 7, 0.9);
+    fill: #ffc107;
+    stroke: #d39e00;
 
     &.o_camping_map_zone_hover {
-        fill: rgba(255, 193, 7, 0.45);
+        fill: #ffca2c;
     }
 
     &.o_camping_map_zone_selected {
-        fill: rgba(255, 193, 7, 0.6);
+        fill: #ffca2c;
     }
 }
 
 .o_camping_map_zone_state_not_suitable {
-    fill: rgba(220, 53, 69, 0.15);
-    stroke: rgba(220, 53, 69, 0.7);
+    fill: #dc3545;
+    stroke: #b02a37;
 
     &.o_camping_map_zone_hover {
-        fill: rgba(220, 53, 69, 0.35);
+        fill: #e35d6a;
     }
 
     &.o_camping_map_zone_selected {
-        fill: rgba(220, 53, 69, 0.5);
+        fill: #e35d6a;
     }
 }
 
@@ -96,6 +96,26 @@
     pointer-events: none;
 }
 
+.o_camping_map_zone_remove {
+    cursor: pointer;
+
+    circle {
+        fill: #dc3545;
+        stroke: #fff;
+        stroke-width: 2;
+    }
+
+    line {
+        stroke: #fff;
+        stroke-width: 2;
+        stroke-linecap: round;
+    }
+
+    &:hover circle {
+        fill: #bb2d3b;
+    }
+}
+
 .o_camping_map_zone_marker_badge {
     display: flex;
     flex-direction: column;
@@ -103,14 +123,11 @@
     justify-content: center;
     width: 100%;
     height: 100%;
-    background: #fff;
-    border: 1px solid rgba(0, 0, 0, 0.2);
-    border-radius: 6px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
     font-size: 11px;
     font-weight: 700;
     line-height: 1.1;
     color: #333;
+    text-shadow: 0 0 3px rgba(255, 255, 255, 0.9), 0 0 3px rgba(255, 255, 255, 0.9);
 
     .fa {
         font-size: 14px;

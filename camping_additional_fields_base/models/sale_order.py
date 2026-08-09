@@ -66,6 +66,30 @@ class SaleOrder(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
+        website_channels = {}
+        for vals in vals_list:
+            if not vals.get("website_id") or vals.get("sale_channel_id"):
+                continue
+            company_id = vals.get("company_id") or self.env.company.id
+            if company_id not in website_channels:
+                channel_model = self.env["sale.channel"].sudo()
+                channel = channel_model.search(
+                    [
+                        ("name", "=", "Website"),
+                        ("company_id", "=", company_id),
+                    ],
+                    limit=1,
+                )
+                if not channel:
+                    channel = channel_model.create(
+                        {
+                            "name": "Website",
+                            "company_id": company_id,
+                        }
+                    )
+                website_channels[company_id] = channel
+            vals["sale_channel_id"] = website_channels[company_id].id
+
         orders = super().create(vals_list)
         for order in orders.filtered(
             lambda o: not o.brand_id and (o.website_id or o.sale_channel_id) and o.company_id.default_brand_id

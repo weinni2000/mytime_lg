@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="view_partner_list_google_contact_import" model="ir.ui.view">
+        <field name="name">res.partner.list.google.contact.import</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_tree" />
+        <field name="arch" type="xml">
+            <xpath expr="//list" position="inside">
+                <header>
+                    <button
+                        name="action_import_google_contacts"
+                        string="Import Google Contacts"
+                        type="object"
+                        class="btn-primary"
+                        icon="fa-google"
+                        display="always"
+                    />
+                </header>
+            </xpath>
+            <xpath expr="//list/field[1]" position="before">
+                <button
+                    name="action_import_google_contacts"
+                    type="object"
+                    icon="fa-google"
+                    string="Import Google Contacts"
+                    title="Import Google Contacts"
+                    class="btn-link"
+                />
+            </xpath>
+        </field>
+    </record>
+    <record id="view_partner_kanban_google_contact_import" model="ir.ui.view">
+        <field name="name">res.partner.kanban.google.contact.import</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.res_partner_kanban_view" />
+        <field name="arch" type="xml">
+            <xpath expr="//kanban" position="inside">
+                <header>
+                    <button
+                        name="action_import_google_contacts"
+                        type="object"
+                        string="Import Google Contacts"
+                        icon="fa-google"
+                        class="btn-primary o-kanban-button-new"
+                        display="always"
+                    />
+                </header>
+            </xpath>
+            <xpath expr="//t[@t-name='card']/main/footer" position="inside">
+                <button
+                    name="action_import_google_contacts"
+                    type="object"
+                    icon="fa-google"
+                    string="Import Google Contacts"
+                    title="Import Google Contacts"
+                    class="btn btn-link px-1"
+                />
+            </xpath>
+        </field>
+    </record>
+</odoo>
