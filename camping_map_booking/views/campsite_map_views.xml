@@ -28,6 +28,8 @@
                         <field name="name" />
                         <field name="active" invisible="1" />
                         <field name="image" /> <!-- widget="image"-->
+                        <field name="show_legend" />
+                        <field name="legend_position" invisible="not show_legend" />
                     </group>
                     <notebook>
                         <page name="map_preview" string="Map Preview">

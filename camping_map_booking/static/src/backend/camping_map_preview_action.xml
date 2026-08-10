@@ -2,7 +2,7 @@
 <templates xml:space="preserve">
     <t t-name="camping_map_booking.CampingMapPreviewAction">
         <div class="o_camping_map_booking o_camping_map_backend_preview p-3">
-            <CampingMap
+            <ResourceMap
                 zones="state.zones"
                 mapImageUrl="'/camping_map_booking/static/src/img/camping_map.png'"
             />

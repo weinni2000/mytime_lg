@@ -14,6 +14,7 @@
                     name="birthdate_date"
                     t-att-value="partner_sudo.birthdate_date"
                     class="form-control"
+                    required="required"
                 />
             </div>
             <div id="div_id_document_front" class="col-lg-6 mb-2">
@@ -36,11 +37,12 @@
         id="address_form_fields_hide_company_vat_street2"
         priority="100"
         inherit_id="website_sale.address_form_fields"
-        name="Checkout: hide company/VAT/apartment fields"
+        name="Checkout: hide company/VAT/apartment/state fields"
     >
         <xpath expr="//div[@id='company_name_div']" position="replace" />
         <xpath expr="//div[@id='div_vat']" position="replace" />
         <xpath expr="//div[@id='div_street2']" position="replace" />
+        <xpath expr="//div[@id='div_state']" position="replace" />
     </template>
 
     <template
@@ -73,6 +75,22 @@
                     t-out="c.name"
                 />
             </optgroup>
+        </xpath>
+    </template>
+    <template
+        id="cart_selected_pitch"
+        inherit_id="website_sale.cart"
+        name="Selected camping pitch in order summary"
+    >
+        <xpath expr="//t[@t-call='website_sale.cart_lines']" position="before">
+            <div
+                t-if="website_sale_order.pitch_resource_id"
+                class="alert alert-info d-flex align-items-center gap-2"
+            >
+                <i class="fa fa-map-marker" />
+                <span>Pitch:</span>
+                <strong t-out="website_sale_order.pitch_resource_id.name" />
+            </div>
         </xpath>
     </template>
 </odoo>

@@ -1,5 +1,7 @@
 from odoo import api, fields, models
 
+from .camping_map_state import STATE_FREE, STATE_NOT_SUITABLE, STATE_OCCUPIED
+
 
 class CampingMapZone(models.Model):
     _name = "camping.map.zone"
@@ -32,6 +34,10 @@ class CampingMapZone(models.Model):
     )
     sequence = fields.Integer(default=10)
     active = fields.Boolean(default=True)
+    hide_on_frontend_map = fields.Boolean(
+        string="Hide on Frontend Map",
+        help="Hide this zone on the public website map.",
+    )
     points = fields.Char(
         help=(
             "Polygon outline of this zone on the campsite map, as SVG points"
@@ -60,14 +66,14 @@ class CampingMapZone(models.Model):
             return False
         start = start or fields.Datetime.now()
         states = {self._get_resource_state(resource, vehicle_type, start, end) for resource in self.resource_ids}
-        if "free" in states:
-            return "free"
-        return "occupied" if "occupied" in states else "not_suitable"
+        if STATE_FREE in states:
+            return STATE_FREE
+        return STATE_OCCUPIED if STATE_OCCUPIED in states else STATE_NOT_SUITABLE
 
     def _get_resource_state(self, resource, vehicle_type, start, end=None):
         if vehicle_type and not self._is_vehicle_allowed(resource, vehicle_type):
-            return "not_suitable"
-        return "free" if self.is_resource_free(resource, start, end) else "occupied"
+            return STATE_NOT_SUITABLE
+        return STATE_FREE if self.is_resource_free(resource, start, end) else STATE_OCCUPIED
 
     def _is_vehicle_allowed(self, resource, vehicle_type):
         # Vehicle suitability comes from the resource's planning role(s)
@@ -101,6 +107,9 @@ class CampingMapZone(models.Model):
                 "points": self.points,
                 "products": products,
                 "state": state,
+                # Colors resolved from the camping.map.state model so the map
+                # renders straight from that single source of truth.
+                "colors": self.env["camping.map.state"]._colors_for(state),
             }
         ]
 

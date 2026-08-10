@@ -1,8 +1,20 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <templates xml:space="preserve">
     <t t-name="camping_map_booking.CampsiteMapPreviewField">
-        <div class="o_camping_map_booking o_camping_map_backend_preview">
+        <div
+            class="o_camping_map_booking o_camping_map_backend_preview o_camping_map_editor"
+        >
             <div class="d-flex align-items-end gap-2 mb-3">
+                <button
+                    type="button"
+                    class="btn btn-success"
+                    t-on-click="startNewPolygon"
+                    t-att-disabled="!state.selectedZoneId"
+                >
+                    <i class="fa fa-plus me-1" />New polygon<t
+                        t-if="selectedZoneName"
+                    >: <t t-esc="selectedZoneName" /></t>
+                </button>
                 <div class="flex-grow-1">
                     <label class="form-label">Zone</label>
                     <select class="form-select" t-on-change="onZoneChange">
@@ -34,17 +46,21 @@
                     t-on-click="saveZone"
                 >Save Zone</button>
             </div>
-            <p class="text-muted" t-if="state.selectedZoneId">
+            <p class="text-muted" t-if="state.drawing">
                 Click around the boundary of the zone. The zone closes automatically when saved.
             </p>
-            <CampingMap
+            <ResourceMap
                 t-if="mapImageUrl"
                 zones="zones"
                 mapImageUrl="mapImageUrl"
                 editable="true"
                 draftPoints="draftPoints"
+                legend="legend"
+                legendPosition="legendPosition"
                 onMapClick.bind="addPoint"
                 onRemoveZone.bind="removeZone"
+                onCloseDraft.bind="saveZone"
+                onCornersChanged.bind="onCornersChanged"
             />
         </div>
     </t>

@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="planning_view_gantt_maps" model="ir.ui.view">
+        <field name="name">planning.slot.gantt.maps</field>
+        <field name="model">planning.slot</field>
+        <field name="arch" type="xml">
+            <gantt_maps
+                class="o_gantt_view"
+                form_view_id="%(booking_engine.booking_engine_schedule_form)d"
+                kanban_view_id="%(planning.planning_view_kanban_inherit)d"
+                date_start="start_datetime"
+                date_stop="end_datetime"
+                default_group_by="resource_id"
+                default_range="month"
+                default_scale="week"
+                color="x_booking_color"
+                plan="false"
+                string="Schedule"
+                total_row="True"
+                scales="day,week,month,quarter,year"
+                precision="{'day': 'hour:full', 'week': 'day:half', 'month': 'day:half', 'year': 'day:full'}"
+                decoration-info="state == 'draft'"
+                decoration-warning="publication_warning or (request_to_switch and not is_past and not allow_self_unassign)"
+                decoration-danger="overlap_slot_count &gt; 0"
+                display_unavailability="1"
+                sample="0"
+                progress_bar="resource_id"
+                pill_label="True"
+            >
+                <field name="allocated_hours" />
+                <field name="allocated_percentage" />
+                <field name="recurrency_id" />
+                <field name="repeat" invisible="1" />
+                <field name="state" />
+                <field name="request_to_switch" />
+                <field name="allow_self_unassign" />
+                <field name="employee_id" />
+                <field name="resource_id" />
+            </gantt_maps>
+        </field>
+    </record>
+
+    <record
+        id="booking_engine_rooms_schedule_action_gantt_maps"
+        model="ir.actions.act_window.view"
+    >
+        <field name="sequence">1</field>
+        <field name="view_mode">gantt_maps</field>
+        <field name="view_id" ref="planning_view_gantt_maps" />
+        <field
+            name="act_window_id"
+            ref="booking_engine.booking_engine_rooms_schedule_action"
+        />
+    </record>
+
+    <record
+        id="booking_engine.booking_engine_rooms_schedule_action"
+        model="ir.actions.act_window"
+    >
+        <field name="view_mode">gantt_maps,gantt,calendar,list,kanban,form</field>
+    </record>
+</odoo>

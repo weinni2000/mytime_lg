@@ -1,0 +1,9 @@
+.o_gantt_maps_map .o_camping_map_zone {
+    fill-opacity: 1;
+}
+
+.o_gantt_maps_map
+    .o_camping_map_zone:not(.o_camping_map_zone_state_free):not(.o_camping_map_zone_state_occupied):not(.o_camping_map_zone_state_not_suitable) {
+    fill: #6c757d;
+    stroke: #495057;
+}

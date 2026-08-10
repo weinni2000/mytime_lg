@@ -6,6 +6,12 @@
         <field name="inherit_id" ref="sale.view_order_form" />
         <field name="arch" type="xml">
             <xpath expr="//notebook" position="inside">
+                <page string="Pitch" name="camping_checkout_pitch">
+                    <group>
+                        <field name="pitch_resource_id" />
+                        <field name="pitch_planning_slot_id" />
+                    </group>
+                </page>
                 <page string="Dogs" name="camping_checkout_animals">
                     <field name="animal_ids" nolabel="1">
                         <list editable="bottom">

@@ -1,9 +1,16 @@
 from odoo import models
+from odoo.fields import Domain
 from odoo.http import request
 
 
 class Website(models.Model):
     _inherit = "website"
+
+    def _get_allowed_steps_domain(self):
+        domain = super()._get_allowed_steps_domain()
+        if not self.company_id.x_use_camping_pitch_map:
+            domain = Domain.AND([domain, [("step_href", "!=", "/shop/pitch")]])
+        return domain
 
     def _get_checkout_step_values(self):
         values = super()._get_checkout_step_values()

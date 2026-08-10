@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <templates xml:space="preserve">
-    <t t-name="camping_map_booking.CampingMap">
+    <t t-name="ressource_map.ResourceMap">
         <div class="o_camping_map_overlay">
             <img
                 t-att-src="props.mapImageUrl"
-                class="o_camping_map_img img-fluid w-100"
+                class="o_camping_map_img img-fluid"
+                t-ref="mapImage"
+                t-att-style="state.availableHeight ? 'max-height: ' + state.availableHeight + 'px' : undefined"
                 t-on-load="onImageLoad"
                 alt="Camping map"
             />
@@ -22,11 +24,12 @@
                     t-key="zone.id"
                 >
                     <polygon
-                        t-att-points="zone.points"
+                        t-att-points="zonePointsString(zone)"
                         t-att-class="zoneClass(zone)"
+                        t-att-style="zoneStyle(zone)"
                         t-on-mouseenter="() => this.onZoneHover(zone.id)"
                         t-on-mouseleave="() => this.onZoneHover(null)"
-                        t-on-click="() => this.onZoneClick(zone)"
+                        t-on-click="(ev) => this.onZoneClick(zone, ev)"
                     />
                     <g
                         t-if="props.editable and props.onRemoveZone"
@@ -71,12 +74,70 @@
                     </foreignObject>
                     -->
                 </t>
+                <t t-if="props.editable and state.editZoneId">
+                    <line
+                        t-foreach="state.editPoints"
+                        t-as="corner"
+                        t-key="'edge-' + corner_index"
+                        class="o_camping_map_edge"
+                        t-att-x1="corner[0]"
+                        t-att-y1="corner[1]"
+                        t-att-x2="state.editPoints[(corner_index + 1) % state.editPoints.length][0]"
+                        t-att-y2="state.editPoints[(corner_index + 1) % state.editPoints.length][1]"
+                        t-on-click="(ev) => this.insertCorner(corner_index, ev)"
+                    />
+                    <circle
+                        t-foreach="state.editPoints"
+                        t-as="corner"
+                        t-key="corner_index"
+                        class="o_camping_map_corner"
+                        t-att-cx="corner[0]"
+                        t-att-cy="corner[1]"
+                        r="9"
+                        t-on-pointerdown="(ev) => this.onCornerPointerDown(corner_index, ev)"
+                        t-on-pointermove="(ev) => this.onCornerPointerMove(corner_index, ev)"
+                        t-on-pointerup="(ev) => this.onCornerPointerUp(corner_index, ev)"
+                        t-on-dblclick="(ev) => this.removeCorner(corner_index, ev)"
+                    />
+                </t>
                 <polyline
                     t-if="props.draftPoints"
                     t-att-points="props.draftPoints"
                     class="o_camping_map_zone_draft"
                 />
+                <g
+                    t-if="props.draftPoints and props.onCloseDraft and draftStartPoint"
+                    class="o_camping_map_draft_close"
+                    t-on-click.stop="onCloseDraftClick"
+                >
+                    <title>Close and save the zone</title>
+                    <circle
+                        t-att-cx="draftStartPoint[0]"
+                        t-att-cy="draftStartPoint[1]"
+                        r="8"
+                    />
+                    <circle
+                        t-att-cx="draftStartPoint[0]"
+                        t-att-cy="draftStartPoint[1]"
+                        r="3"
+                        class="o_camping_map_draft_close_dot"
+                    />
+                </g>
             </svg>
+            <div t-if="showLegend" t-att-class="legendClass" t-att-style="legendStyle">
+                <div
+                    t-foreach="props.legend"
+                    t-as="entry"
+                    t-key="entry_index"
+                    class="o_camping_map_legend_item"
+                >
+                    <span
+                        class="o_camping_map_legend_swatch"
+                        t-attf-style="background-color: {{entry.color}};"
+                    />
+                    <span t-esc="entry.label" />
+                </div>
+            </div>
             <div
                 t-if="hoveredZone"
                 class="o_camping_map_tooltip"
@@ -110,7 +171,21 @@
                                     t-esc="product.price"
                                 />
                             </a>
-                            <div t-else="" class="o_camping_map_pitch">
+                            <button
+                                t-if="!product.url and props.onSelectItem"
+                                type="button"
+                                t-att-class="itemClass(product)"
+                                t-att-disabled="!product.selectable"
+                                t-on-click="() => this.onItemClick(product)"
+                            >
+                                <span t-esc="product.name" />
+                                <small
+                                    t-if="product.state"
+                                    class="d-block opacity-75"
+                                    t-esc="itemStateLabel(product)"
+                                />
+                            </button>
+                            <div t-elif="!product.url" class="o_camping_map_pitch">
                                 <span t-esc="product.name" />
                             </div>
                         </t>

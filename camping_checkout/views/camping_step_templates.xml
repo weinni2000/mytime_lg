@@ -19,21 +19,6 @@
                     <h5 class="mb-2">Vehicle</h5>
                     <div class="row mb-4">
                         <div class="col-lg-6 mb-2">
-                            <label
-                                class="col-form-label label-optional"
-                                for="o_vehicle_license_plate"
-                            >
-                                License Plate
-                            </label>
-                            <input
-                                id="o_vehicle_license_plate"
-                                type="text"
-                                name="x_vehicle_license_plate"
-                                t-att-value="vehicle.license_plate"
-                                class="form-control"
-                            />
-                        </div>
-                        <div class="col-lg-6 mb-2">
                             <label class="col-form-label" for="o_vehicle_category_id">
                                 Vehicle Category
                             </label>
@@ -224,7 +209,7 @@
                                             name="x_guest_age"
                                             class="form-control"
                                             required="required"
-                                            t-att-value="guest['age']"
+                                            t-attf-value="{{ guest['age'] if guest['age'] is not False and guest['age'] is not None else '' }}"
                                         />
                                     </div>
                                     <div class="col-2">

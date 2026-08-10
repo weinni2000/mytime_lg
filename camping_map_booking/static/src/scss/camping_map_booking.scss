@@ -14,6 +14,18 @@
     display: block;
 }
 
+.o_camping_map_booking[data-selectable="true"] .o_camping_map_overlay {
+    width: fit-content;
+    max-width: 100%;
+    margin-inline: auto;
+}
+
+.o_camping_map_booking[data-selectable="true"] .o_camping_map_img {
+    width: auto;
+    max-width: 100%;
+    height: auto;
+}
+
 .o_camping_map_svg {
     position: absolute;
     inset: 0;
@@ -21,60 +33,87 @@
     height: 100%;
 }
 
+.o_camping_map_legend {
+    position: absolute;
+    z-index: 2;
+    // Never cover more than 30% of the map width.
+    max-width: 30%;
+    display: flex;
+    flex-direction: column;
+    // Sized in em so the whole legend scales with the font-size that the
+    // component sets from the rendered map width (see ResourceMap.legendStyle).
+    gap: 0.35em;
+    padding: 0.6em 0.75em;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 0.5em;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+    font-size: 12px; // fallback; overridden inline with the scaled size
+    line-height: 1.2;
+    color: #333;
+    pointer-events: none;
+}
+
+.o_camping_map_legend_top_left {
+    top: 8px;
+    left: 8px;
+}
+
+.o_camping_map_legend_top_right {
+    top: 8px;
+    right: 8px;
+}
+
+.o_camping_map_legend_bottom_left {
+    bottom: 8px;
+    left: 8px;
+}
+
+.o_camping_map_legend_bottom_right {
+    bottom: 8px;
+    right: 8px;
+}
+
+.o_camping_map_legend_item {
+    display: flex;
+    // Long labels wrap under, keeping the legend within its 30% cap.
+    align-items: flex-start;
+    gap: 0.5em;
+}
+
+.o_camping_map_legend_swatch {
+    display: inline-block;
+    width: 1.15em;
+    height: 1.15em;
+    margin-top: 0.05em;
+    border-radius: 0.25em;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    flex-shrink: 0;
+}
+
+// Availability colors are driven by the camping.map.state model: the map
+// component sets --o-zone-fill / --o-zone-stroke / --o-zone-hover inline per
+// zone (see ResourceMap.zoneStyle). The values below are only fallbacks used
+// when a zone carries no availability state (e.g. the plain editor preview).
 .o_camping_map_zone {
-    fill: rgba(0, 128, 0, 0.15);
-    stroke: rgba(0, 128, 0, 0.6);
+    fill: var(--o-zone-fill, rgba(0, 128, 0, 0.15));
+    stroke: var(--o-zone-stroke, rgba(0, 128, 0, 0.6));
     stroke-width: 3;
     cursor: pointer;
     transition: fill 0.15s ease-in-out;
 }
 
 .o_camping_map_zone_hover {
-    fill: rgba(0, 128, 0, 0.35);
+    fill: var(--o-zone-hover, rgba(0, 128, 0, 0.35));
 }
 
 .o_camping_map_zone_selected {
-    fill: rgba(0, 128, 0, 0.5);
+    fill: var(--o-zone-hover, rgba(0, 128, 0, 0.5));
     stroke-width: 5;
 }
 
-.o_camping_map_zone_state_free {
-    fill: #198754;
-    stroke: #146c43;
-
-    &.o_camping_map_zone_hover {
-        fill: #22a06b;
-    }
-
-    &.o_camping_map_zone_selected {
-        fill: #22a06b;
-    }
-}
-
-.o_camping_map_zone_state_occupied {
-    fill: #ffc107;
-    stroke: #d39e00;
-
-    &.o_camping_map_zone_hover {
-        fill: #ffca2c;
-    }
-
-    &.o_camping_map_zone_selected {
-        fill: #ffca2c;
-    }
-}
-
-.o_camping_map_zone_state_not_suitable {
-    fill: #dc3545;
-    stroke: #b02a37;
-
-    &.o_camping_map_zone_hover {
-        fill: #e35d6a;
-    }
-
-    &.o_camping_map_zone_selected {
-        fill: #e35d6a;
-    }
+.o_camping_map_zone.o_camping_map_zone_muted {
+    fill: #adb5bd;
+    stroke: #6c757d;
 }
 
 .o_camping_map_zone_label {
@@ -141,6 +180,69 @@
     stroke-width: 4;
     stroke-dasharray: 10 6;
     pointer-events: none;
+}
+
+.o_camping_map_draft_close {
+    cursor: pointer;
+
+    circle {
+        fill: #0d6efd;
+        stroke: #fff;
+        stroke-width: 2;
+        transition: fill 0.15s ease-in-out;
+    }
+
+    .o_camping_map_draft_close_dot {
+        fill: #fff;
+        stroke: none;
+    }
+
+    &:hover circle {
+        fill: #0b5ed7;
+    }
+}
+
+// In the zone editor, make every zone clearly visible (not near-transparent)
+// so it can be seen and clicked. Scoped to the editor so the Testing tab's
+// availability colors are left untouched.
+.o_camping_map_editor {
+    .o_camping_map_zone {
+        fill: rgba(13, 110, 253, 0.45);
+        stroke: #0d6efd;
+        stroke-width: 3;
+        cursor: pointer;
+    }
+
+    .o_camping_map_zone_hover {
+        fill: rgba(13, 110, 253, 0.6);
+    }
+
+    .o_camping_map_zone_editing {
+        fill: rgba(13, 110, 253, 0.7);
+        stroke: #0a58ca;
+        stroke-width: 4;
+    }
+}
+
+// Draggable corner handles for the zone being edited.
+.o_camping_map_corner {
+    fill: #fff;
+    stroke: #0d6efd;
+    stroke-width: 2;
+    cursor: move;
+
+    &:hover {
+        fill: #cfe2ff;
+    }
+}
+
+// Invisible, wide hit-area along each edge of the zone being edited.
+// Clicking it inserts a new corner at that spot.
+.o_camping_map_edge {
+    stroke: transparent;
+    stroke-width: 16;
+    pointer-events: stroke;
+    cursor: copy;
 }
 
 .o_camping_map_backend_preview .o_camping_map_svg {

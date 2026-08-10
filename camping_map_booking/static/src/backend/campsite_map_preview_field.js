@@ -3,11 +3,11 @@ import {registry} from "@web/core/registry";
 import {_t} from "@web/core/l10n/translation";
 import {useService} from "@web/core/utils/hooks";
 import {standardFieldProps} from "@web/views/fields/standard_field_props";
-import {CampingMap} from "../components/camping_map/camping_map";
+import {ResourceMap} from "@ressource_map/components/resource_map/resource_map";
 
 export class CampsiteMapPreviewField extends Component {
     static template = "camping_map_booking.CampsiteMapPreviewField";
-    static components = {CampingMap};
+    static components = {ResourceMap};
     static props = {...standardFieldProps};
 
     setup() {
@@ -18,6 +18,7 @@ export class CampsiteMapPreviewField extends Component {
             shapes: [...(this.previewData.shapes || [])],
             selectedZoneId: null,
             draftPoints: [],
+            drawing: false,
         });
         onWillUpdateProps((nextProps) => {
             const data = nextProps.record.data[nextProps.name] || {};
@@ -38,14 +39,37 @@ export class CampsiteMapPreviewField extends Component {
         return this.previewData.image_url || "";
     }
 
+    get legend() {
+        return this.previewData.legend || [];
+    }
+
+    get legendPosition() {
+        return this.previewData.legend_position || "none";
+    }
+
     get draftPoints() {
         return this.state.draftPoints.map(({x, y}) => `${x},${y}`).join(" ");
+    }
+
+    get selectedZoneName() {
+        const zone = this.state.zones.find(({id}) => id === this.state.selectedZoneId);
+        return zone ? zone.name : "";
     }
 
     onZoneChange(ev) {
         const zoneId = Number(ev.target.value) || null;
         this.state.selectedZoneId = zoneId;
         this.state.draftPoints = [];
+        this.state.drawing = false;
+    }
+
+    startNewPolygon() {
+        // A polygon can only be drawn for a chosen zone.
+        if (!this.state.selectedZoneId) {
+            return;
+        }
+        this.state.drawing = true;
+        this.state.draftPoints.splice(0);
     }
 
     parsePoints(points) {
@@ -60,7 +84,7 @@ export class CampsiteMapPreviewField extends Component {
     }
 
     addPoint(point) {
-        if (this.state.selectedZoneId) {
+        if (this.state.drawing && this.state.selectedZoneId) {
             this.state.draftPoints.push(point);
         }
     }
@@ -107,7 +131,20 @@ export class CampsiteMapPreviewField extends Component {
             state: false,
         });
         this.clearPoints();
+        this.state.drawing = false;
         this.notification.add(_t("The zone was saved."), {type: "success"});
+    }
+
+    async onCornersChanged(zoneId, points) {
+        if (!zoneId || !points) {
+            return;
+        }
+        await this.orm.write("camping.map.zone", [zoneId], {points});
+        const shape = this.state.shapes.find(({zone_id: id}) => id === zoneId);
+        if (shape) {
+            shape.points = points;
+        }
+        this.notification.add(_t("The zone outline was updated."), {type: "success"});
     }
 
     async removeZone(zone) {

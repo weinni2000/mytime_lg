@@ -1,11 +1,11 @@
 import {Component} from "@odoo/owl";
 import {registry} from "@web/core/registry";
 import {standardFieldProps} from "@web/views/fields/standard_field_props";
-import {CampingMap} from "../components/camping_map/camping_map";
+import {ResourceMap} from "@ressource_map/components/resource_map/resource_map";
 
 export class CampingZoneMapField extends Component {
     static template = "camping_map_booking.CampingZoneMapField";
-    static components = {CampingMap};
+    static components = {ResourceMap};
     static props = {...standardFieldProps};
 
     // Read straight from the record (reactive) rather than caching in local
@@ -22,6 +22,14 @@ export class CampingZoneMapField extends Component {
 
     get mapImageUrl() {
         return this.previewData.image_url || "";
+    }
+
+    get legend() {
+        return this.previewData.legend || [];
+    }
+
+    get legendPosition() {
+        return this.previewData.legend_position || "none";
     }
 }
 

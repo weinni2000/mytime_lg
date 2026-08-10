@@ -11,6 +11,21 @@ class CampsiteMap(models.Model):
     name = fields.Char(required=True)
     active = fields.Boolean(default=True)
     image = fields.Binary(required=True, attachment=True)
+    show_legend = fields.Boolean(
+        default=True,
+        help="Display a color legend on the map.",
+    )
+    legend_position = fields.Selection(
+        [
+            ("top_left", "Top left"),
+            ("top_right", "Top right"),
+            ("bottom_left", "Bottom left"),
+            ("bottom_right", "Bottom right"),
+        ],
+        default="bottom_left",
+        required=True,
+        help="Where the color legend sits on the map.",
+    )
     zone_ids = fields.One2many("camping.map.zone", "map_id", string="Zones")
     preview_data = fields.Json(compute="_compute_preview_data")
     refresh = fields.Boolean(help="Toggle to force the tested availability to recompute.")
@@ -28,6 +43,20 @@ class CampsiteMap(models.Model):
         help="Vehicle type to check pitch suitability for. Leave empty to ignore vehicle suitability.",
     )
     test_preview_data = fields.Json(compute="_compute_test_preview_data")
+
+    def _legend_position(self):
+        """Configured legend position, or 'none' when the legend is hidden."""
+        self.ensure_one()
+        return self.legend_position if self.show_legend else "none"
+
+    def _get_availability_legend(self):
+        """Legend items [{label, color}] for the availability states."""
+        self.ensure_one()
+        return [
+            {"label": colors["label"], "color": colors["fill"]}
+            for colors in self.env["camping.map.state"]._get_frontend_map().values()
+            if colors.get("label")
+        ]
 
     def _image_url(self):
         self.ensure_one()
@@ -47,6 +76,8 @@ class CampsiteMap(models.Model):
         "zone_ids.code",
         "zone_ids.symbol",
         "zone_ids.points",
+        "show_legend",
+        "legend_position",
     )
     def _compute_preview_data(self):
         for record in self:
@@ -72,6 +103,8 @@ class CampsiteMap(models.Model):
                     for zone in zones
                 ],
                 "shapes": shapes,
+                "legend": record._get_availability_legend(),
+                "legend_position": record._legend_position(),
             }
 
     @api.depends(
@@ -84,6 +117,8 @@ class CampsiteMap(models.Model):
         "availability_check_end",
         "vehicle_type_id",
         "refresh",
+        "show_legend",
+        "legend_position",
     )
     def _compute_test_preview_data(self):
         for record in self:
@@ -106,4 +141,6 @@ class CampsiteMap(models.Model):
                 "map_id": record.id if isinstance(record.id, int) else False,
                 "image_url": record._image_url(),
                 "shapes": shapes,
+                "legend": record._get_availability_legend(),
+                "legend_position": record._legend_position(),
             }

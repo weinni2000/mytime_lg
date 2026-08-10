@@ -18,6 +18,7 @@
                 <field name="code" />
                 <field name="symbol" />
                 <field name="map_id" />
+                <field name="hide_on_frontend_map" optional="show" />
                 <field name="product_count" />
                 <field name="active" column_invisible="True" />
             </list>
@@ -41,6 +42,7 @@
                         <field name="code" />
                         <field name="symbol" />
                         <field name="map_id" />
+                        <field name="hide_on_frontend_map" />
                         <field name="pitch_source" widget="radio" />
                         <field name="sequence" />
                         <field name="active" invisible="1" />

@@ -7,7 +7,16 @@ from odoo.http import request
 class CampingMapBookingController(http.Controller):
     @http.route("/camping/map", type="http", auth="public", website=True, sitemap=True)
     def camping_map(self, vehicle_type_id=None, **kwargs):
-        zones = request.env["camping.map.zone"].sudo().search([("points", "!=", False)])
+        zones = (
+            request.env["camping.map.zone"]
+            .sudo()
+            .search(
+                [
+                    ("points", "!=", False),
+                    ("hide_on_frontend_map", "=", False),
+                ]
+            )
+        )
         vehicle_type = None
         if vehicle_type_id and vehicle_type_id.isdigit():
             vehicle_type = request.env["camping.vehicle.type"].sudo().browse(int(vehicle_type_id))

@@ -1,5 +1,6 @@
 _CAMPING_WEBSITE_DOMAIN = "https://camping.unternhub.at"
 _CAMPING_STEP_HREF = "/shop/camping"
+_PITCH_STEP_HREF = "/shop/pitch"
 _DOG_PRODUCT_NAME = "Hunde"
 _DOG_PRODUCT_XMLID = "product_dog"
 _ADDITIONAL_GUEST_PRODUCT_NAME = "Zusätzliche Personen im Zelt"
@@ -15,6 +16,7 @@ _ELECTRICITY_PRODUCT_TEMPLATE_ID = 2898
 
 def post_init_hook(env):
     _setup_camping_step(env)
+    _setup_pitch_step(env)
     _setup_dog_product(env)
     _reorder_cart_step(env)
     _setup_additional_guest_product(env)
@@ -58,6 +60,35 @@ def _setup_camping_step(env):
     )
 
 
+def _setup_pitch_step(env):
+    website = env["website"].search([("domain", "=", _CAMPING_WEBSITE_DOMAIN)], limit=1)
+    if not website:
+        return
+
+    step = env["website.checkout.step"].search(
+        [("website_id", "=", website.id), ("step_href", "=", _PITCH_STEP_HREF)],
+        limit=1,
+    )
+    if step:
+        return
+
+    camping_step = env["website.checkout.step"].search(
+        [("website_id", "=", website.id), ("step_href", "=", _CAMPING_STEP_HREF)],
+        limit=1,
+    )
+    env["website.checkout.step"].create(
+        {
+            "website_id": website.id,
+            "name": "Pitch",
+            "sequence": (camping_step.sequence or 260) + 10,
+            "step_href": _PITCH_STEP_HREF,
+            "main_button_label": "Continue",
+            "back_button_label": "Back to pitch selection",
+            "is_published": True,
+        }
+    )
+
+
 def _reorder_cart_step(env):
     website = env["website"].search([("domain", "=", _CAMPING_WEBSITE_DOMAIN)], limit=1)
     if not website:
@@ -80,7 +111,11 @@ def _reorder_cart_step(env):
     if not camping_step or not cart_step:
         return
 
-    target_sequence = camping_step.sequence + 10
+    pitch_step = env["website.checkout.step"].search(
+        [("website_id", "=", website.id), ("step_href", "=", _PITCH_STEP_HREF)],
+        limit=1,
+    )
+    target_sequence = (pitch_step or camping_step).sequence + 10
     if cart_step.sequence != target_sequence:
         cart_step.sequence = target_sequence
 

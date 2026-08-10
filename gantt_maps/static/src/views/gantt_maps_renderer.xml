@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+    <t t-name="gantt_maps.GanttMapsRenderer">
+        <div class="o_gantt_maps_renderer d-flex h-100 overflow-hidden">
+            <aside
+                t-if="mapState.imageUrl"
+                class="o_gantt_maps_map flex-shrink-0 overflow-auto border-end p-2"
+                style="width: 35%;"
+            >
+                <div class="mb-2">
+                    <label class="form-label" for="gantt_maps_night">Night</label>
+                    <input
+                        id="gantt_maps_night"
+                        class="form-control"
+                        type="date"
+                        t-model="mapState.night"
+                        t-on-change="loadResourceMap"
+                    />
+                </div>
+                <ResourceMap
+                    zones="mapState.zones"
+                    mapImageUrl="mapState.imageUrl"
+                    legend="mapState.legend"
+                    legendPosition="mapState.legendPosition"
+                />
+            </aside>
+            <section
+                class="o_gantt_maps_timeline flex-grow-1 overflow-auto"
+                style="min-width: 0;"
+            >
+                <t t-call="planning.PlanningGanttRenderer" />
+            </section>
+        </div>
+    </t>
+</templates>

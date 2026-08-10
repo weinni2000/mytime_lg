@@ -2,3 +2,5 @@ id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_campsite_map_sales_manager,campsite.map sales manager,model_campsite_map,sales_team.group_sale_manager,1,1,1,1
 access_campsite_map_zone_sales_manager,camping.map.zone sales manager,model_camping_map_zone,sales_team.group_sale_manager,1,1,1,1
 access_camping_vehicle_type_sales_manager,camping.vehicle.type sales manager,model_camping_vehicle_type,sales_team.group_sale_manager,1,1,1,1
+access_camping_map_state_user,camping.map.state user,model_camping_map_state,base.group_user,1,0,0,0
+access_camping_map_state_sales_manager,camping.map.state sales manager,model_camping_map_state,sales_team.group_sale_manager,1,1,1,1
