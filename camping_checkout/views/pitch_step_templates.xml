@@ -15,27 +15,55 @@
                     role="alert"
                     t-out="error"
                 />
-                <div class="row g-3 mb-4">
+                <form
+                    method="get"
+                    action="/shop/pitch"
+                    id="o_pitch_filters_form"
+                    class="row g-3 mb-4"
+                >
                     <div class="col-md-4">
-                        <label class="form-label">Vehicle type</label>
-                        <div
-                            class="form-control bg-light"
-                            t-out="vehicle.category_id.name"
+                        <label class="form-label" for="o_pitch_vehicle_type">
+                            Vehicle type
+                        </label>
+                        <select
+                            id="o_pitch_vehicle_type"
+                            name="vehicle_type_id"
+                            class="form-select"
+                            onchange="this.form.submit()"
+                        >
+                            <t t-foreach="vehicle_types" t-as="vehicle_type">
+                                <option
+                                    t-att-value="vehicle_type.id"
+                                    t-att-selected="vehicle_type.id == selected_vehicle_type_id or None"
+                                    t-esc="vehicle_type.name"
+                                />
+                            </t>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label" for="o_pitch_start_date">Start</label>
+                        <input
+                            id="o_pitch_start_date"
+                            type="date"
+                            name="start_date"
+                            class="form-control"
+                            t-att-value="start_date_value"
+                            onchange="this.form.submit()"
                         />
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label">Start</label>
-                        <div class="form-control bg-light">
-                            <span t-field="order.rental_start_date" />
-                        </div>
+                        <label class="form-label" for="o_pitch_end_date">End</label>
+                        <input
+                            id="o_pitch_end_date"
+                            type="date"
+                            name="end_date"
+                            class="form-control"
+                            t-att-value="end_date_value"
+                            t-att-min="start_date_value"
+                            onchange="this.form.submit()"
+                        />
                     </div>
-                    <div class="col-md-4">
-                        <label class="form-label">End</label>
-                        <div class="form-control bg-light">
-                            <span t-field="order.rental_return_date" />
-                        </div>
-                    </div>
-                </div>
+                </form>
 
                 <form
                     action="/shop/pitch/submit"

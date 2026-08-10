@@ -1,9 +1,11 @@
 import base64
 import json
-from datetime import date
+from datetime import date, datetime, time
 
+import pytz
 from werkzeug.exceptions import NotFound
 
+from odoo import fields
 from odoo.exceptions import ValidationError
 from odoo.http import request, route
 from odoo.tools.image import image_process
@@ -278,7 +280,7 @@ class WebsiteSaleCampingCheckout(WebsiteSale):
             )
 
         total_guests = 1 + len(guest_vals)
-        adult_guests = sum(1 for age in guest_ages if age >= LOCAL_TAX_MIN_AGE)
+        adult_guests = sum(1 for age in guest_ages if age > LOCAL_TAX_MIN_AGE)
         return total_guests, adult_guests
 
     def _update_additional_guest_product(self, order_sudo, guest_count):
@@ -301,14 +303,7 @@ class WebsiteSaleCampingCheckout(WebsiteSale):
         tax_product = order_sudo.company_id.x_local_tax_product_id
         if not tax_product:
             return
-        nights = 0
-        if order_sudo.rental_start_date and order_sudo.rental_return_date:
-            # Camping stays run evening check-in to morning check-out, e.g. 20:00 to
-            # 07:00 the next day: barely 11 elapsed hours, but a full night's stay.
-            # duration_days (raw elapsed time) would round that down to 0 nights, so
-            # nights are counted by calendar date instead.
-            nights = (order_sudo.rental_return_date.date() - order_sudo.rental_start_date.date()).days
-        self._set_camping_product_quantity(order_sudo, tax_product, adult_guest_count * max(nights, 0))
+        self._set_camping_product_quantity(order_sudo, tax_product, adult_guest_count)
 
     @staticmethod
     def _age_from_birthdate(birthdate):
@@ -379,7 +374,9 @@ class WebsiteSaleCampingPitch(WebsiteSale):
         }
         shapes = []
         if campsite_map:
-            for zone in campsite_map.zone_ids.filtered(lambda item: item.active and item.points):
+            for zone in campsite_map.zone_ids.filtered(
+                lambda item: item.active and item.points and not item.hide_on_frontend_map
+            ):
                 items = []
                 for resource in zone.resource_ids:
                     state = zone._get_resource_state(
@@ -416,6 +413,9 @@ class WebsiteSaleCampingPitch(WebsiteSale):
             "order": order_sudo,
             "vehicle": vehicle,
             "vehicle_types": request.env["camping.vehicle.type"].sudo().search([]),
+            "selected_vehicle_type_id": vehicle.category_id.id,
+            "start_date_value": self._pitch_date_input_value(order_sudo, order_sudo.rental_start_date),
+            "end_date_value": self._pitch_date_input_value(order_sudo, order_sudo.rental_return_date),
             "campsite_map": campsite_map,
             "zones_json": json.dumps(shapes),
             "map_image_url": (
@@ -432,7 +432,7 @@ class WebsiteSaleCampingPitch(WebsiteSale):
         return values
 
     @route([PITCH_STEP_HREF], type="http", auth="public", website=True, sitemap=False)
-    def shop_pitch(self, **post):
+    def shop_pitch(self, vehicle_type_id=None, start_date=None, end_date=None, **post):
         order_sudo = request.cart
         redirection = self._check_cart(order_sudo)
         if redirection:
@@ -441,10 +441,76 @@ class WebsiteSaleCampingPitch(WebsiteSale):
             return request.redirect("/shop/cart")
         if not order_sudo.vehicle_ids:
             return request.redirect(CAMPING_STEP_HREF)
+        self._apply_pitch_filters(order_sudo, vehicle_type_id, start_date, end_date)
         return request.render(
             "camping_checkout.pitch_step",
             self._get_pitch_page_values(order_sudo),
         )
+
+    def _pitch_timezone(self):
+        """Timezone used to display and parse the pitch stay dates.
+
+        Kept identical to the one QWeb's ``t-field`` uses (the request/user
+        context tz), so the date shown in the input round-trips back to the same
+        stored UTC datetime the customer saw.
+        """
+        tz_name = request.env.context.get("tz") or request.env.user.tz or "Europe/Vienna"
+        try:
+            return pytz.timezone(tz_name)
+        except pytz.UnknownTimeZoneError:
+            return pytz.timezone("Europe/Vienna")
+
+    @staticmethod
+    def _pitch_date_input_value(order_sudo, value):
+        """Local date string ("YYYY-MM-DD") for a stored UTC stay datetime."""
+        if not value:
+            return ""
+        return fields.Datetime.context_timestamp(order_sudo, value).strftime("%Y-%m-%d")
+
+    def _parse_pitch_date(self, order_sudo, date_str, current_value):
+        """Combine an edited local date with the stay's existing time-of-day.
+
+        Camping stays keep a fixed check-in/check-out time (e.g. 18:00 / 09:00);
+        the customer only edits the calendar day, so the local time component of
+        the current value is preserved and the result is stored back as naive UTC.
+        """
+        if not date_str:
+            return current_value
+        try:
+            new_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+        except (TypeError, ValueError):
+            return current_value
+        tz = self._pitch_timezone()
+        if current_value:
+            local_time = fields.Datetime.context_timestamp(order_sudo, current_value).time()
+        else:
+            local_time = time(14, 0)
+        local_dt = tz.localize(datetime.combine(new_date, local_time))
+        return local_dt.astimezone(pytz.utc).replace(tzinfo=None)
+
+    def _apply_pitch_filters(self, order_sudo, vehicle_type_id, start_date, end_date):
+        """Apply the vehicle/stay edits made on the pitch step to the cart.
+
+        Changing either invalidates a previously chosen pitch, so the selection is
+        cleared and the customer re-picks against the freshly recomputed map.
+        """
+        if vehicle_type_id and str(vehicle_type_id).isdigit():
+            category = request.env["camping.vehicle.type"].sudo().browse(int(vehicle_type_id)).exists()
+            vehicle_sudo = order_sudo.vehicle_ids[:1]
+            if category and vehicle_sudo and vehicle_sudo.category_id != category:
+                vehicle_sudo.category_id = category.id
+                order_sudo.pitch_resource_id = False
+
+        new_start = self._parse_pitch_date(order_sudo, start_date, order_sudo.rental_start_date)
+        new_end = self._parse_pitch_date(order_sudo, end_date, order_sudo.rental_return_date)
+        if (
+            new_start
+            and new_end
+            and new_end > new_start
+            and (new_start != order_sudo.rental_start_date or new_end != order_sudo.rental_return_date)
+        ):
+            # _cart_update_renting_period already clears the pitch selection on a date change.
+            order_sudo._cart_update_renting_period(new_start, new_end)
 
     @route(
         [f"{PITCH_STEP_HREF}/submit"],

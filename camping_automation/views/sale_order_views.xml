@@ -1,0 +1,27 @@
+<odoo>
+    <record id="action_checkout_expired_rentals" model="ir.actions.server">
+        <field name="name">Checkout Expired Bookings</field>
+        <field name="model_id" ref="sale.model_sale_order" />
+        <field name="state">code</field>
+        <field name="code">action = model.action_checkout_expired_rentals()</field>
+    </record>
+
+    <record id="booking_engine_orders_kanban_checkout_expired" model="ir.ui.view">
+        <field name="name">rental.order.kanban.checkout.expired</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="booking_engine.booking_engine_orders_kanban" />
+        <field name="arch" type="xml">
+            <xpath expr="//kanban" position="inside">
+                <header>
+                    <button
+                        name="%(action_checkout_expired_rentals)d"
+                        type="action"
+                        string="Checkout Expired"
+                        class="btn-primary"
+                        display="always"
+                    />
+                </header>
+            </xpath>
+        </field>
+    </record>
+</odoo>

@@ -185,8 +185,8 @@
                     <h5 class="mb-2">Guests</h5>
                     <div class="mb-4">
                         <p class="text-muted small mb-2">
-                            Children under 16 are exempt from the local tax; it is only
-                            charged for guests aged 16 and older.
+                            Guests aged 16 or younger are exempt from the local tax; it is only
+                            charged for guests older than 16.
                         </p>
                         <div id="guest_rows">
                             <t t-foreach="guest_rows" t-as="guest">

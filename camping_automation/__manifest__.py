@@ -7,6 +7,7 @@
     "author": "mytime.click",
     "website": "https://mytime.click",
     "depends": [
+        "booking_engine",
         "camping_base",
         "sale",
         "sale_renting",
@@ -20,6 +21,7 @@
     "data": [
         "security/ir.model.access.csv",
         "data/ir_cron.xml",
+        "views/sale_order_views.xml",
     ],
     "installable": True,
     "application": False,
