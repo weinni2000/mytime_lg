@@ -60,12 +60,21 @@
                             />
                         </page>
                         <page name="zones" string="Zones">
+                            <button
+                                name="action_generate_zones_from_resources"
+                                type="object"
+                                string="Create Zone for Each Resource"
+                                class="btn-secondary mb-2"
+                            />
                             <field name="zone_ids">
                                 <list editable="bottom">
                                     <field name="sequence" widget="handle" />
                                     <field name="name" />
                                     <field name="points" />
-                                    <field name="product_count" />
+                                    <field
+                                        name="resource_ids"
+                                        widget="many2many_tags"
+                                    />
                                     <button
                                         name="action_open_form"
                                         type="object"

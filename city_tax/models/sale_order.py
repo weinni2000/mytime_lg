@@ -8,7 +8,7 @@ class SaleOrder(models.Model):
     x_transferred_to_deskline = fields.Boolean(
         string="Transferred to Deskline", compute="_compute_x_transferred_to_deskline", store=True
     )
-    x_data_valid = fields.Boolean(string="Data Valid", compute="_compute_x_data_valid", store=True)
+    x_data_valid = fields.Boolean(string="Data Valid", compute="_compute_x_data_valid")
 
     refresh = fields.Boolean(help="Toggle to force the computed Data Valid to recompute.")
 
@@ -17,13 +17,14 @@ class SaleOrder(models.Model):
         for order in self:
             order.x_transferred_to_deskline = bool(order.x_deskline_master_id)
 
-    @api.depends(
-        "x_guest_line_ids.x_main_guest",
-        "x_guest_line_ids.x_main_guest_check",
-        "x_guest_line_ids.x_tourist_tax_check",
-        "refresh",
-    )
+    @api.depends("x_guest_line_ids", "refresh")
     def _compute_x_data_valid(self):
+        guest_line_fields = self.env["x_guests_line"]._fields
+        required_fields = {"x_main_guest", "x_main_guest_check", "x_tourist_tax_check"}
+        if not required_fields.issubset(guest_line_fields):
+            for order in self:
+                order.x_data_valid = False
+            return
         for order in self:
             order.x_data_valid = any(guest_line.x_main_guest for guest_line in order.x_guest_line_ids) and all(
                 guest_line.x_main_guest_check == "ok" and guest_line.x_tourist_tax_check == "ok"
@@ -57,7 +58,7 @@ class SaleOrder(models.Model):
 
     def _add_partner_as_guest(self):
         self.ensure_one()
-        if not self.partner_id:
+        if not self.partner_id or "x_main_guest" not in self.env["x_guests_line"]._fields:
             return
         existing = self.x_guest_line_ids.filtered(
             lambda guest_line: guest_line.x_guest_partner_id == self.partner_id

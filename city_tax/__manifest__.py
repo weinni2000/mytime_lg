@@ -1,16 +1,17 @@
 {
     "name": "City Tax",
     "summary": "Overview of all guest lines used for city tax reporting.",
-    "version": "19.0.1.1.1",
+    "version": "19.0.1.1.6",
     "category": "Hidden/Tools",
     "license": "OPL-1",
     "author": "mytime.click",
     "website": "https://mytime.click",
     "depends": [
-        "booking_engine",
+        # "booking_engine", industry modules can't be added as dependencies.
         "partner_title",
         "partner_contact_personal_information_page",
         "partner_contact_birthdate",
+        "sale_channel",
     ],
     "external_dependencies": {"python": ["requests", "playwright", "gender_guesser"]},
     "data": [

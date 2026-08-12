@@ -19,7 +19,7 @@
                 <field name="symbol" />
                 <field name="map_id" />
                 <field name="hide_on_frontend_map" optional="show" />
-                <field name="product_count" />
+                <field name="resource_ids" widget="many2many_tags" />
                 <field name="active" column_invisible="True" />
             </list>
         </field>
@@ -43,29 +43,19 @@
                         <field name="symbol" />
                         <field name="map_id" />
                         <field name="hide_on_frontend_map" />
-                        <field name="pitch_source" widget="radio" />
                         <field name="sequence" />
                         <field name="active" invisible="1" />
                         <field name="points" />
                     </group>
                     <notebook>
-                        <page name="pitches" string="Pitches">
+                        <page name="pitches" string="Resources">
                             <group>
-                                <field
-                                    name="product_template_ids"
-                                    string="Rental Products"
-                                    widget="many2many_tags"
-                                    domain="[('rent_ok', '=', True)]"
-                                    options="{'no_create': True}"
-                                    invisible="pitch_source != 'product'"
-                                />
                                 <field
                                     name="resource_ids"
                                     string="Resources"
                                     widget="many2many_tags"
                                     context="{'active_test': False}"
                                     options="{'no_create': True}"
-                                    invisible="pitch_source != 'resource'"
                                 />
                             </group>
                         </page>

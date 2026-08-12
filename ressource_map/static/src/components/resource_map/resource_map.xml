@@ -6,7 +6,7 @@
                 t-att-src="props.mapImageUrl"
                 class="o_camping_map_img img-fluid"
                 t-ref="mapImage"
-                t-att-style="state.availableHeight ? 'max-height: ' + state.availableHeight + 'px' : undefined"
+                t-att-style="state.availableHeight ? 'height: ' + state.availableHeight + 'px' : undefined"
                 t-on-load="onImageLoad"
                 alt="Camping map"
             />

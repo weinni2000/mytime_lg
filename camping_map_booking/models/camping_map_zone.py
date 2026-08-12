@@ -1,4 +1,4 @@
-from odoo import api, fields, models
+from odoo import fields, models
 
 from .camping_map_state import STATE_FREE, STATE_NOT_SUITABLE, STATE_OCCUPIED
 
@@ -23,15 +23,20 @@ class CampingMapZone(models.Model):
             ("fa-fire", "Fire Pit"),
             ("fa-wifi", "WiFi"),
             ("fa-paw", "Pets Allowed"),
+            ("fa-trash", "Waste / Müll"),
+            ("fa-bicycle", "Bicycle"),
+            ("fa-cutlery", "Restaurant"),
+            ("fa-shopping-basket", "Shop"),
+            ("fa-child", "Playground"),
+            ("fa-wheelchair", "Accessible"),
+            ("fa-first-aid", "First Aid"),
+            ("fa-info-circle", "Information"),
+            ("fa-bus", "Bus Stop"),
+            ("fa-life-ring", "Swimming Pool"),
             ("fa-map-marker", "Generic Marker"),
         ],
     )
     map_id = fields.Many2one("campsite.map", ondelete="cascade")
-    pitch_source = fields.Selection(
-        [("product", "Rental Products"), ("resource", "Resources")],
-        required=True,
-        default="product",
-    )
     sequence = fields.Integer(default=10)
     active = fields.Boolean(default=True)
     hide_on_frontend_map = fields.Boolean(
@@ -44,21 +49,7 @@ class CampingMapZone(models.Model):
             ' in the source image\'s own pixel space: "x1,y1 x2,y2 x3,y3 ...".'
         ),
     )
-    product_template_ids = fields.One2many(
-        "product.template",
-        "camping_map_zone_id",
-        string="Rental Products",
-        domain=[("rent_ok", "=", True)],
-    )
     resource_ids = fields.Many2many("resource.resource", string="Resources")
-    product_count = fields.Integer(compute="_compute_product_count")
-
-    @api.depends("pitch_source", "product_template_ids", "resource_ids")
-    def _compute_product_count(self):
-        for record in self:
-            record.product_count = len(
-                record.product_template_ids if record.pitch_source == "product" else record.resource_ids
-            )
 
     def _get_availability_state(self, vehicle_type=None, start=None, end=None):
         self.ensure_one()
@@ -115,19 +106,8 @@ class CampingMapZone(models.Model):
 
     def _get_map_items(self):
         self.ensure_one()
-        if self.pitch_source == "resource":
-            return [
-                {"id": resource.id, "name": resource.name, "price": "", "url": False}
-                for resource in self.resource_ids
-            ]
         return [
-            {
-                "id": product.id,
-                "name": product.name,
-                "price": product.list_price,
-                "url": product.website_url,
-            }
-            for product in self.product_template_ids.filtered("website_published")
+            {"id": resource.id, "name": resource.name, "price": "", "url": False} for resource in self.resource_ids
         ]
 
     def action_view_map(self):

@@ -44,6 +44,21 @@ class CampsiteMap(models.Model):
     )
     test_preview_data = fields.Json(compute="_compute_test_preview_data")
 
+    def action_generate_zones_from_resources(self):
+        self.ensure_one()
+        assigned_resource_ids = self.env["camping.map.zone"].search([]).resource_ids.ids
+        resources = self.env["resource.resource"].search(
+            [("id", "not in", assigned_resource_ids), ("resource_type", "=", "material")]
+        )
+        for resource in resources:
+            self.env["camping.map.zone"].create(
+                {
+                    "name": resource.name,
+                    "map_id": self.id,
+                    "resource_ids": [(6, 0, [resource.id])],
+                }
+            )
+
     def _legend_position(self):
         """Configured legend position, or 'none' when the legend is hidden."""
         self.ensure_one()
@@ -60,12 +75,13 @@ class CampsiteMap(models.Model):
 
     def _image_url(self):
         self.ensure_one()
+        if not isinstance(self.id, int):
+            # Unsaved record: nothing has been uploaded to preview yet.
+            return False
         # For a saved map (image is required), always serve the stored image from
         # the DB. Don't gate on `self.image`: during an onchange (e.g. switching
         # the checked vehicle) the web client omits the binary, which would
-        # otherwise flip the URL back to the generic fallback image.
-        if not isinstance(self.id, int):
-            return "/camping_map_booking/static/src/img/camping_map.png"
+        # otherwise make this flip to a blank preview.
         url = f"/web/image/campsite.map/{self.id}/image"
         # Cache-buster so a newly uploaded image isn't served stale by the browser.
         return f"{url}?unique={self.write_date.isoformat()}" if self.write_date else url

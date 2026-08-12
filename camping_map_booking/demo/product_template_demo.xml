@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <odoo noupdate="1">
+<!--
     <record id="product_template_demo_pitch_a" model="product.template">
         <field name="name">Pitch A1</field>
         <field name="type">service</field>
@@ -9,7 +10,7 @@
         <field name="service_type">manual</field>
         <field name="invoice_policy">order</field>
         <field name="website_published" eval="True" />
-        <field name="camping_map_zone_id" ref="camping_map_zone_demo_1" />
+        <field name="planning_role_id" ref="planning_role_demo_pitch_a" />
     </record>
 
     <record id="product_template_demo_pitch_b" model="product.template">
@@ -21,7 +22,7 @@
         <field name="service_type">manual</field>
         <field name="invoice_policy">order</field>
         <field name="website_published" eval="True" />
-        <field name="camping_map_zone_id" ref="camping_map_zone_demo_2" />
+        <field name="planning_role_id" ref="planning_role_demo_pitch_b" />
     </record>
 
     <record id="product_template_demo_pitch_c" model="product.template">
@@ -33,6 +34,7 @@
         <field name="service_type">manual</field>
         <field name="invoice_policy">order</field>
         <field name="website_published" eval="True" />
-        <field name="camping_map_zone_id" ref="camping_map_zone_demo_3" />
+        <field name="planning_role_id" ref="planning_role_demo_pitch_c" />
     </record>
+    -->
 </odoo>

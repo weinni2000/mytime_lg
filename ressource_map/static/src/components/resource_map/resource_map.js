@@ -22,13 +22,11 @@ export class ResourceMap extends Component {
         this.updateAvailableHeight = () => {
             const image = this.mapImageRef.el;
             if (image) {
-                const rect = image.getBoundingClientRect();
-                this.state.availableHeight = Math.max(
-                    120,
-                    window.innerHeight - rect.top - 24
-                );
+                // Target close to the full window height regardless of where the
+                // image sits on the page - the page scrolls to reveal the rest.
+                this.state.availableHeight = Math.max(120, window.innerHeight - 48);
                 // Drives the legend size so it stays proportional to the map.
-                this.state.mapWidth = rect.width;
+                this.state.mapWidth = image.getBoundingClientRect().width;
             }
         };
         this.state = useState({

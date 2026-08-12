@@ -1,6 +1,7 @@
 {
     "name": "Gantt Maps",
     "version": "19.0.1.0.0",
+    "author": "mytime.click",
     "category": "Hidden",
     "license": "OEEL-1",
     "depends": ["booking_engine", "camping_map_booking", "ressource_map", "web_gantt"],

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo noupdate="0">
+    <record id="planning_role_demo_tentalo_1" model="planning.role">
+        <field name="name">Tentalo 1</field>
+        <field name="x_is_a_room_offer">True</field>
+        <field
+            name="allowed_vehicle_type_ids"
+            eval="[(6, 0, [ref('camping_vehicle_type_tent')])]"
+        />
+    </record>
+
+    <record id="planning_role_demo_tentalo_2" model="planning.role">
+        <field name="name">Tentalo 2</field>
+        <field name="x_is_a_room_offer">True</field>
+        <field
+            name="allowed_vehicle_type_ids"
+            eval="[(6, 0, [ref('camping_vehicle_type_tent')])]"
+        />
+    </record>
+</odoo>

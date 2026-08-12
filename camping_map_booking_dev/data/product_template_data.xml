@@ -9,7 +9,6 @@
         <field name="service_type">manual</field>
         <field name="invoice_policy">order</field>
         <field name="website_published" eval="True" />
-        <field name="camping_map_zone_id" ref="camping_map_zone_data_1" />
     </record>
 
     <record id="product_template_data_pitch_b" model="product.template">
@@ -21,7 +20,6 @@
         <field name="service_type">manual</field>
         <field name="invoice_policy">order</field>
         <field name="website_published" eval="True" />
-        <field name="camping_map_zone_id" ref="camping_map_zone_data_2" />
     </record>
 
     <record id="product_template_data_pitch_c" model="product.template">
@@ -33,6 +31,5 @@
         <field name="service_type">manual</field>
         <field name="invoice_policy">order</field>
         <field name="website_published" eval="True" />
-        <field name="camping_map_zone_id" ref="camping_map_zone_data_3" />
     </record>
 </odoo>

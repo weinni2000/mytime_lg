@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="rental_order_view_kanban_customer_from_passport" model="ir.ui.view">
+        <field name="name">sale.order.kanban.customer.from.passport</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale_renting.rental_order_view_kanban" />
+        <field name="arch" type="xml">
+            <xpath expr="//kanban" position="inside">
+                <header>
+                    <button
+                        name="%(id_scan_customer_wizard_action)d"
+                        type="action"
+                        string="Scan ID"
+                        icon="fa-plus"
+                        class="btn-secondary"
+                        display="always"
+                    />
+                </header>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="rental_order_view_tree_customer_from_passport" model="ir.ui.view">
+        <field name="name">sale.order.list.customer.from.passport</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale_renting.rental_order_view_tree" />
+        <field name="arch" type="xml">
+            <xpath expr="//list" position="inside">
+                <header>
+                    <button
+                        name="%(id_scan_customer_wizard_action)d"
+                        type="action"
+                        string="Scan ID"
+                        icon="fa-plus"
+                        class="btn-secondary"
+                        display="always"
+                    />
+                </header>
+            </xpath>
+        </field>
+    </record>
+</odoo>

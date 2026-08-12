@@ -3,7 +3,8 @@
     <!--
         Placeholder polygons in the source PNG's own pixel space. These are a rough visual
         approximation, not a surveyed layout - recalibrate by eye once the real map image is
-        in place and viewed at /camping/map.
+        in place, using the campsite.map "Map Preview" tab (Testing) or the pitch selection
+        step in camping_checkout.
     -->
     <record id="camping_map_zone_demo_1" model="camping.map.zone">
         <field name="name">Bereich A - Beim Hof</field>

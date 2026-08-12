@@ -7,11 +7,9 @@
     "author": "mytime.click",
     "website": "https://mytime.click",
     "depends": [
-        "booking_engine",
-        "campsite",
+        # "campsite", # manually check if it's installed
         "planning",
         "product",
-        "resource",
         "ressource_map",
         "website_sale_renting",
     ],
@@ -22,14 +20,12 @@
         "views/camping_vehicle_type_views.xml",
         "views/planning_role_views.xml",
         "views/campsite_map_views.xml",
-        "views/product_template_views.xml",
-        "views/camping_map_booking_templates.xml",
-        "data/website_menu.xml",
         "data/camping_vehicle_type_data.xml",
         "data/camping_map_state_data.xml",
     ],
     "demo": [
         "demo/camping_map_zone_demo.xml",
+        "demo/planning_role_demo.xml",
         "demo/product_template_demo.xml",
     ],
     "assets": {
@@ -44,4 +40,5 @@
     },
     "installable": True,
     "application": False,
+    "pre_init_hook": "pre_init_hook",
 }

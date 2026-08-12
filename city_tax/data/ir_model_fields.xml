@@ -250,6 +250,64 @@
         <field name="value">invalid</field>
     </record>
 
+    <!-- related pass-through fields used by the tourist-tax check dependencies -->
+    <record id="model_x_guests_line_x_guest_name" model="ir.model.fields">
+        <field name="ttype">char</field>
+        <field name="related">x_guest_partner_id.name</field>
+        <field name="field_description">Name</field>
+        <field name="model_id" ref="booking_engine.x_model_guests_line" />
+        <field name="name">x_guest_name</field>
+        <field name="readonly" eval="True" />
+        <field name="store" eval="False" />
+    </record>
+    <record id="model_x_guests_line_x_guest_country_id" model="ir.model.fields">
+        <field name="ttype">many2one</field>
+        <field name="related">x_guest_partner_id.country_id</field>
+        <field name="relation">res.country</field>
+        <field name="field_description">Country</field>
+        <field name="model_id" ref="booking_engine.x_model_guests_line" />
+        <field name="name">x_guest_country_id</field>
+        <field name="readonly" eval="True" />
+        <field name="store" eval="False" />
+    </record>
+    <record id="model_x_guests_line_x_calc_nationality_id" model="ir.model.fields">
+        <field name="ttype">many2one</field>
+        <field name="related">x_guest_partner_id.x_calc_nationality_id</field>
+        <field name="relation">res.country</field>
+        <field name="field_description">Calculated Nationality</field>
+        <field name="model_id" ref="booking_engine.x_model_guests_line" />
+        <field name="name">x_calc_nationality_id</field>
+        <field name="readonly" eval="True" />
+        <field name="store" eval="False" />
+    </record>
+    <record id="model_x_guests_line_x_guest_zip" model="ir.model.fields">
+        <field name="ttype">char</field>
+        <field name="related">x_guest_partner_id.zip</field>
+        <field name="field_description">Zip</field>
+        <field name="model_id" ref="booking_engine.x_model_guests_line" />
+        <field name="name">x_guest_zip</field>
+        <field name="readonly" eval="True" />
+        <field name="store" eval="False" />
+    </record>
+    <record id="model_x_guests_line_x_guest_city" model="ir.model.fields">
+        <field name="ttype">char</field>
+        <field name="related">x_guest_partner_id.city</field>
+        <field name="field_description">City</field>
+        <field name="model_id" ref="booking_engine.x_model_guests_line" />
+        <field name="name">x_guest_city</field>
+        <field name="readonly" eval="True" />
+        <field name="store" eval="False" />
+    </record>
+    <record id="model_x_guests_line_x_guest_street" model="ir.model.fields">
+        <field name="ttype">char</field>
+        <field name="related">x_guest_partner_id.street</field>
+        <field name="field_description">Street</field>
+        <field name="model_id" ref="booking_engine.x_model_guests_line" />
+        <field name="name">x_guest_street</field>
+        <field name="readonly" eval="True" />
+        <field name="store" eval="False" />
+    </record>
+
     <!-- Whether the guest line has what's required to submit to Feratel (Deskline):
          a name for every guest, plus country/nationality and address for the main guest. -->
     <record id="model_x_guests_line_x_tourist_tax_check" model="ir.model.fields">
@@ -353,15 +411,6 @@
     </record>
 
     <!-- related pass-through fields onto the guest partner -->
-    <record id="model_x_guests_line_x_guest_name" model="ir.model.fields">
-        <field name="ttype">char</field>
-        <field name="related">x_guest_partner_id.name</field>
-        <field name="field_description">Name</field>
-        <field name="model_id" ref="booking_engine.x_model_guests_line" />
-        <field name="name">x_guest_name</field>
-        <field name="readonly" eval="True" />
-        <field name="store" eval="False" />
-    </record>
     <record id="model_x_guests_line_x_guest_title_id" model="ir.model.fields">
         <field name="ttype">many2one</field>
         <field name="related">x_guest_partner_id.title_id</field>
@@ -390,16 +439,6 @@
         <field name="readonly" eval="True" />
         <field name="store" eval="False" />
     </record>
-    <record id="model_x_guests_line_x_guest_country_id" model="ir.model.fields">
-        <field name="ttype">many2one</field>
-        <field name="related">x_guest_partner_id.country_id</field>
-        <field name="relation">res.country</field>
-        <field name="field_description">Country</field>
-        <field name="model_id" ref="booking_engine.x_model_guests_line" />
-        <field name="name">x_guest_country_id</field>
-        <field name="readonly" eval="True" />
-        <field name="store" eval="False" />
-    </record>
     <record id="model_x_guests_line_x_guest_nationality" model="ir.model.fields">
         <field name="ttype">many2one</field>
         <field name="related">x_guest_partner_id.x_calc_nationality_id</field>
@@ -407,43 +446,6 @@
         <field name="field_description">Nationality</field>
         <field name="model_id" ref="booking_engine.x_model_guests_line" />
         <field name="name">x_guest_nationality</field>
-        <field name="readonly" eval="True" />
-        <field name="store" eval="False" />
-    </record>
-    <record id="model_x_guests_line_x_calc_nationality_id" model="ir.model.fields">
-        <field name="ttype">many2one</field>
-        <field name="related">x_guest_partner_id.x_calc_nationality_id</field>
-        <field name="relation">res.country</field>
-        <field name="field_description">Calculated Nationality</field>
-        <field name="model_id" ref="booking_engine.x_model_guests_line" />
-        <field name="name">x_calc_nationality_id</field>
-        <field name="readonly" eval="True" />
-        <field name="store" eval="False" />
-    </record>
-    <record id="model_x_guests_line_x_guest_zip" model="ir.model.fields">
-        <field name="ttype">char</field>
-        <field name="related">x_guest_partner_id.zip</field>
-        <field name="field_description">Zip</field>
-        <field name="model_id" ref="booking_engine.x_model_guests_line" />
-        <field name="name">x_guest_zip</field>
-        <field name="readonly" eval="True" />
-        <field name="store" eval="False" />
-    </record>
-    <record id="model_x_guests_line_x_guest_city" model="ir.model.fields">
-        <field name="ttype">char</field>
-        <field name="related">x_guest_partner_id.city</field>
-        <field name="field_description">City</field>
-        <field name="model_id" ref="booking_engine.x_model_guests_line" />
-        <field name="name">x_guest_city</field>
-        <field name="readonly" eval="True" />
-        <field name="store" eval="False" />
-    </record>
-    <record id="model_x_guests_line_x_guest_street" model="ir.model.fields">
-        <field name="ttype">char</field>
-        <field name="related">x_guest_partner_id.street</field>
-        <field name="field_description">Street</field>
-        <field name="model_id" ref="booking_engine.x_model_guests_line" />
-        <field name="name">x_guest_street</field>
         <field name="readonly" eval="True" />
         <field name="store" eval="False" />
     </record>
