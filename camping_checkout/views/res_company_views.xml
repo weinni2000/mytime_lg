@@ -10,6 +10,10 @@
                     <group>
                         <field name="x_local_tax_product_id" />
                         <field name="x_use_camping_pitch_map" />
+                        <field
+                            name="x_pitch_no_availability_message"
+                            invisible="not x_use_camping_pitch_map"
+                        />
                     </group>
                 </page>
             </xpath>

@@ -10,6 +10,40 @@
                 <p class="text-muted">Select a free pitch for your vehicle and stay.</p>
 
                 <div
+                    class="modal fade"
+                    id="o_pitch_no_availability_modal"
+                    tabindex="-1"
+                    role="dialog"
+                    aria-labelledby="o_pitch_no_availability_modal_label"
+                    aria-hidden="true"
+                >
+                    <div class="modal-dialog modal-dialog-centered" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5
+                                    class="modal-title"
+                                    id="o_pitch_no_availability_modal_label"
+                                >No available pitch</h5>
+                                <button
+                                    type="button"
+                                    class="btn-close"
+                                    data-bs-dismiss="modal"
+                                    aria-label="Close"
+                                />
+                            </div>
+                            <div class="modal-body" t-out="no_availability_message" />
+                            <div class="modal-footer">
+                                <button
+                                    type="button"
+                                    class="btn btn-primary"
+                                    data-bs-dismiss="modal"
+                                >Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div
                     t-if="error"
                     class="alert alert-danger"
                     role="alert"
@@ -94,6 +128,8 @@
                             data-input-id="pitch_resource_id"
                             data-button-id="pitch_continue_button"
                             data-label-id="selected_pitch_label"
+                            t-att-data-no-availability="'true' if no_availability else 'false'"
+                            data-modal-id="o_pitch_no_availability_modal"
                         >
                             <div class="o_camping_map_mount" />
                         </div>

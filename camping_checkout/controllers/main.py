@@ -18,6 +18,10 @@ from odoo.addons.camping_map_booking.models.camping_map_state import (
 from odoo.addons.website_sale.controllers.cart import Cart
 from odoo.addons.website_sale.controllers.main import WebsiteSale
 
+from ..models.res_company import (
+    DEFAULT_PITCH_NO_AVAILABILITY_MESSAGE,
+)
+
 CAMPING_STEP_HREF = "/shop/camping"
 PITCH_STEP_HREF = "/shop/pitch"
 DOG_SPECIES_XMLID = "animal.dog"
@@ -373,6 +377,7 @@ class WebsiteSaleCampingPitch(WebsiteSale):
             code: colors["label"] for code, colors in request.env["camping.map.state"]._get_frontend_map().items()
         }
         shapes = []
+        first_free_resource = request.env["resource.resource"]
         if campsite_map:
             for zone in campsite_map.zone_ids.filtered(
                 lambda item: item.active and item.points and not item.hide_on_frontend_map
@@ -385,6 +390,8 @@ class WebsiteSaleCampingPitch(WebsiteSale):
                         order_sudo.rental_start_date,
                         order_sudo.rental_return_date,
                     )
+                    if state == STATE_FREE and not first_free_resource:
+                        first_free_resource = resource
                     items.append(
                         {
                             "id": resource.id,
@@ -408,6 +415,10 @@ class WebsiteSaleCampingPitch(WebsiteSale):
                 shape["products"] = items
                 shapes.append(shape)
 
+        # Pre-populate with the first available pitch so the customer can continue
+        # immediately; they can still pick another free pitch on the map.
+        selected_pitch = order_sudo.pitch_resource_id or first_free_resource
+        no_availability = bool(campsite_map) and not selected_pitch
         values = {
             "website_sale_order": order_sudo,
             "order": order_sudo,
@@ -423,10 +434,14 @@ class WebsiteSaleCampingPitch(WebsiteSale):
                 if campsite_map and campsite_map.image
                 else "/camping_map_booking/static/src/img/camping_map.png"
             ),
-            "selected_pitch": order_sudo.pitch_resource_id,
+            "selected_pitch": selected_pitch,
             "map_legend_json": json.dumps(campsite_map._get_availability_legend()) if campsite_map else "[]",
             "map_legend_position": campsite_map._legend_position() if campsite_map else "none",
             "error": error,
+            "no_availability": no_availability,
+            "no_availability_message": (
+                order_sudo.company_id.x_pitch_no_availability_message or DEFAULT_PITCH_NO_AVAILABILITY_MESSAGE
+            ),
         }
         values.update(request.website._get_checkout_step_values())
         return values

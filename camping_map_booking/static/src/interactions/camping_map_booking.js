@@ -31,6 +31,18 @@ export class CampingMapBooking extends Interaction {
             };
         }
         this.mountComponent(mountEl, ResourceMap, props);
+
+        if (this.el.dataset.noAvailability === "true") {
+            this._showNoAvailabilityModal();
+        }
+    }
+
+    _showNoAvailabilityModal() {
+        const modalId = this.el.dataset.modalId;
+        const modalEl = modalId && document.getElementById(modalId);
+        if (modalEl && window.Modal) {
+            window.Modal.getOrCreateInstance(modalEl).show();
+        }
     }
 }
 
