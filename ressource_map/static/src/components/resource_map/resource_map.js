@@ -1,5 +1,54 @@
 import {Component, onMounted, onWillUnmount, useRef, useState} from "@odoo/owl";
 
+// --- Polygon geometry helpers for the proportional slice fill -------------
+
+function polygonArea(points) {
+    let area = 0;
+    for (let i = 0; i < points.length; i++) {
+        const [x1, y1] = points[i];
+        const [x2, y2] = points[(i + 1) % points.length];
+        area += x1 * y2 - x2 * y1;
+    }
+    return Math.abs(area) / 2;
+}
+
+// Sutherland-Hodgman clip against a vertical line. keepLeft keeps x <= cut,
+// otherwise x >= cut. A half-plane is convex, so this is exact for concave
+// polygons too.
+function clipVertical(points, cut, keepLeft) {
+    const out = [];
+    const inside = (point) => (keepLeft ? point[0] <= cut : point[0] >= cut);
+    for (let i = 0; i < points.length; i++) {
+        const cur = points[i];
+        const next = points[(i + 1) % points.length];
+        const curIn = inside(cur);
+        const nextIn = inside(next);
+        if (curIn) {
+            out.push(cur);
+        }
+        if (curIn !== nextIn && next[0] !== cur[0]) {
+            const t = (cut - cur[0]) / (next[0] - cur[0]);
+            out.push([cut, cur[1] + t * (next[1] - cur[1])]);
+        }
+    }
+    return out;
+}
+
+// Binary-search the x where the area left of it equals targetArea.
+function cutXForArea(points, minX, maxX, targetArea) {
+    let lo = minX;
+    let hi = maxX;
+    for (let iter = 0; iter < 40; iter++) {
+        const mid = (lo + hi) / 2;
+        if (polygonArea(clipVertical(points, mid, true)) < targetArea) {
+            lo = mid;
+        } else {
+            hi = mid;
+        }
+    }
+    return (lo + hi) / 2;
+}
+
 export class ResourceMap extends Component {
     static template = "ressource_map.ResourceMap";
     static props = {
@@ -15,6 +64,7 @@ export class ResourceMap extends Component {
         onSelectItem: {type: Function, optional: true},
         legend: {type: Array, optional: true},
         legendPosition: {type: String, optional: true},
+        labelScale: {type: Number, optional: true},
     };
 
     setup() {
@@ -275,6 +325,29 @@ export class ResourceMap extends Component {
         return {x: total.x / points.length, y: total.y / points.length};
     }
 
+    get labelScale() {
+        return this.props.labelScale || 1;
+    }
+
+    get labelFontPx() {
+        // Base font size of the marker code (see SCSS), scaled by the slider.
+        return 11 * this.labelScale;
+    }
+
+    zoneMarkerBox(zone) {
+        // A box centered on the zone centroid so the label stays centered as it
+        // grows/shrinks with the slider.
+        const center = this.zoneLabelPosition(zone);
+        const width = 140 * this.labelScale;
+        const height = 44 * this.labelScale;
+        return {
+            x: center.x - width / 2,
+            y: center.y - height / 2,
+            width,
+            height,
+        };
+    }
+
     zoneTopRight(zone) {
         const points = this.zonePoints(zone);
         return {
@@ -330,6 +403,15 @@ export class ResourceMap extends Component {
         if (zone.state) {
             classes.push(`o_camping_map_zone_state_${zone.state}`);
         }
+        // Colour comes from a CSS class (e.g. the Gantt palette "o_gantt_color_N")
+        // resolved by the stylesheet, so the map tracks the theme. Empty pitches
+        // (nothing booked) get their own muted class.
+        if (zone.color_class) {
+            classes.push(zone.color_class);
+        }
+        if (zone.empty) {
+            classes.push("o_camping_map_zone_empty");
+        }
         if (
             this.state.selectedItemId &&
             !zone.products.some((item) => item.id === this.state.selectedItemId)
@@ -352,19 +434,67 @@ export class ResourceMap extends Component {
         // Feed the zone's availability colors (from the camping.map.state model)
         // into CSS custom properties so the SCSS renders straight from them.
         const colors = zone.colors;
-        if (!colors) {
-            return undefined;
-        }
         const vars = [];
-        if (colors.fill) {
-            vars.push(`--o-zone-fill: ${colors.fill}`);
+        if (colors) {
+            if (colors.fill) {
+                vars.push(`--o-zone-fill: ${colors.fill}`);
+            }
+            if (colors.stroke) {
+                vars.push(`--o-zone-stroke: ${colors.stroke}`);
+            }
+            if (colors.hover) {
+                vars.push(`--o-zone-hover: ${colors.hover}`);
+            }
         }
-        if (colors.stroke) {
-            vars.push(`--o-zone-stroke: ${colors.stroke}`);
-        }
-        if (colors.hover) {
-            vars.push(`--o-zone-hover: ${colors.hover}`);
+        // When a zone carries occupancy segments it is filled transparent so
+        // the proportional slice polygons (drawn on top) show through.
+        if (this.hasParts(zone)) {
+            vars.push("fill: transparent");
         }
         return vars.length ? vars.join("; ") : undefined;
+    }
+
+    hasParts(zone) {
+        return Boolean(zone.segments && zone.segments.length > 1);
+    }
+
+    zonePolygonParts(zone) {
+        // Split the polygon into vertical bands whose areas are proportional to
+        // the segment fractions, each drawn as a solid-colored polygon. This
+        // splits by real area (not a bounding-box gradient), so a skewed pitch
+        // still shows each color at its true share.
+        if (!this.hasParts(zone)) {
+            return [];
+        }
+        const points = this.zonePoints(zone);
+        const totalArea = polygonArea(points);
+        if (points.length < 3 || !totalArea) {
+            return [];
+        }
+        const xs = points.map(([x]) => x);
+        const minX = Math.min(...xs);
+        const maxX = Math.max(...xs);
+        const parts = [];
+        let cumulative = 0;
+        let leftX = minX;
+        zone.segments.forEach((segment, index) => {
+            cumulative += segment.fraction;
+            const rightX =
+                index === zone.segments.length - 1
+                    ? maxX
+                    : cutXForArea(points, minX, maxX, totalArea * cumulative);
+            const band = clipVertical(clipVertical(points, rightX, true), leftX, false);
+            if (band.length >= 3) {
+                parts.push({
+                    points: band.map((point) => point.join(",")).join(" "),
+                    // Either an explicit fill (colors.fill) or a CSS colour class
+                    // (color_class, e.g. the Gantt palette) resolved by the sheet.
+                    color: segment.colors && segment.colors.fill,
+                    colorClass: segment.color_class,
+                });
+            }
+            leftX = rightX;
+        });
+        return parts;
     }
 }

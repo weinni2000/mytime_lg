@@ -27,6 +27,7 @@
                     <group>
                         <field name="name" />
                         <field name="active" invisible="1" />
+                        <field name="label_scale" invisible="1" />
                         <field name="image" /> <!-- widget="image"-->
                         <field name="show_legend" />
                         <field name="legend_position" invisible="not show_legend" />

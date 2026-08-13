@@ -1,13 +1,13 @@
 {
     "name": "Camping Map Booking",
     "summary": "Interactive campsite map with clickable areas linking to rentable pitches.",
-    "version": "19.0.1.1.3",
+    "version": "19.0.1.1.6",
     "category": "Sales/Rental",
     "license": "OPL-1",
     "author": "mytime.click",
     "website": "https://mytime.click",
     "depends": [
-        # "campsite", # manually check if it's installed
+        # "campsite", # no industry app
         "planning",
         "product",
         "ressource_map",
@@ -24,6 +24,7 @@
         "data/camping_map_state_data.xml",
     ],
     "demo": [
+        "demo/campsite_map_demo.xml",
         "demo/camping_map_zone_demo.xml",
         "demo/planning_role_demo.xml",
         "demo/product_template_demo.xml",

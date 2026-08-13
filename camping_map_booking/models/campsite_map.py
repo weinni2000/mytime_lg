@@ -26,6 +26,10 @@ class CampsiteMap(models.Model):
         required=True,
         help="Where the color legend sits on the map.",
     )
+    label_scale = fields.Float(
+        default=1.0,
+        help="Zoom factor for the zone labels shown on the map preview.",
+    )
     zone_ids = fields.One2many("camping.map.zone", "map_id", string="Zones")
     preview_data = fields.Json(compute="_compute_preview_data")
     refresh = fields.Boolean(help="Toggle to force the tested availability to recompute.")

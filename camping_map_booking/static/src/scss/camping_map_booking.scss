@@ -138,6 +138,13 @@
     pointer-events: none;
 }
 
+// Proportional occupancy slices painted over a zone (see ResourceMap
+// zonePolygonParts). Non-interactive so hover/click stay with the zone below.
+.o_camping_map_zone_part {
+    stroke: none;
+    pointer-events: none;
+}
+
 .o_camping_map_zone_remove {
     cursor: pointer;
 
@@ -165,14 +172,17 @@
     justify-content: center;
     width: 100%;
     height: 100%;
-    font-size: 11px;
+    // Font size is driven by the label-size slider (see ResourceMap.labelFontPx);
+    // 11px is the fallback when no scale is supplied.
+    font-size: var(--o-label-font, 11px);
     font-weight: 700;
     line-height: 1.1;
     color: #333;
+    text-align: center;
     text-shadow: 0 0 3px rgba(255, 255, 255, 0.9), 0 0 3px rgba(255, 255, 255, 0.9);
 
     .fa {
-        font-size: 14px;
+        font-size: calc(var(--o-label-font, 11px) * 1.27);
         margin-bottom: 2px;
     }
 }

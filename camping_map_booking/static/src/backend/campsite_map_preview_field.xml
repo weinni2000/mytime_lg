@@ -45,6 +45,19 @@
                     class="btn btn-primary"
                     t-on-click="saveZone"
                 >Save Zone</button>
+                <div class="d-flex flex-column">
+                    <label class="form-label">Label size</label>
+                    <input
+                        type="range"
+                        class="form-range"
+                        min="0.5"
+                        max="3"
+                        step="0.1"
+                        style="width: 130px;"
+                        t-att-value="labelScale"
+                        t-on-input="onLabelScaleChange"
+                    />
+                </div>
             </div>
             <p class="text-muted" t-if="state.drawing">
                 Click around the boundary of the zone. The zone closes automatically when saved.
@@ -57,6 +70,7 @@
                 draftPoints="draftPoints"
                 legend="legend"
                 legendPosition="legendPosition"
+                labelScale="labelScale"
                 onMapClick.bind="addPoint"
                 onRemoveZone.bind="removeZone"
                 onCloseDraft.bind="saveZone"

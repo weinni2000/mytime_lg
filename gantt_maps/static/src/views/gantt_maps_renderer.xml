@@ -5,23 +5,128 @@
             <aside
                 t-if="mapState.imageUrl"
                 class="o_gantt_maps_map flex-shrink-0 overflow-auto border-end p-2"
-                style="width: 35%;"
+                t-att-class="{o_gantt_maps_map_fullscreen: mapState.fullscreen}"
             >
                 <div class="mb-2">
-                    <label class="form-label" for="gantt_maps_night">Night</label>
-                    <input
-                        id="gantt_maps_night"
-                        class="form-control"
-                        type="date"
-                        t-model="mapState.night"
-                        t-on-change="loadResourceMap"
-                    />
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div class="btn-group btn-group-sm" role="group">
+                        <input
+                                id="gantt_maps_mode_night"
+                                type="radio"
+                                class="btn-check"
+                                value="night"
+                                t-model="mapState.mode"
+                                t-on-change="onModeChange"
+                            />
+                        <label
+                                class="btn btn-outline-primary"
+                                for="gantt_maps_mode_night"
+                            >Point in time</label>
+                        <input
+                                id="gantt_maps_mode_range"
+                                type="radio"
+                                class="btn-check"
+                                value="range"
+                                t-model="mapState.mode"
+                                t-on-change="onModeChange"
+                            />
+                        <label
+                                class="btn btn-outline-primary"
+                                for="gantt_maps_mode_range"
+                            >Date range</label>
+                        </div>
+                        <button
+                            type="button"
+                            class="btn btn-sm btn-light"
+                            t-on-click="toggleFullscreen"
+                            t-att-title="mapState.fullscreen ? 'Exit full screen' : 'Full screen'"
+                        >
+                            <i
+                                t-att-class="mapState.fullscreen ? 'fa fa-compress' : 'fa fa-expand'"
+                            />
+                        </button>
+                    </div>
+                    <div class="form-check">
+                        <input
+                            id="gantt_maps_show_free"
+                            type="checkbox"
+                            class="form-check-input"
+                            t-model="mapState.showFree"
+                            t-on-change="loadResourceMap"
+                        />
+                        <label
+                            class="form-check-label"
+                            for="gantt_maps_show_free"
+                        >Show free time (white)</label>
+                    </div>
+                    <div t-if="mapState.mode === 'night'">
+                        <label
+                            class="form-label"
+                            for="gantt_maps_point"
+                        >Date &amp; time</label>
+                        <input
+                            id="gantt_maps_point"
+                            class="form-control"
+                            type="datetime-local"
+                            t-model="mapState.point"
+                            t-on-change="loadResourceMap"
+                        />
+                    </div>
+                    <div t-else="">
+                        <div
+                            class="d-flex justify-content-between align-items-center mb-1"
+                        >
+                            <small class="text-muted">
+                                <t t-if="mapState.manualRange">Manual range</t>
+                                <t t-else="">Following the schedule</t>
+                            </small>
+                            <button
+                                type="button"
+                                class="btn btn-sm btn-link p-0"
+                                t-on-click="toggleManualRange"
+                            >
+                                <t t-if="mapState.manualRange">Follow schedule</t>
+                                <t t-else="">Enter manually</t>
+                            </button>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <div class="flex-grow-1">
+                                <label
+                                    class="form-label"
+                                    for="gantt_maps_range_start"
+                                >Check-in</label>
+                                <input
+                                    id="gantt_maps_range_start"
+                                    class="form-control"
+                                    type="date"
+                                    t-model="mapState.rangeStart"
+                                    t-att-disabled="!mapState.manualRange"
+                                    t-on-change="loadResourceMap"
+                                />
+                            </div>
+                            <div class="flex-grow-1">
+                                <label
+                                    class="form-label"
+                                    for="gantt_maps_range_end"
+                                >Check-out</label>
+                                <input
+                                    id="gantt_maps_range_end"
+                                    class="form-control"
+                                    type="date"
+                                    t-model="mapState.rangeEnd"
+                                    t-att-disabled="!mapState.manualRange"
+                                    t-on-change="loadResourceMap"
+                                />
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <ResourceMap
                     zones="mapState.zones"
                     mapImageUrl="mapState.imageUrl"
                     legend="mapState.legend"
                     legendPosition="mapState.legendPosition"
+                    labelScale="mapState.labelScale"
                 />
             </aside>
             <section

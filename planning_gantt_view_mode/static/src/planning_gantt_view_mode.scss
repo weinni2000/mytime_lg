@@ -1,0 +1,12 @@
+.o_gantt_view .o_gantt_renderer .o_planning_gantt_view_mode_title {
+    align-content: center;
+    flex-wrap: wrap;
+    gap: 0.25rem !important;
+    min-width: 0;
+
+    > span {
+        flex-basis: 100%;
+        min-width: 0;
+        text-align: center;
+    }
+}

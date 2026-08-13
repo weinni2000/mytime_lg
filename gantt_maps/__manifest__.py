@@ -4,7 +4,12 @@
     "author": "mytime.click",
     "category": "Hidden",
     "license": "OEEL-1",
-    "depends": ["booking_engine", "camping_map_booking", "ressource_map", "web_gantt"],
+    "depends": [
+        # "booking_engine", # industry app
+        "camping_map_booking",
+        "ressource_map",
+        "web_gantt",
+    ],
     "data": ["views/planning_slot_views.xml"],
     "assets": {
         "web.assets_backend_lazy": [

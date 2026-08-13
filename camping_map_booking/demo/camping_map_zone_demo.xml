@@ -1,26 +1,214 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<odoo noupdate="1">
+<odoo noupdate="0">
     <!--
-        Placeholder polygons in the source PNG's own pixel space. These are a rough visual
-        approximation, not a surveyed layout - recalibrate by eye once the real map image is
-        in place, using the campsite.map "Map Preview" tab (Testing) or the pitch selection
-        step in camping_checkout.
+        Polygon coordinates exported from the plane_map_test database. The
+        points use the demo map image's own pixel space.
     -->
-    <record id="camping_map_zone_demo_1" model="camping.map.zone">
-        <field name="name">Bereich A - Beim Hof</field>
+    <record id="camping_map_zone_demo_101" model="camping.map.zone">
+        <field name="name">101</field>
+        <field name="code">101</field>
+        <field name="symbol">fa-truck</field>
+        <field name="map_id" ref="campsite_map_demo_test" />
         <field name="sequence">10</field>
-        <field name="points">370,620 760,620 760,1080 370,1080</field>
+        <field name="points">331,50 416,43 420,111 336,118</field>
+        <field
+            name="resource_ids"
+            eval="[(6, 0, [ref('campsite.planning_resource_6')])]"
+        />
     </record>
 
-    <record id="camping_map_zone_demo_2" model="camping.map.zone">
-        <field name="name">Bereich B - Straßenseite</field>
-        <field name="sequence">20</field>
-        <field name="points">760,620 1140,620 1140,1150 760,1150</field>
+    <record id="camping_map_zone_demo_102" model="camping.map.zone">
+        <field name="name">102</field>
+        <field name="code">102</field>
+        <field name="symbol">fa-truck</field>
+        <field name="map_id" ref="campsite_map_demo_test" />
+        <field name="sequence">10</field>
+        <field name="points">518,42 520,109 434,111 430,47</field>
+        <field
+            name="resource_ids"
+            eval="[(6, 0, [ref('campsite.planning_resource_7')])]"
+        />
     </record>
 
-    <record id="camping_map_zone_demo_3" model="camping.map.zone">
-        <field name="name">Bereich C - Wiese</field>
-        <field name="sequence">30</field>
-        <field name="points">370,1150 1140,1150 1140,1950 370,1950</field>
+    <record id="camping_map_zone_demo_103" model="camping.map.zone">
+        <field name="name">103</field>
+        <field name="code">103</field>
+        <field name="symbol">fa-truck</field>
+        <field name="map_id" ref="campsite_map_demo_test" />
+        <field name="sequence">10</field>
+        <field name="points">620,40 619,107 529,107 527,43</field>
+        <field
+            name="resource_ids"
+            eval="[(6, 0, [ref('campsite.planning_resource_8')])]"
+        />
+    </record>
+
+    <record id="camping_map_zone_demo_201" model="camping.map.zone">
+        <field name="name">201</field>
+        <field name="code">201</field>
+        <field name="symbol">fa-truck</field>
+        <field name="map_id" ref="campsite_map_demo_test" />
+        <field name="sequence">10</field>
+        <field name="points">282,179 271,231 344,237 348,181</field>
+        <field
+            name="resource_ids"
+            eval="[(6, 0, [ref('campsite.planning_resource_1')])]"
+        />
+    </record>
+
+    <record id="camping_map_zone_demo_202" model="camping.map.zone">
+        <field name="name">202</field>
+        <field name="code">202</field>
+        <field name="symbol">fa-truck</field>
+        <field name="map_id" ref="campsite_map_demo_test" />
+        <field name="sequence">10</field>
+        <field name="points">342,295 345,238 273,235 267,287</field>
+        <field
+            name="resource_ids"
+            eval="[(6, 0, [ref('campsite.planning_resource_2')])]"
+        />
+    </record>
+
+    <record id="camping_map_zone_demo_203" model="camping.map.zone">
+        <field name="name">203</field>
+        <field name="code">203</field>
+        <field name="symbol">fa-truck</field>
+        <field name="map_id" ref="campsite_map_demo_test" />
+        <field name="sequence">10</field>
+        <field name="points">338,348 341,293 266,289 264,343</field>
+        <field
+            name="resource_ids"
+            eval="[(6, 0, [ref('campsite.planning_resource_3')])]"
+        />
+    </record>
+
+    <record id="camping_map_zone_demo_204" model="camping.map.zone">
+        <field name="name">204</field>
+        <field name="code">204</field>
+        <field name="symbol">fa-truck</field>
+        <field name="map_id" ref="campsite_map_demo_test" />
+        <field name="sequence">10</field>
+        <field name="points">334,402 340,348 263,347 258,397</field>
+        <field
+            name="resource_ids"
+            eval="[(6, 0, [ref('campsite.planning_resource_4')])]"
+        />
+    </record>
+
+    <record id="camping_map_zone_demo_205" model="camping.map.zone">
+        <field name="name">205</field>
+        <field name="code">205</field>
+        <field name="symbol">fa-truck</field>
+        <field name="map_id" ref="campsite_map_demo_test" />
+        <field name="sequence">10</field>
+        <field name="points">329,457 334,403 259,398 256,454</field>
+        <field
+            name="resource_ids"
+            eval="[(6, 0, [ref('campsite.planning_resource_5')])]"
+        />
+    </record>
+
+    <record id="camping_map_zone_demo_bungalow_10" model="camping.map.zone">
+        <field name="name">Bungalow 10</field>
+        <field name="code">B10</field>
+        <field name="symbol">fa-home</field>
+        <field name="map_id" ref="campsite_map_demo_test" />
+        <field name="sequence">10</field>
+        <field name="points">624,289 618,351 722,354 722,290</field>
+        <field
+            name="resource_ids"
+            eval="[(6, 0, [ref('campsite.planning_resource_14')])]"
+        />
+    </record>
+
+    <record id="camping_map_zone_demo_bungalow_11" model="camping.map.zone">
+        <field name="name">Bungalow 11</field>
+        <field name="code">B11</field>
+        <field name="symbol">fa-home</field>
+        <field name="map_id" ref="campsite_map_demo_test" />
+        <field name="sequence">10</field>
+        <field name="points">615,416 723,415 725,352 618,348</field>
+        <field
+            name="resource_ids"
+            eval="[(6, 0, [ref('campsite.planning_resource_15')])]"
+        />
+    </record>
+
+    <record id="camping_map_zone_demo_bungalow_12" model="camping.map.zone">
+        <field name="name">Bungalow 12</field>
+        <field name="code">B12</field>
+        <field name="symbol">fa-home</field>
+        <field name="map_id" ref="campsite_map_demo_test" />
+        <field name="sequence">10</field>
+        <field name="points">613,480 618,413 721,413 718,481</field>
+        <field
+            name="resource_ids"
+            eval="[(6, 0, [ref('campsite.planning_resource_16')])]"
+        />
+    </record>
+
+    <record id="camping_map_zone_demo_bungalow_20" model="camping.map.zone">
+        <field name="name">Bungalow 20</field>
+        <field name="code">B20</field>
+        <field name="symbol">fa-home</field>
+        <field name="map_id" ref="campsite_map_demo_test" />
+        <field name="sequence">10</field>
+        <field name="points">772,301 769,354 892,352 885,296</field>
+        <field
+            name="resource_ids"
+            eval="[(6, 0, [ref('campsite.planning_resource_11')])]"
+        />
+    </record>
+
+    <record id="camping_map_zone_demo_bungalow_21" model="camping.map.zone">
+        <field name="name">Bungalow 21</field>
+        <field name="code">B21</field>
+        <field name="symbol">fa-home</field>
+        <field name="map_id" ref="campsite_map_demo_test" />
+        <field name="sequence">10</field>
+        <field name="points">770,416 896,416 889,356 772,353</field>
+        <field
+            name="resource_ids"
+            eval="[(6, 0, [ref('campsite.planning_resource_12')])]"
+        />
+    </record>
+
+    <record id="camping_map_zone_demo_bungalow_22" model="camping.map.zone">
+        <field name="name">Bungalow 22</field>
+        <field name="code">B22</field>
+        <field name="symbol">fa-home</field>
+        <field name="map_id" ref="campsite_map_demo_test" />
+        <field name="sequence">10</field>
+        <field name="points">770,478 899,480 894,416 769,416</field>
+        <field
+            name="resource_ids"
+            eval="[(6, 0, [ref('campsite.planning_resource_13')])]"
+        />
+    </record>
+
+    <record id="camping_map_zone_demo_tentalo_1" model="camping.map.zone">
+        <field name="name">Tentalo 1</field>
+        <field name="code">T1</field>
+        <field name="symbol">fa-home</field>
+        <field name="map_id" ref="campsite_map_demo_test" />
+        <field name="sequence">10</field>
+        <field name="points">246,497 247,559 325,552 317,496</field>
+        <field
+            name="resource_ids"
+            eval="[(6, 0, [ref('campsite.planning_resource_9')])]"
+        />
+    </record>
+
+    <record id="camping_map_zone_demo_tentalo_2" model="camping.map.zone">
+        <field name="name">Tentalo 2</field>
+        <field name="code">T2</field>
+        <field name="symbol">fa-home</field>
+        <field name="map_id" ref="campsite_map_demo_test" />
+        <field name="sequence">10</field>
+        <field name="points">250,569 326,568 333,624 253,623</field>
+        <field
+            name="resource_ids"
+            eval="[(6, 0, [ref('campsite.planning_resource_10')])]"
+        />
     </record>
 </odoo>

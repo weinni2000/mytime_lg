@@ -1,0 +1,1 @@
+* mytime.click

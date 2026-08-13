@@ -56,6 +56,16 @@ export class CampsiteMapPreviewField extends Component {
         return zone ? zone.name : "";
     }
 
+    get labelScale() {
+        return this.props.record.data.label_scale || 1;
+    }
+
+    onLabelScaleChange(ev) {
+        // Persist on the record so the size survives a save and is shared with
+        // the Testing tab; the form's dirty/save flow handles storing it.
+        this.props.record.update({label_scale: Number(ev.target.value) || 1});
+    }
+
     onZoneChange(ev) {
         const zoneId = Number(ev.target.value) || null;
         this.state.selectedZoneId = zoneId;

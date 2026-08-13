@@ -31,6 +31,10 @@ export class CampingZoneMapField extends Component {
     get legendPosition() {
         return this.previewData.legend_position || "none";
     }
+
+    get labelScale() {
+        return this.props.record.data.label_scale || 1;
+    }
 }
 
 registry.category("fields").add("camping_zone_map", {

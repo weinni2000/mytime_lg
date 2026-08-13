@@ -6,7 +6,7 @@
                 t-att-src="props.mapImageUrl"
                 class="o_camping_map_img img-fluid"
                 t-ref="mapImage"
-                t-att-style="state.availableHeight ? 'height: ' + state.availableHeight + 'px' : undefined"
+                t-att-style="state.availableHeight ? 'max-height: ' + state.availableHeight + 'px' : undefined"
                 t-on-load="onImageLoad"
                 alt="Camping map"
             />
@@ -14,7 +14,7 @@
                 t-if="state.naturalWidth"
                 class="o_camping_map_svg"
                 t-attf-viewBox="0 0 {{state.naturalWidth}} {{state.naturalHeight}}"
-                preserveAspectRatio="none"
+                preserveAspectRatio="xMidYMid meet"
                 t-on-click="onMapClick"
             >
                 <t
@@ -31,6 +31,16 @@
                         t-on-mouseleave="() => this.onZoneHover(null)"
                         t-on-click="(ev) => this.onZoneClick(zone, ev)"
                     />
+                    <!-- Proportional occupancy slices, drawn on top of the
+                         (transparent) zone so clicks still hit the zone. -->
+                    <polygon
+                        t-foreach="zonePolygonParts(zone)"
+                        t-as="part"
+                        t-key="'part-' + zone.id + '-' + part_index"
+                        t-attf-class="o_camping_map_zone_part {{part.colorClass or ''}}"
+                        t-att-points="part.points"
+                        t-att-style="part.color ? ('fill: ' + part.color) : undefined"
+                    />
                     <g
                         t-if="props.editable and props.onRemoveZone"
                         class="o_camping_map_zone_remove"
@@ -44,15 +54,16 @@
                     </g>
                     <foreignObject
                         t-if="zone.code"
-                        t-att-x="zoneLabelPosition(zone).x - 25"
-                        t-att-y="zoneLabelPosition(zone).y - 25"
-                        width="50"
-                        height="50"
+                        t-att-x="zoneMarkerBox(zone).x"
+                        t-att-y="zoneMarkerBox(zone).y"
+                        t-att-width="zoneMarkerBox(zone).width"
+                        t-att-height="zoneMarkerBox(zone).height"
                         class="o_camping_map_zone_marker"
                     >
                         <div
                             xmlns="http://www.w3.org/1999/xhtml"
                             class="o_camping_map_zone_marker_badge"
+                            t-attf-style="--o-label-font: {{labelFontPx}}px"
                         >
                             <i t-if="zone.symbol" t-attf-class="fa {{zone.symbol}}" />
                             <span t-esc="zone.code" />
@@ -132,8 +143,8 @@
                     class="o_camping_map_legend_item"
                 >
                     <span
-                        class="o_camping_map_legend_swatch"
-                        t-attf-style="background-color: {{entry.color}};"
+                        t-attf-class="o_camping_map_legend_swatch {{entry.color_class or ''}}"
+                        t-att-style="entry.color ? ('background-color: ' + entry.color) : undefined"
                     />
                     <span t-esc="entry.label" />
                 </div>

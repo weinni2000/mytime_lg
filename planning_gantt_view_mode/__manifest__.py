@@ -2,7 +2,7 @@
     "name": "Planning Gantt View Mode",
     "summary": "Toggle the Planning schedule between planning mode (all bookable"
     " resources) and watching mode (only booked rows).",
-    "version": "19.0.1.0.0",
+    "version": "19.0.1.0.1",
     "category": "Human Resources/Planning",
     "license": "OPL-1",
     "author": "mytime.click",

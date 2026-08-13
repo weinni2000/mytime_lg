@@ -8,6 +8,7 @@
                 mapImageUrl="mapImageUrl"
                 legend="legend"
                 legendPosition="legendPosition"
+                labelScale="labelScale"
             />
             <p t-else="" class="text-muted mb-0">
                 Set this zone's map and draw its outline to preview it here.

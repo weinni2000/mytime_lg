@@ -1,6 +1,6 @@
 {
     "name": "Resource Map",
-    "version": "19.0.1.0.0",
+    "version": "19.0.1.0.1",
     "summary": "Reusable OWL resource map component.",
     "category": "Technical",
     "license": "LGPL-3",

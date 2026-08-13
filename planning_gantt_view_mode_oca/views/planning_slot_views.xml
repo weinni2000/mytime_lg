@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="booking_engine_planning_timeline_view" model="ir.ui.view">
+        <field name="name">planning.slot.timeline.booking.engine</field>
+        <field name="model">planning.slot</field>
+        <field name="type">timeline</field>
+        <field name="arch" type="xml">
+            <timeline
+                date_start="start_datetime"
+                date_stop="end_datetime"
+                default_group_by="resource_id"
+                event_open_popup="true"
+                colors="#ec7063: overlap_slot_count &gt; 0; #f0ad4e: publication_warning or (request_to_switch and not is_past and not allow_self_unassign); #5bc0de: state == 'draft'"
+            >
+                <field name="name" />
+                <field name="resource_id" />
+                <field name="role_id" />
+                <field name="employee_id" />
+                <field name="state" />
+                <field name="allocated_hours" />
+                <field name="overlap_slot_count" />
+                <field name="publication_warning" />
+                <field name="request_to_switch" />
+                <field name="is_past" />
+                <field name="allow_self_unassign" />
+            </timeline>
+        </field>
+    </record>
+
+    <!--
+        The timeline mode is attached to the schedule action by post_init_hook /
+        migration (see hooks.py), NOT here. booking_engine and gantt_maps also
+        edit this action's view_ids/view_mode; a declarative (5,0,0) reset or
+        view_mode overwrite made the modules clobber each other's tabs.
+    -->
+</odoo>

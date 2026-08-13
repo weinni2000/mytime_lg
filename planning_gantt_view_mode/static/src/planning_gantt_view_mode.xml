@@ -42,8 +42,9 @@
         <xpath expr="//b[hasclass('o_gantt_title')]" position="replace">
             <b
                 class="o_gantt_title d-flex align-items-center justify-content-center gap-2 bg-100 position-sticky start-0 p-2 border-end"
+                t-att-class="{ o_planning_gantt_view_mode_title: model.toggleWatchingMode }"
             >
-                <span t-esc="model.metaData.string" />
+                <span class="text-truncate" t-esc="model.metaData.string" />
                 <button
                     t-if="model.toggleWatchingMode"
                     type="button"

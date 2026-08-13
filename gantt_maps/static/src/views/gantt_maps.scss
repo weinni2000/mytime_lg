@@ -1,9 +1,64 @@
+// The map panel takes a third of the split by default; the full-screen toggle
+// blows it up to cover the whole viewport (a solid, theme-aware background so
+// the schedule behind it doesn't show through).
+.o_gantt_maps_map {
+    width: 35%;
+
+    &.o_gantt_maps_map_fullscreen {
+        position: fixed;
+        inset: 0;
+        width: 100vw;
+        max-width: 100vw;
+        height: 100vh;
+        z-index: 1050;
+        background-color: $o-view-background-color;
+    }
+}
+
 .o_gantt_maps_map .o_camping_map_zone {
+    // Colours come from the `o_gantt_color_<n>` classes below, so render fills
+    // at full opacity like the Gantt pills.
     fill-opacity: 1;
 }
 
-.o_gantt_maps_map
-    .o_camping_map_zone:not(.o_camping_map_zone_state_free):not(.o_camping_map_zone_state_occupied):not(.o_camping_map_zone_state_not_suitable) {
-    fill: #6c757d;
-    stroke: #495057;
+// Colour the pitches from the very same palette the Gantt pills use, so the map
+// matches the schedule in both light and dark themes. `o_gantt_color_<n>` is set
+// by the backend from planning.slot.x_booking_color; the fill mirrors the Gantt
+// pill background `mix(color, white, 60%)` and the stroke is the base colour.
+@for $index from 1 through length($o-colors) {
+    $n: $index - 1;
+    $base: nth($o-colors, $index);
+    $fill: mix($base, white, 60%);
+
+    .o_gantt_maps_map .o_camping_map_zone.o_gantt_color_#{$n},
+    .o_gantt_maps_map .o_camping_map_zone_part.o_gantt_color_#{$n} {
+        fill: $fill;
+    }
+    .o_gantt_maps_map .o_camping_map_zone.o_gantt_color_#{$n} {
+        stroke: $base;
+    }
+    .o_gantt_maps_map .o_camping_map_zone.o_gantt_color_#{$n}.o_camping_map_zone_hover {
+        fill: mix($base, white, 45%);
+    }
+    .o_gantt_maps_map .o_camping_map_legend_swatch.o_gantt_color_#{$n} {
+        background-color: $fill;
+    }
+}
+
+// A pitch with nothing booked (no resource, or free the whole time). The map
+// image underneath is a light illustration in both themes, so a dark fill reads
+// as "nothing to measure" regardless of the backend theme.
+.o_gantt_maps_map .o_camping_map_zone.o_camping_map_zone_empty {
+    fill: #000;
+    stroke: #000;
+}
+
+// Unallocated (free) time, shown white when the "show free time" option is on —
+// as the whole pitch, or as a proportional slice alongside the booked colours.
+.o_gantt_maps_map .o_camping_map_zone.o_camping_map_zone_free {
+    fill: #fff;
+    stroke: #cfcfcf;
+}
+.o_gantt_maps_map .o_camping_map_zone_part.o_camping_map_zone_free {
+    fill: #fff;
 }
