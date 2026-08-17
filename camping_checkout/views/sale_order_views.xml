@@ -8,8 +8,8 @@
             <xpath expr="//notebook" position="inside">
                 <page string="Pitch" name="camping_checkout_pitch">
                     <group>
-                        <field name="pitch_resource_id" />
-                        <field name="pitch_planning_slot_id" />
+                        <field name="pitch_resource_ids" widget="many2many_tags" />
+                        <field name="pitch_planning_slot_ids" widget="many2many_tags" />
                     </group>
                 </page>
                 <page string="Dogs" name="camping_checkout_animals">

@@ -194,27 +194,33 @@
     </record>
 
     <!-- Override the Booking Engine identity badge so the company can make
-         document checks optional. -->
-    <record
-        id="booking_engine.x_model_guests_line_x_guest_identity_check"
-        model="ir.model.fields"
-    >
-        <field name="related" eval="False" />
-        <field
-            name="compute"
-        ><![CDATA[for record in self:
-    company = record.x_sale_order_id.company_id or record.env.company
-    if not company.identity_check_necessary:
-        record['x_guest_identity_check'] = 'ok'
-    else:
-        record['x_guest_identity_check'] = record.x_guest_partner_id.x_identity_check or 'na'
-]]></field>
-        <field
-            name="depends"
-        >x_guest_partner_id.x_identity_check, x_sale_order_id.company_id.identity_check_necessary</field>
-        <field name="readonly" eval="True" />
-        <field name="store" eval="False" />
-    </record>
+         document checks optional.  booking_engine is an industry module that
+         cannot be a dependency of this one, so we must NOT re-use its xml_id to
+         update the field: _test_xml_id rejects a foreign-module id whenever
+         booking_engine is not exactly in state 'installed' (e.g. a combined
+         install/upgrade run, where it is 'to upgrade').  Instead we look the
+         field up by (model, name) and rewrite its compute in place. -->
+    <function model="ir.model.fields" name="write">
+        <value
+            model="ir.model.fields"
+            search="[('model', '=', 'x_guests_line'), ('name', '=', 'x_guest_identity_check')]"
+        />
+        <value
+            eval="{
+            'related': False,
+            'store': False,
+            'readonly': True,
+            'depends': 'x_guest_partner_id.x_identity_check, x_sale_order_id.company_id.identity_check_necessary',
+            'compute':
+                &quot;for record in self:\n&quot;
+                &quot;    company = record.x_sale_order_id.company_id or record.env.company\n&quot;
+                &quot;    if not company.identity_check_necessary:\n&quot;
+                &quot;        record['x_guest_identity_check'] = 'ok'\n&quot;
+                &quot;    else:\n&quot;
+                &quot;        record['x_guest_identity_check'] = record.x_guest_partner_id.x_identity_check or 'na'\n&quot;,
+        }"
+        />
+    </function>
 
     <record
         id="model_x_guests_line_x_guest_identity_check_selection_na"

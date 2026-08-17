@@ -1,6 +1,0 @@
-[tool.ruff]
-extend = "../pyproject.toml"
-
-[build-system]
-requires = ["whool"]
-build-backend = "whool.buildapi"

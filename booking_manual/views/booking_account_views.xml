@@ -1,0 +1,86 @@
+<odoo>
+    <record id="booking_account_view_list" model="ir.ui.view">
+        <field name="name">booking.account.list</field>
+        <field name="model">booking.account</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="username" />
+                <field name="login_state" widget="badge" />
+                <field name="last_login" />
+            </list>
+        </field>
+    </record>
+
+    <record id="booking_account_view_form" model="ir.ui.view">
+        <field name="name">booking.account.form</field>
+        <field name="model">booking.account</field>
+        <field name="arch" type="xml">
+            <form string="Booking.com Account">
+                <header>
+                    <button
+                        name="action_booking_login"
+                        type="object"
+                        string="Log in"
+                        class="btn-primary"
+                    />
+                    <button
+                        name="action_open_booking_challenge"
+                        type="object"
+                        string="Open human verification"
+                        class="btn-secondary"
+                        invisible="login_state not in ('logging_in', 'waiting_human')"
+                    />
+                    <button
+                        name="action_close_booking_processes"
+                        type="object"
+                        string="Close browser processes"
+                        class="btn-secondary"
+                        groups="base.group_system"
+                        confirm="Close the active Booking.com browser and any hanging noVNC processes?"
+                    />
+                    <field name="login_state" widget="statusbar" />
+                </header>
+                <sheet>
+                    <group>
+                        <field name="username" />
+                        <field name="password" password="True" />
+                        <field name="login_url" />
+                        <field name="last_login" readonly="1" />
+                        <field
+                            name="vnc_password"
+                            readonly="1"
+                            invisible="login_state not in ('logging_in', 'waiting_human')"
+                        />
+                    </group>
+                    <group string="Last error" invisible="not login_error">
+                        <field name="login_error" nolabel="1" readonly="1" />
+                    </group>
+                    <group string="Technical" groups="base.group_system">
+                        <field name="session_cookies" readonly="1" />
+                        <field name="temp_booking_key" readonly="1" />
+                        <field name="worker_pid" readonly="1" />
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="booking_account_action" model="ir.actions.act_window">
+        <field name="name">Booking.com Accounts</field>
+        <field name="res_model">booking.account</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem
+        id="booking_manual_menu_root"
+        name="Booking.com"
+        groups="base.group_system"
+    />
+    <menuitem
+        id="booking_account_menu"
+        name="Accounts"
+        parent="booking_manual_menu_root"
+        action="booking_account_action"
+        groups="base.group_system"
+    />
+</odoo>

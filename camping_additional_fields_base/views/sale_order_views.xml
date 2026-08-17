@@ -67,6 +67,7 @@
                 position="inside"
             >
                 <field name="is_rental_order" />
+                <field name="amount_guests" />
             </xpath>
         </field>
     </record>

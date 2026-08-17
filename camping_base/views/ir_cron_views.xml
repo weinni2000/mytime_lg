@@ -51,11 +51,19 @@
     </record>
 
     <menuitem
+        id="menu_automations"
+        name="Automations"
+        parent="booking_engine.booking_engine_rooms_menu"
+        sequence="60"
+        groups="base.group_system"
+    />
+
+    <menuitem
         id="menu_ir_cron_camping"
         name="Crons"
-        parent="booking_engine.menu_availability_steering"
+        parent="menu_automations"
         action="ir_cron_camping_action"
-        sequence="90"
+        sequence="10"
         groups="base.group_system"
     />
 </odoo>

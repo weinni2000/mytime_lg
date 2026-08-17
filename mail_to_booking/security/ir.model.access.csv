@@ -1,7 +1,0 @@
-id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_mail_to_booking_user,mail.to.booking.user,model_mail_to_booking,base.group_user,1,1,1,1
-access_mail_to_booking_product_mapping_user,mail.to.booking.product.mapping.user,model_mail_to_booking_product_mapping,base.group_user,1,1,1,1
-access_mail_to_booking_product_mapping_wizard_user,mail.to.booking.product.mapping.wizard.user,model_mail_to_booking_product_mapping_wizard,base.group_user,1,1,1,1
-access_mail_to_booking_subject_blocklist_user,mail.to.booking.subject.blocklist.user,model_mail_to_booking_subject_blocklist,base.group_user,1,1,1,1
-access_mail_to_booking_excluded_email_user,mail.to.booking.excluded.email.user,model_mail_to_booking_excluded_email,base.group_user,1,1,1,1
-access_mail_to_booking_not_booking_wizard_user,mail.to.booking.not.booking.wizard.user,model_mail_to_booking_not_booking_wizard,base.group_user,1,1,1,1

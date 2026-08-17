@@ -84,12 +84,14 @@
     >
         <xpath expr="//t[@t-call='website_sale.cart_lines']" position="before">
             <div
-                t-if="website_sale_order.pitch_resource_id"
-                class="alert alert-info d-flex align-items-center gap-2"
+                t-if="website_sale_order.pitch_resource_ids"
+                class="alert alert-info d-flex align-items-center gap-2 flex-wrap"
             >
                 <i class="fa fa-map-marker" />
-                <span>Pitch:</span>
-                <strong t-out="website_sale_order.pitch_resource_id.name" />
+                <span>Pitches:</span>
+                <strong
+                    t-out="', '.join(website_sale_order.pitch_resource_ids.mapped('name'))"
+                />
             </div>
         </xpath>
     </template>

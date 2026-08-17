@@ -9,6 +9,7 @@
                 <page name="camping" string="Camping">
                     <group>
                         <field name="x_max_guest" />
+                        <field name="x_included_persons" />
                         <field name="x_additional_guest_product_id" />
                         <field name="x_electricity_product_id" />
                     </group>

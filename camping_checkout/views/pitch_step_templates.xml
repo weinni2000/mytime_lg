@@ -111,9 +111,9 @@
                     />
                     <input
                         type="hidden"
-                        id="pitch_resource_id"
-                        name="pitch_resource_id"
-                        t-att-value="selected_pitch.id"
+                        id="pitch_resource_ids"
+                        name="pitch_resource_ids"
+                        t-att-value="selected_pitch_ids_csv"
                     />
 
                     <div t-if="campsite_map" class="mb-4">
@@ -124,21 +124,13 @@
                             t-att-data-legend="map_legend_json"
                             t-att-data-legend-position="map_legend_position"
                             data-selectable="true"
-                            t-att-data-selected-item="selected_pitch.id"
-                            data-input-id="pitch_resource_id"
+                            t-att-data-selected-items="selected_pitch_ids_csv"
+                            data-input-id="pitch_resource_ids"
                             data-button-id="pitch_continue_button"
-                            data-label-id="selected_pitch_label"
                             t-att-data-no-availability="'true' if no_availability else 'false'"
                             data-modal-id="o_pitch_no_availability_modal"
                         >
                             <div class="o_camping_map_mount" />
-                        </div>
-                        <div class="alert alert-info mt-3 mb-0">
-                            Selected pitch:
-                            <strong
-                                id="selected_pitch_label"
-                                t-out="selected_pitch.name or 'None selected'"
-                            />
                         </div>
                     </div>
                     <div t-else="" class="alert alert-warning">
@@ -158,7 +150,7 @@
                         <button
                             id="pitch_continue_button"
                             type="submit"
-                            t-att-disabled="not selected_pitch"
+                            t-att-disabled="not selected_pitches"
                             class="btn btn-primary w-100 w-md-auto order-1 order-md-3"
                         >
                             Continue<i class="fw-light fa fa-angle-right ms-2" />

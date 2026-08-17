@@ -1,7 +1,7 @@
 {
     "name": "Camping Checkout",
     "summary": "Adds camping-specific information to the website checkout.",
-    "version": "19.0.1.2.0",
+    "version": "19.0.1.3.0",
     "category": "Website/eCommerce",
     "license": "OPL-1",
     "author": "mytime.click",

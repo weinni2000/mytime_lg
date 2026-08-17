@@ -26,7 +26,6 @@ CAMPING_STEP_HREF = "/shop/camping"
 PITCH_STEP_HREF = "/shop/pitch"
 DOG_SPECIES_XMLID = "animal.dog"
 DOG_PRODUCT_XMLID = "camping_checkout.product_dog"
-ADDITIONAL_GUEST_PRODUCT_XMLID = "camping_checkout.product_additional_guest"
 LOCAL_TAX_MIN_AGE = 16
 
 
@@ -97,7 +96,7 @@ class WebsiteSaleCampingCheckout(WebsiteSale):
             order_sudo
             and order_sudo.state in ("draft", "sent")
             and order_sudo.company_id.x_use_camping_pitch_map
-            and order_sudo.pitch_resource_id
+            and order_sudo.pitch_resource_ids
         ):
             transaction = order_sudo.get_portal_last_transaction()
             if transaction and transaction.provider_id.code == "custom" and transaction.state == "pending":
@@ -157,7 +156,7 @@ class WebsiteSaleCampingCheckout(WebsiteSale):
         self._update_camping_dogs(order_sudo, post)
         self._update_electricity_product(order_sudo, post.get("x_with_electricity") == "on")
         guest_count, adult_guest_count = self._update_camping_guests(order_sudo)
-        self._update_additional_guest_product(order_sudo, guest_count)
+        order_sudo._update_additional_guest_charge()
         self._update_local_tax_product(order_sudo, adult_guest_count)
 
         current_step = request.website._get_checkout_step(CAMPING_STEP_HREF)
@@ -287,22 +286,6 @@ class WebsiteSaleCampingCheckout(WebsiteSale):
         adult_guests = sum(1 for age in guest_ages if age > LOCAL_TAX_MIN_AGE)
         return total_guests, adult_guests
 
-    def _update_additional_guest_product(self, order_sudo, guest_count):
-        sudo_env = request.env(su=True)
-        extra_product = sudo_env.ref(ADDITIONAL_GUEST_PRODUCT_XMLID, raise_if_not_found=False)
-        if not extra_product:
-            return
-
-        accommodation_lines = order_sudo.order_line.filtered(
-            lambda line: line.product_id.product_tmpl_id.x_additional_guest_product_id
-        )
-        if not accommodation_lines:
-            return
-
-        max_guest_total = sum(line.product_uom_qty * line.product_id.x_max_guest for line in accommodation_lines)
-        extra_qty = max(guest_count - max_guest_total, 0)
-        self._set_camping_product_quantity(order_sudo, extra_product, extra_qty)
-
     def _update_local_tax_product(self, order_sudo, adult_guest_count):
         tax_product = order_sudo.company_id.x_local_tax_product_id
         if not tax_product:
@@ -376,6 +359,7 @@ class WebsiteSaleCampingPitch(WebsiteSale):
         state_labels = {
             code: colors["label"] for code, colors in request.env["camping.map.state"]._get_frontend_map().items()
         }
+        selected_pitches = order_sudo.pitch_resource_ids
         shapes = []
         first_free_resource = request.env["resource.resource"]
         if campsite_map:
@@ -390,6 +374,10 @@ class WebsiteSaleCampingPitch(WebsiteSale):
                         order_sudo.rental_start_date,
                         order_sudo.rental_return_date,
                     )
+                    # A pitch the customer already picked stays free/selectable
+                    # for them even though it now carries their own (draft) slot.
+                    if resource in selected_pitches:
+                        state = STATE_FREE
                     if state == STATE_FREE and not first_free_resource:
                         first_free_resource = resource
                     items.append(
@@ -415,10 +403,9 @@ class WebsiteSaleCampingPitch(WebsiteSale):
                 shape["products"] = items
                 shapes.append(shape)
 
-        # Pre-populate with the first available pitch so the customer can continue
-        # immediately; they can still pick another free pitch on the map.
-        selected_pitch = order_sudo.pitch_resource_id or first_free_resource
-        no_availability = bool(campsite_map) and not selected_pitch
+        # Customers may pick as many free pitches as they like; the warning only
+        # fires when the map has nothing free and nothing is already selected.
+        no_availability = bool(campsite_map) and not first_free_resource and not selected_pitches
         values = {
             "website_sale_order": order_sudo,
             "order": order_sudo,
@@ -434,7 +421,8 @@ class WebsiteSaleCampingPitch(WebsiteSale):
                 if campsite_map and campsite_map.image
                 else "/camping_map_booking/static/src/img/camping_map.png"
             ),
-            "selected_pitch": selected_pitch,
+            "selected_pitches": selected_pitches,
+            "selected_pitch_ids_csv": ",".join(map(str, selected_pitches.ids)),
             "map_legend_json": json.dumps(campsite_map._get_availability_legend()) if campsite_map else "[]",
             "map_legend_position": campsite_map._legend_position() if campsite_map else "none",
             "error": error,
@@ -514,7 +502,7 @@ class WebsiteSaleCampingPitch(WebsiteSale):
             vehicle_sudo = order_sudo.vehicle_ids[:1]
             if category and vehicle_sudo and vehicle_sudo.category_id != category:
                 vehicle_sudo.category_id = category.id
-                order_sudo.pitch_resource_id = False
+                order_sudo.pitch_resource_ids = [(5,)]
 
         new_start = self._parse_pitch_date(order_sudo, start_date, order_sudo.rental_start_date)
         new_end = self._parse_pitch_date(order_sudo, end_date, order_sudo.rental_return_date)
@@ -543,27 +531,33 @@ class WebsiteSaleCampingPitch(WebsiteSale):
         if not order_sudo.company_id.x_use_camping_pitch_map:
             return request.redirect("/shop/cart")
 
-        pitch_id = post.get("pitch_resource_id")
-        pitch = (
-            request.env["resource.resource"].sudo().browse(int(pitch_id)).exists()
-            if pitch_id and pitch_id.isdigit()
-            else request.env["resource.resource"]
-        )
-        if not pitch:
+        raw_ids = post.get("pitch_resource_ids") or ""
+        pitch_ids = [int(value) for value in raw_ids.split(",") if value.strip().isdigit()]
+        pitches = request.env["resource.resource"].sudo().browse(pitch_ids).exists()
+        if not pitches:
             return request.render(
                 "camping_checkout.pitch_step",
-                self._get_pitch_page_values(order_sudo, error="Please select an available pitch."),
+                self._get_pitch_page_values(order_sudo, error="Please select at least one available pitch."),
             )
 
-        order_sudo.pitch_resource_id = pitch
+        previous_pitches = order_sudo.pitch_resource_ids
+        order_sudo.pitch_resource_ids = [(6, 0, pitches.ids)]
         try:
             order_sudo._validate_pitch_selection()
         except ValidationError as error:
-            order_sudo.pitch_resource_id = False
+            order_sudo.pitch_resource_ids = [(6, 0, previous_pitches.ids)]
             return request.render(
                 "camping_checkout.pitch_step",
                 self._get_pitch_page_values(order_sudo, error=str(error)),
             )
+
+        # Each pitch is billed: the matching accommodation line's quantity tracks
+        # the number of pitches chosen for it.
+        for line, line_pitches in order_sudo._pitch_lines_map().items():
+            order_sudo._cart_update_line_quantity(line_id=line.id, quantity=len(line_pitches))
+        # The included headcount scales with the pitch quantity, so re-price the
+        # additional-guest surcharge now that the quantities are known.
+        order_sudo._update_additional_guest_charge()
 
         current_step = request.website._get_checkout_step(PITCH_STEP_HREF)
         next_step = current_step._get_next_checkout_step(request.website._get_allowed_steps_domain())

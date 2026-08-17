@@ -40,6 +40,16 @@ class SaleOrder(models.Model):
         compute="_compute_planning_role_ids",
         store=True,
     )
+    amount_guests = fields.Integer(
+        string="Guests",
+        compute="_compute_amount_guests",
+        store=True,
+    )
+
+    @api.depends("x_guest_line_ids")
+    def _compute_amount_guests(self):
+        for order in self:
+            order.amount_guests = len(order.x_guest_line_ids)
 
     @api.depends("invoice_ids.payment_state", "invoice_ids.state")
     def _compute_is_paid(self):

@@ -1,7 +1,7 @@
 {
     "name": "Camping Additional Fields Base",
     "summary": "Base module for additional camping-specific fields on products.",
-    "version": "19.0.1.0.0",
+    "version": "19.0.1.1.0",
     "category": "Sales/Rental",
     "license": "OPL-1",
     "author": "mytime.click",
