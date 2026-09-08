@@ -9,6 +9,20 @@
         <field name="code">records.action_send_to_deskline()</field>
     </record>
 
+    <record id="action_server_sale_order_open_form" model="ir.actions.server">
+        <field name="name">Open Order</field>
+        <field name="model_id" ref="sale.model_sale_order" />
+        <field name="state">code</field>
+        <field name="code">action = {
+    'type': 'ir.actions.act_window',
+    'res_model': 'sale.order',
+    'res_id': records.id,
+    'view_mode': 'form',
+    'views': [(False, 'form')],
+    'target': 'current',
+}</field>
+    </record>
+
     <record id="action_server_sale_order_toggle_refresh" model="ir.actions.server">
         <field name="name">Toggle Refresh</field>
         <field name="model_id" ref="sale.model_sale_order" />
@@ -26,6 +40,14 @@
         <field name="arch" type="xml">
             <xpath expr="//list" position="attributes">
                 <attribute name="multi_edit">1</attribute>
+            </xpath>
+            <xpath expr="//list/field[@name='name']" position="before">
+                <button
+                    name="%(action_server_sale_order_open_form)d"
+                    type="action"
+                    icon="fa-external-link"
+                    string="Open"
+                />
             </xpath>
             <xpath expr="//list/field[@name='currency_id']" position="before">
                 <field name="x_guest_line_warning" optional="show" />
