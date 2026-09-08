@@ -24,6 +24,9 @@
         <field name="model">sale.order</field>
         <field name="inherit_id" ref="sale_renting.rental_order_view_tree" />
         <field name="arch" type="xml">
+            <xpath expr="//list" position="attributes">
+                <attribute name="multi_edit">1</attribute>
+            </xpath>
             <xpath expr="//list/field[@name='currency_id']" position="before">
                 <field name="x_guest_line_warning" optional="show" />
                 <field name="x_feratel_number" optional="show" />
