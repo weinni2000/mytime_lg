@@ -1,11 +1,33 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <odoo>
+    <record id="action_server_x_guests_line_open_form" model="ir.actions.server">
+        <field name="name">Open Guest Line</field>
+        <field name="model_id" ref="booking_engine.x_model_guests_line" />
+        <field name="state">code</field>
+        <field name="code">action = {
+    'type': 'ir.actions.act_window',
+    'res_model': 'x_guests_line',
+    'res_id': records.id,
+    'view_mode': 'form',
+    'views': [(False, 'form')],
+    'target': 'current',
+}</field>
+    </record>
+
     <record id="x_guests_line_list_view" model="ir.ui.view">
         <field name="name">x_guests_line.list</field>
         <field name="model">x_guests_line</field>
         <field name="arch" type="xml">
             <list editable="bottom" multi_edit="1" open_form_view="1">
+                <button
+                    name="%(action_server_x_guests_line_open_form)d"
+                    type="action"
+                    icon="fa-external-link"
+                    string="Open"
+                />
                 <field name="x_main_guest" />
+                <field name="x_manual_exclude" optional="show" />
+                <field name="x_comment" optional="show" />
                 <field
                     name="x_main_guest_check"
                     widget="badge"
@@ -19,8 +41,15 @@
                 <field name="x_planned_departure_date" optional="show" />
                 <field name="x_departure_date" />
                 <field name="x_departure_date_manual" optional="show" />
-                <field name="x_guest_name" />
+                <field
+                    name="x_guest_partner_id"
+                    string="Guest"
+                    readonly="1"
+                    options="{'no_open': False}"
+                />
+                <field name="x_guest_name" optional="hide" />
                 <field name="x_anrede" optional="show" />
+                <field name="x_title_advanced" optional="show" />
                 <field name="x_guest_title_id" string="Gender" optional="show" />
                 <field name="x_guest_lang" optional="show" />
                 <field name="x_guest_country_id" optional="show" />
@@ -35,10 +64,21 @@
                 <field name="x_guest_document_authority" optional="show" />
                 <field name="x_guest_birthdate" optional="show" />
                 <field name="x_guest_age" optional="show" />
+                <field name="x_is_child" optional="show" />
+                <field name="x_person_group_frei" optional="show" />
                 <field name="x_save_as_contact" optional="show" />
                 <field name="x_guest_marketing_consent" optional="show" />
                 <field name="x_room_resource_id" />
-                <field name="x_sale_order_id" optional="show" />
+                <field
+                    name="x_sale_order_id"
+                    optional="show"
+                    readonly="1"
+                    options="{'no_open': False}"
+                />
+                <field name="x_sale_order_state" optional="show" widget="badge" />
+                <field name="x_sale_channel_id" optional="show" />
+                <field name="x_deskline_master_id" optional="show" />
+                <field name="x_feratel_number" optional="show" />
                 <field
                     name="x_guest_identity_check"
                     widget="badge"
@@ -51,14 +91,123 @@
         </field>
     </record>
 
+    <record id="x_guests_line_search_view" model="ir.ui.view">
+        <field name="name">x_guests_line.search</field>
+        <field name="model">x_guests_line</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="x_guest_name" />
+                <field name="x_guest_partner_id" />
+                <field name="x_sale_order_id" />
+                <field name="x_sale_order_state" />
+                <field name="x_sale_channel_id" />
+                <field name="x_room_resource_id" />
+                <field name="x_guest_country_id" />
+                <field name="x_guest_document_number" />
+                <separator />
+                <filter
+                    string="Arrival Date"
+                    name="filter_arrival_date"
+                    date="x_arrival_date"
+                />
+                <filter
+                    string="Departure Date"
+                    name="filter_departure_date"
+                    date="x_departure_date"
+                />
+                <separator />
+                <filter
+                    string="Main Guest"
+                    name="filter_main_guest"
+                    domain="[('x_main_guest', '=', True)]"
+                />
+                <filter
+                    string="Document Missing"
+                    name="filter_document_missing"
+                    domain="[('x_guest_document_number', '=', False)]"
+                />
+                <filter
+                    string="Marketing Consent"
+                    name="filter_marketing_consent"
+                    domain="[('x_guest_marketing_consent', '=', True)]"
+                />
+                <separator />
+                <group>
+                    <filter
+                        string="Sale Order"
+                        name="groupby_sale_order"
+                        context="{'group_by': 'x_sale_order_id'}"
+                    />
+                    <filter
+                        string="Sale Order State"
+                        name="groupby_sale_order_state"
+                        context="{'group_by': 'x_sale_order_state'}"
+                    />
+                    <filter
+                        string="Sale Channel"
+                        name="groupby_sale_channel"
+                        context="{'group_by': 'x_sale_channel_id'}"
+                    />
+                    <filter
+                        string="Room"
+                        name="groupby_room"
+                        context="{'group_by': 'x_room_resource_id'}"
+                    />
+                    <filter
+                        string="Country"
+                        name="groupby_country"
+                        context="{'group_by': 'x_guest_country_id'}"
+                    />
+                    <filter
+                        string="Nationality"
+                        name="groupby_nationality"
+                        context="{'group_by': 'x_calc_nationality_id'}"
+                    />
+                    <filter
+                        string="Arrival Date"
+                        name="groupby_arrival_date"
+                        context="{'group_by': 'x_arrival_date'}"
+                    />
+                    <filter
+                        string="Departure Date"
+                        name="groupby_departure_date"
+                        context="{'group_by': 'x_departure_date'}"
+                    />
+                    <filter
+                        string="Document Type"
+                        name="groupby_document_type"
+                        context="{'group_by': 'x_guest_document_type'}"
+                    />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_server_x_guests_line_refresh" model="ir.actions.server">
+        <field name="name">Refresh Guest Check</field>
+        <field name="model_id" ref="booking_engine.x_model_guests_line" />
+        <field name="state">code</field>
+        <field name="code">records.write({'x_refresh': not records.x_refresh})</field>
+    </record>
+
     <record id="x_guests_line_form_view" model="ir.ui.view">
         <field name="name">x_guests_line.form</field>
         <field name="model">x_guests_line</field>
         <field name="arch" type="xml">
             <form string="Neumeldung Individualgast">
+                <header>
+                    <button
+                        name="%(action_server_x_guests_line_refresh)d"
+                        type="action"
+                        string="Refresh"
+                        icon="fa-refresh"
+                    />
+                </header>
                 <sheet>
                     <group>
                         <field name="x_main_guest" />
+                        <field name="x_manual_exclude" />
+                        <field name="x_comment" />
                         <field
                             name="x_main_guest_check"
                             widget="badge"
@@ -76,6 +225,11 @@
                         <field name="x_guest_check_warning" nolabel="1" readonly="1" />
                     </div>
                     <group string="Aufenthalt">
+                        <field name="x_sale_order_id" />
+                        <field name="x_sale_order_state" widget="badge" />
+                        <field name="x_sale_channel_id" />
+                        <field name="x_deskline_master_id" />
+                        <field name="x_feratel_number" />
                         <field
                             name="x_arrival_date"
                             readonly="bool(x_arrival_date_manual)"
@@ -113,6 +267,8 @@
                     <group string="Geburtsdaten">
                         <field name="x_guest_birthdate" />
                         <field name="x_guest_age" readonly="1" />
+                        <field name="x_is_child" />
+                        <field name="x_person_group_frei" readonly="1" />
                     </group>
                     <group>
                         <field name="x_save_as_contact" />
@@ -127,6 +283,7 @@
         <field name="name">Guest Lines</field>
         <field name="res_model">x_guests_line</field>
         <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="x_guests_line_search_view" />
     </record>
 
     <menuitem

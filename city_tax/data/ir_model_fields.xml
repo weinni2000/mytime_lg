@@ -14,6 +14,39 @@
         <field name="model_id" ref="booking_engine.x_model_guests_line" />
         <field name="name">x_main_guest</field>
     </record>
+    <record id="model_x_guests_line_x_manual_exclude" model="ir.model.fields">
+        <field name="ttype">boolean</field>
+        <field name="copied" eval="True" />
+        <field name="field_description">Manual Exclude</field>
+        <field name="model_id" ref="booking_engine.x_model_guests_line" />
+        <field name="name">x_manual_exclude</field>
+    </record>
+    <record id="model_x_guests_line_x_comment" model="ir.model.fields">
+        <field name="ttype">text</field>
+        <field name="copied" eval="True" />
+        <field name="field_description">Comment</field>
+        <field name="model_id" ref="booking_engine.x_model_guests_line" />
+        <field name="name">x_comment</field>
+    </record>
+    <record id="model_x_guests_line_x_sale_channel_id" model="ir.model.fields">
+        <field name="ttype">many2one</field>
+        <field name="related">x_sale_order_id.sale_channel_id</field>
+        <field name="relation">sale.channel</field>
+        <field name="field_description">Sale Channel</field>
+        <field name="model_id" ref="booking_engine.x_model_guests_line" />
+        <field name="name">x_sale_channel_id</field>
+        <field name="readonly" eval="True" />
+        <field name="store" eval="True" />
+    </record>
+    <record id="model_x_guests_line_x_sale_order_state" model="ir.model.fields">
+        <field name="ttype">selection</field>
+        <field name="related">x_sale_order_id.state</field>
+        <field name="field_description">Sale Order State</field>
+        <field name="model_id" ref="booking_engine.x_model_guests_line" />
+        <field name="name">x_sale_order_state</field>
+        <field name="readonly" eval="True" />
+        <field name="store" eval="True" />
+    </record>
     <record id="model_x_guests_line_x_refresh" model="ir.model.fields">
         <field name="ttype">boolean</field>
         <field name="field_description">Refresh</field>
@@ -315,7 +348,13 @@
     </record>
 
     <!-- Whether the guest line has what's required to submit to Feratel (Deskline):
-         a name for every guest, plus country/nationality and address for the main guest. -->
+         a name for every guest, plus country/nationality and address for the main
+         guest. An additional guest's own country is not checked here even though
+         Deskline's API requires a non-empty CountryCode for every guest (confirmed
+         via deskline.log); the real web form disables Land/Nationalität for an
+         additional guest ("Gast N mit gleichem Wohnsitz") and inherits it from the
+         main guest instead of having it entered per guest, and
+         _deskline_utils.build_guest_payload() does the same at submission time. -->
     <record id="model_x_guests_line_x_tourist_tax_check" model="ir.model.fields">
         <field name="ttype">selection</field>
         <field
@@ -352,7 +391,7 @@
         <field name="name">x_tourist_tax_check</field>
         <field name="readonly" eval="True" />
         <field name="selectable" eval="False" />
-        <field name="store" eval="False" />
+        <field name="store" eval="True" />
     </record>
     <record
         id="model_x_guests_line_x_tourist_tax_check_selection_na"
@@ -436,6 +475,18 @@
         <field name="readonly" eval="True" />
         <field name="store" eval="False" />
     </record>
+    <record id="model_x_guests_line_x_title_advanced" model="ir.model.fields">
+        <field name="ttype">char</field>
+        <field name="field_description">Advanced Title</field>
+        <field name="model_id" ref="booking_engine.x_model_guests_line" />
+        <field name="name">x_title_advanced</field>
+        <field name="ai" eval="True" />
+        <field name="system_prompt" type="html">
+<p>Deduce the guest's gender from their full name <span
+                    data-ai-field="x_guest_name"
+                >Guest Name</span> and return the German salutation "Herr" if male or "Frau" if female. If the gender cannot be reliably determined from the name, leave the value empty.</p>
+</field>
+    </record>
     <record id="model_x_guests_line_x_guest_lang" model="ir.model.fields">
         <field name="ttype">selection</field>
         <field name="related">x_guest_partner_id.lang</field>
@@ -509,6 +560,35 @@
         <field name="readonly" eval="True" />
         <field name="store" eval="False" />
     </record>
+    <record id="model_x_guests_line_x_is_child" model="ir.model.fields">
+        <field name="ttype">boolean</field>
+        <field name="copied" eval="True" />
+        <field name="field_description">Child (Manual)</field>
+        <field
+            name="help"
+        >Forces the guest into the Deskline "Frei" (tax-exempt) person group even when age/birthdate is unknown (age 0, no birthdate).</field>
+        <field name="model_id" ref="booking_engine.x_model_guests_line" />
+        <field name="name">x_is_child</field>
+    </record>
+    <record id="model_x_guests_line_x_person_group_frei" model="ir.model.fields">
+        <field name="ttype">boolean</field>
+        <field
+            name="compute"
+        ><![CDATA[for record in self:
+    record['x_person_group_frei'] = bool(record.x_is_child) or bool(
+        record.x_guest_age and record.x_guest_age < 16
+    )
+]]></field>
+        <field name="depends">x_refresh, x_is_child, x_guest_age</field>
+        <field name="field_description">Person Group Frei</field>
+        <field
+            name="help"
+        >Whether this guest is sent to Deskline as person group "Frei" (tax-exempt) rather than "Pflichtig". True if Child (Manual) is set, or if age is known and under 16.</field>
+        <field name="model_id" ref="booking_engine.x_model_guests_line" />
+        <field name="name">x_person_group_frei</field>
+        <field name="readonly" eval="True" />
+        <field name="store" eval="True" />
+    </record>
     <record id="model_x_guests_line_x_guest_taxable" model="ir.model.fields">
         <field name="ttype">boolean</field>
         <field name="related">x_guest_partner_id.x_taxable</field>
@@ -526,5 +606,23 @@
         <field name="name">x_guest_marketing_consent</field>
         <field name="readonly" eval="True" />
         <field name="store" eval="False" />
+    </record>
+    <record id="model_x_guests_line_x_deskline_master_id" model="ir.model.fields">
+        <field name="ttype">char</field>
+        <field name="related">x_sale_order_id.x_deskline_master_id</field>
+        <field name="field_description">Deskline Reference</field>
+        <field name="model_id" ref="booking_engine.x_model_guests_line" />
+        <field name="name">x_deskline_master_id</field>
+        <field name="readonly" eval="True" />
+        <field name="store" eval="True" />
+    </record>
+    <record id="model_x_guests_line_x_feratel_number" model="ir.model.fields">
+        <field name="ttype">char</field>
+        <field name="related">x_sale_order_id.x_feratel_number</field>
+        <field name="field_description">Feratel Number</field>
+        <field name="model_id" ref="booking_engine.x_model_guests_line" />
+        <field name="name">x_feratel_number</field>
+        <field name="readonly" eval="True" />
+        <field name="store" eval="True" />
     </record>
 </odoo>
