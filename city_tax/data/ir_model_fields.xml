@@ -367,6 +367,8 @@
     missing = []
     if not record.x_guest_name:
         missing.append('Name')
+    elif len(record.x_guest_name.split()) < 2:
+        missing.append('Name (first and last name required)')
     if record.x_main_guest:
         if not (record.x_calc_nationality_id or record.x_guest_country_id):
             missing.append('Country/Nationality')
@@ -429,6 +431,8 @@
     missing = []
     if not record.x_guest_name:
         missing.append('Name')
+    elif len(record.x_guest_name.split()) < 2:
+        missing.append('Name (first and last name required)')
     if record.x_main_guest:
         if not (record.x_calc_nationality_id or record.x_guest_country_id):
             missing.append('Country/Nationality')
