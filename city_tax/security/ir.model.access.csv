@@ -2,3 +2,4 @@ id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_guest_tax_message_user,guest.tax.message.user,model_guest_tax_message,base.group_user,1,1,1,1
 access_deskline_log_user,deskline.log.user,model_deskline_log,base.group_user,1,0,0,0
 access_deskline_log_system,deskline.log.system,model_deskline_log,base.group_system,1,1,1,1
+access_guest_tax_deskline_resend_wizard_user,guest.tax.deskline.resend.wizard.user,model_guest_tax_deskline_resend_wizard,base.group_user,1,1,1,1

@@ -1,7 +1,7 @@
 {
     "name": "City Tax",
     "summary": "Overview of all guest lines used for city tax reporting.",
-    "version": "19.0.1.1.6",
+    "version": "19.0.1.1.14",
     "category": "Hidden/Tools",
     "license": "OPL-1",
     "author": "mytime.click",
@@ -26,6 +26,7 @@
         "views/sale_order_views.xml",
         "views/res_partner_views.xml",
         "views/res_company_views.xml",
+        "wizard/guest_tax_deskline_resend_wizard_views.xml",
     ],
     "installable": True,
     "application": False,

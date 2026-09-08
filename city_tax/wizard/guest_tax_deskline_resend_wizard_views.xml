@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="guest_tax_deskline_resend_wizard_view_form" model="ir.ui.view">
+        <field name="name">guest.tax.deskline.resend.wizard.form</field>
+        <field name="model">guest.tax.deskline.resend.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Already Transferred">
+                <field name="res_model" invisible="1" />
+                <field name="res_id" invisible="1" />
+                <p>
+                    <field
+                        name="record_display_name"
+                        nolabel="1"
+                        readonly="1"
+                        class="fw-bold"
+                    />
+                    has already been transferred to Deskline. Send it again?
+                </p>
+                <footer>
+                    <button
+                        string="Send Again"
+                        type="object"
+                        name="action_resend"
+                        class="btn-primary"
+                    />
+                    <button string="Cancel" special="cancel" class="btn-secondary" />
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

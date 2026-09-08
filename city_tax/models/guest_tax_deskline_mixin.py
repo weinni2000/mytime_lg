@@ -13,9 +13,9 @@ class GuestTaxDesklineMixin(models.AbstractModel):
         readonly=True,
         copy=False,
         help="masterId of this registration on Deskline, returned by the initial "
-        "submission. Needed to later convert a Voranmeldung into a final Meldeschein.",
+        "submission. Passed back on a later resubmission to update this same "
+        "registration instead of creating a new one.",
     )
-    x_deskline_master_sub_type = fields.Integer(string="Deskline Reference Sub Type", readonly=True, copy=False)
 
     def _get_deskline_guest_lines(self):
         """Return the x_guests_line records to submit."""
@@ -25,19 +25,54 @@ class GuestTaxDesklineMixin(models.AbstractModel):
         return self.env.company
 
     def action_send_to_deskline(self):
-        for record in self:
+        force_resend = self.env.context.get("deskline_force_resend")
+        if len(self) == 1 and self.x_deskline_master_id and not force_resend:
+            return self._deskline_resend_confirm_action()
+
+        to_send = self if force_resend else self.filtered(lambda record: not record.x_deskline_master_id)
+        already_transferred = self - to_send
+        for record in to_send:
             record._send_guests_to_deskline()
 
-    def action_convert_to_meldeschein(self):
-        for record in self:
-            record._convert_guests_to_deskline()
+        if already_transferred:
+            return {
+                "type": "ir.actions.client",
+                "tag": "display_notification",
+                "params": {
+                    "title": self.env._("Deskline"),
+                    "message": self.env._(
+                        "Skipped %(count)s record(s) already transferred to Deskline: %(names)s",
+                        count=len(already_transferred),
+                        names=", ".join(already_transferred.mapped("display_name")),
+                    ),
+                    "type": "warning",
+                    "sticky": True,
+                },
+            }
+        return None
+
+    def _deskline_resend_confirm_action(self):
+        self.ensure_one()
+        wizard = self.env["guest.tax.deskline.resend.wizard"].create({"res_model": self._name, "res_id": self.id})
+        return {
+            "type": "ir.actions.act_window",
+            "res_model": "guest.tax.deskline.resend.wizard",
+            "res_id": wizard.id,
+            "view_mode": "form",
+            "target": "new",
+        }
 
     def _deskline_guest_lines_or_raise(self):
         self.ensure_one()
         guest_lines = self._get_deskline_guest_lines()
         if not guest_lines:
             raise UserError(self.env._("There are no guests to submit."))
-        return guest_lines
+        included_guest_lines = guest_lines.filtered(lambda guest_line: not guest_line.x_manual_exclude)
+        if not included_guest_lines:
+            raise UserError(
+                self.env._("All guests are manually excluded. There is no guest tax information to send.")
+            )
+        return included_guest_lines
 
     def _deskline_company_or_raise(self):
         self.ensure_one()
@@ -62,17 +97,4 @@ class GuestTaxDesklineMixin(models.AbstractModel):
         result = company._submit_deskline_payload(payload)
         if isinstance(result, dict) and result.get("masterId"):
             self.x_deskline_master_id = result["masterId"]
-            self.x_deskline_master_sub_type = result.get("masterSubType") or 0
         return result
-
-    def _convert_guests_to_deskline(self):
-        self.ensure_one()
-        if not self.x_deskline_master_id:
-            raise UserError(self.env._("This has not been sent to Deskline yet — use 'Send to Deskline' first."))
-        company = self._deskline_company_or_raise()
-        guest_lines = self._deskline_guest_lines_or_raise()
-
-        payload = _deskline_utils.build_submission_payload(guest_lines, master_id=self.x_deskline_master_id)
-        return company._convert_deskline_payload(
-            payload, self.x_deskline_master_id, self.x_deskline_master_sub_type
-        )
