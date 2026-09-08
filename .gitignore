@@ -100,3 +100,4 @@ node_modules/*/*/*/*/*/*/*/*/
 
 # Local Google OAuth credential
 contact_sync_nw/misc/client_secret_google.json
+id_detection/misc/test.txt

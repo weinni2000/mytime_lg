@@ -6,8 +6,10 @@
         <field name="arch" type="xml">
             <list>
                 <field name="name" />
+                <field name="x_load_method" />
                 <field name="x_sheet_url" />
                 <field name="x_month" />
+                <field name="x_import_warning" optional="show" />
             </list>
         </field>
     </record>
@@ -19,29 +21,34 @@
             <form>
                 <header>
                     <button
-                        string="Load Month From URL"
+                        string="Load Month"
                         type="object"
                         name="action_load_month"
                         class="btn-primary"
-                        invisible="not x_sheet_url"
-                    />
-                    <button
-                        string="Load Month From File"
-                        type="object"
-                        name="action_load_month_from_file"
-                        class="btn-primary"
-                        invisible="not x_file"
+                        invisible="(x_load_method == 'gog' and not x_sheet_url) or (x_load_method == 'file' and not x_file)"
                     />
                 </header>
                 <sheet>
                     <group>
                         <field name="name" />
-                        <field name="x_sheet_url" />
-                        <field name="x_file" filename="x_filename" />
+                        <field name="x_load_method" widget="radio" />
+                        <field name="x_sheet_url" invisible="x_load_method != 'gog'" />
+                        <field
+                            name="x_file"
+                            filename="x_filename"
+                            invisible="x_load_method != 'file'"
+                        />
                         <field name="x_filename" invisible="1" />
                         <field name="x_month" />
                         <field name="x_product_id" />
                     </group>
+                    <div
+                        class="alert alert-warning"
+                        role="alert"
+                        invisible="not x_import_warning"
+                    >
+                        <field name="x_import_warning" nolabel="1" readonly="1" />
+                    </div>
                     <notebook>
                         <page string="Guest Tax Messages" name="guest_tax_messages">
                             <field name="x_guest_tax_message_ids" readonly="1">

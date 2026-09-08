@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <!-- The generic Properties field (which now also carries our
+         "Calculated Gender" property, see hooks.py) is shown by base
+         near the top of the form; move it into the Personal Information
+         page instead, next to the other guest AI/identity fields added by
+         city_tax. -->
+    <record id="res_partner_view_form_inherit_city_tax_gender" model="ir.ui.view">
+        <field name="name">res.partner.form.inherit.city_tax_gender</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//group[@name='personal_information_group']" position="inside">
+                <field name="properties" position="move" />
+            </xpath>
+        </field>
+    </record>
+</odoo>

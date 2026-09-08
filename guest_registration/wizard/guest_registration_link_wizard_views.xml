@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="guest_registration_link_wizard_view_form" model="ir.ui.view">
+        <field name="name">guest.registration.link.wizard.form</field>
+        <field name="model">guest.registration.link.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Guest Registration Link">
+                <field name="sale_order_id" invisible="1" />
+                <group>
+                    <field name="url" widget="CopyClipboardURL" readonly="1" />
+                    <field name="partner_email" readonly="1" string="Customer Email" />
+                </group>
+                <footer>
+                    <button
+                        string="Send by Email"
+                        type="object"
+                        name="action_send_email"
+                        class="btn-primary"
+                        invisible="not partner_email"
+                        confirm="Send the guest registration link by email to the customer?"
+                    />
+                    <button string="Close" special="cancel" class="btn-secondary" />
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

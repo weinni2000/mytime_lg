@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="sale_order_view_form_flower_calculator" model="ir.ui.view">
+        <field name="name">sale.order.form.flower.calculator</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form" />
+        <field name="arch" type="xml">
+            <notebook position="inside">
+                <page name="flower_calculator" string="Flower calculator">
+                    <group>
+                        <field name="flower_image" widget="image" class="oe_avatar" />
+                        <field name="flower_counter" widget="radio" />
+                        <field name="flower_model" />
+                        <field name="flower_annotate" />
+                        <field name="flower_auto_complete_flow" />
+                        <field name="flower_total_quantity" readonly="1" />
+                        <field name="flower_last_request_cost" readonly="1" />
+                        <field name="flower_last_request_tokens" readonly="1" />
+                    </group>
+                    <group
+                        string="Annotated Photo"
+                        invisible="not flower_annotated_image"
+                    >
+                        <field
+                            name="flower_annotated_image"
+                            widget="flower_image_fullscreen"
+                            nolabel="1"
+                            readonly="1"
+                        />
+                    </group>
+                    <div class="mb-3">
+                        <button
+                            name="action_analyze_flower_image"
+                            type="object"
+                            string="Analyze Flowers"
+                            class="btn-secondary"
+                        />
+                        <button
+                            name="action_add_flowers_to_order_lines"
+                            type="object"
+                            string="Add Flowers to Order"
+                            class="btn-secondary"
+                        />
+                        <button
+                            name="%(flower_calculator_mapping_wizard_action)d"
+                            type="action"
+                            string="Sync Flower Mapping"
+                            class="btn-secondary"
+                            context="{'default_sale_order_id': id}"
+                        />
+                    </div>
+                    <field name="flower_detected_ids" readonly="1">
+                        <list>
+                            <field name="name" />
+                            <field name="quantity" />
+                            <field name="size" />
+                            <field name="product_id" />
+                            <field name="description" optional="show" />
+                            <field name="genus" optional="show" />
+                            <field name="german_name" />
+                            <field name="group_type" optional="show" />
+                            <field name="variety" />
+                            <field name="color" />
+                        </list>
+                    </field>
+                    <!--
+                    <group string="Formatted">
+                        <field
+                            name="flower_analysis_display"
+                            nolabel="1"
+                            readonly="1"
+                        />
+                    </group>
+                    -->
+                    <group string="Formatted JSON">
+                        <field name="flower_analysis_json_html" nolabel="1" />
+                    </group>
+                    <!--
+                    <group string="Raw JSON">
+                        <field name="flower_analysis_json" />
+                    </group>
+                    -->
+                </page>
+            </notebook>
+        </field>
+    </record>
+</odoo>

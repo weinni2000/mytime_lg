@@ -19,6 +19,7 @@
     ],
     "data": [
         "data/ir_cron.xml",
+        "data/ir_model_fields.xml",
         "views/booking_engine_menu_views.xml",
         "views/planning_role_menu_views.xml",
         "views/planning_slot_views.xml",

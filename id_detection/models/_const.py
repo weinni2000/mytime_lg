@@ -1,4 +1,6 @@
 GEMINI_MODEL = "gemini-2.5-flash"
+OPENAI_FALLBACK_MODEL = "gpt-4.1-mini"
+CLAUDE_MODEL = "claude-haiku-4-5"
 
 # Longest side, in pixels, for images sent to Gemini. Large phone-camera photos
 # (4000px+) are downsampled by the API anyway; sending them at that size just
@@ -25,12 +27,13 @@ fields null if no address is printed on the document. Also inspect every attache
 its zero-based attachment order as \
 image_index and report the clockwise rotation required to make the document upright. Report the \
 document_box tightly enclosing only the physical document in the ORIGINAL attached image. When \
-the image contains the holder's printed portrait, report its bounding box
-in the ORIGINAL attached image. All bounding-box coordinates are integers
-from 0 to 1000 in [top, left, bottom, right] order.
-The box must tightly enclose only the portrait photograph, not text, borders,
-signatures, holograms, or the whole document. Independently report the clockwise \
-rotation required to make the person's face in that cropped portrait upright. For \
+ the document contains the holder's printed portrait, report portrait_box in the UPRIGHT, \
+ CROPPED DOCUMENT coordinate system (after applying clockwise_rotation and document_box), \
+ never in the original sideways image. All bounding-box coordinates are integers from 0 to \
+ 1000 in [top, left, bottom, right] order. The portrait_box must tightly enclose only the \
+ printed portrait photograph, not nearby text, borders, signatures, holograms, or the whole \
+ document. Set portrait_clockwise_rotation to 0 because portrait_box is defined on the upright \
+ document. For \
 document_type, always choose the closest matching option even if you are not \
 fully certain — never leave it empty. Leave any other field null if you cannot read it with \
 confidence. Never invent data that is not present in the image(s)."""
@@ -48,7 +51,12 @@ GEMINI_ID_SCAN_SCHEMA = {
         "document_date": {"type": ["string", "null"]},
         "document_authority": {"type": ["string", "null"]},
         "nationality": {"type": ["string", "null"]},
-        "gender": {"type": ["string", "null"], "enum": ["M", "F", None]},
+        "gender": {
+            "anyOf": [
+                {"type": "string", "enum": ["M", "F"]},
+                {"type": "null"},
+            ]
+        },
         "address_street": {"type": ["string", "null"]},
         "address_zip": {"type": ["string", "null"]},
         "address_city": {"type": ["string", "null"]},
@@ -63,18 +71,16 @@ GEMINI_ID_SCAN_SCHEMA = {
                     "document_box": {
                         "type": ["array", "null"],
                         "items": {"type": "integer"},
-                        "minItems": 4,
-                        "maxItems": 4,
                     },
                     "portrait_box": {
                         "type": ["array", "null"],
                         "items": {"type": "integer"},
-                        "minItems": 4,
-                        "maxItems": 4,
                     },
                     "portrait_clockwise_rotation": {
-                        "type": ["integer", "null"],
-                        "enum": [0, 90, 180, 270, None],
+                        "anyOf": [
+                            {"type": "integer", "enum": [0, 90, 180, 270]},
+                            {"type": "null"},
+                        ]
                     },
                 },
                 "required": [
@@ -84,6 +90,7 @@ GEMINI_ID_SCAN_SCHEMA = {
                     "portrait_box",
                     "portrait_clockwise_rotation",
                 ],
+                "additionalProperties": False,
             },
         },
     },
@@ -103,4 +110,5 @@ GEMINI_ID_SCAN_SCHEMA = {
         "address_country",
         "images",
     ],
+    "additionalProperties": False,
 }

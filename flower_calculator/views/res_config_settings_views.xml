@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="res_config_settings_view_form" model="ir.ui.view">
+        <field
+            name="name"
+        >res.config.settings.view.form.inherit.flower.calculator</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="ai.res_config_settings_view_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//setting[@id='openai_provider']" position="after">
+                <setting
+                    id="flower_openrouter_provider"
+                    string="Use OpenRouter for flower detection"
+                    help="Provide an OpenRouter API key to run flower detection through Gemini via OpenRouter"
+                    groups="base.group_system"
+                >
+                    <field name="flower_openrouter_key_enabled" />
+                    <group invisible="not flower_openrouter_key_enabled">
+                        <div class="flex-grow-1">
+                            <field
+                                name="flower_openrouter_key"
+                                placeholder="Key"
+                                password="True"
+                                nolabel="1"
+                                class="w-100"
+                            />
+                        </div>
+                    </group>
+                </setting>
+            </xpath>
+        </field>
+    </record>
+</odoo>

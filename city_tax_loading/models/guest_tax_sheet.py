@@ -1,11 +1,13 @@
 import base64
-import csv
 import io
+import json
+import os
 import re
+import shlex
+import subprocess
 from datetime import date, datetime, time, timedelta
 
 import openpyxl
-import requests
 
 from odoo import Command, fields, models
 from odoo.exceptions import UserError
@@ -20,6 +22,11 @@ _GID_RE = re.compile(r"[#&?]gid=(\d+)")
 _CHECKIN_DATE_FORMATS = ["%m/%d/%Y", "%Y-%m-%d"]
 _DOB_DATE_FORMATS = ["%m/%d/%Y", "%Y-%m-%d"]
 _TINY_AWAY_CHANNEL_NAME = "Tiny Away"
+_GOG_ACCOUNT_PARAM = "gog_testing.gmail_account"
+_GOG_COMMAND_PARAM = "gog_testing.gog_command"
+_GOG_PASSPHRASE_PARAM = "gog_testing.gog_passphrase"
+_DEFAULT_GOG_ACCOUNT = "weinni2000@gmail.com"
+_DEFAULT_GOG_COMMAND = "/home/weinni2000/bin/gog-unlocked"
 
 _GENDER_TO_ANREDE = {"male": _DESKLINE_SALUTATION_HERR, "female": _DESKLINE_SALUTATION_FRAU}
 _COUNTRY_ALIASES = {
@@ -27,23 +34,6 @@ _COUNTRY_ALIASES = {
     "österreich": "Austria",
     "oesterreich": "Austria",
     "schweiz": "Switzerland",
-}
-
-# csv (guest_registration_sheet.csv, as used by submit_service_summary.py) header -> normalized key
-_CSV_COLUMN_MAP = {
-    "email": "email",
-    "checkin": "checkin",
-    "checkout": "checkout",
-    "full_name": "full_name",
-    "gender": "gender",
-    "country": "country",
-    "street": "street",
-    "dob": "dob",
-    "city": "city",
-    "zip": "zip",
-    "guest2_name": "guest2_name",
-    "guest2_gender": "guest2_gender",
-    "guest2_nationality": "guest2_nationality",
 }
 
 # xlsx (Google Forms "Responses" export) header -> normalized row key
@@ -66,6 +56,11 @@ _XLSX_COLUMN_MAP = {
     "Nationality 2": "guest3_nationality",
 }
 _XLSX_REQUIRED_COLUMNS = {"email", "checkin", "full_name"}
+_DUPLICATE_XLSX_COLUMNS = {
+    "Gender": ("gender", "guest2_gender", "guest3_gender"),
+    "First and Second Name": ("guest2_name", "guest3_name"),
+    "Nationality": ("guest2_nationality", "guest3_nationality"),
+}
 
 
 def _clean(value):
@@ -120,13 +115,20 @@ class GuestTaxSheet(models.Model):
     _description = "Guest Tax Google Sheet"
 
     name = fields.Char(required=True)
+    x_load_method = fields.Selection(
+        [("gog", "Google Sheet via gog"), ("file", "Uploaded File")],
+        string="Load Method",
+        required=True,
+        default="gog",
+    )
     x_sheet_url = fields.Char(
         string="Google Sheet URL",
-        help="Full Google Sheets URL, e.g. .../spreadsheets/d/<id>/edit#gid=<gid>. "
-        "The sheet must be shared as 'Anyone with the link can view'.",
+        help="Full Google Sheets URL. The Odoo service user's authenticated gog "
+        "account must have access to the spreadsheet.",
     )
     x_file = fields.Binary(string="File", attachment=True)
     x_filename = fields.Char(string="Filename")
+    x_import_warning = fields.Text(string="Import Warnings", readonly=True)
     x_month = fields.Date(
         string="Month",
         help="Any day within the target month — only the year and month are used.",
@@ -147,6 +149,8 @@ class GuestTaxSheet(models.Model):
 
     def action_load_month(self):
         self.ensure_one()
+        if self.x_load_method == "file":
+            return self.action_load_month_from_file()
         if not self.x_sheet_url:
             raise UserError(self.env._("Set the Google Sheet URL first."))
 
@@ -154,29 +158,8 @@ class GuestTaxSheet(models.Model):
         if not sheet_id_match:
             raise UserError(self.env._("Could not find a spreadsheet ID in the URL."))
         gid_match = _GID_RE.search(self.x_sheet_url)
-
-        export_url = f"https://docs.google.com/spreadsheets/d/{sheet_id_match.group(1)}/export?format=csv"
-        if gid_match:
-            export_url += f"&gid={gid_match.group(1)}"
-
-        response = requests.get(export_url, timeout=30)
-        if not response.ok or "<!DOCTYPE html" in response.text[:200]:
-            raise UserError(
-                self.env._(
-                    "Could not download the sheet as CSV (HTTP %(status)s). Make sure it is "
-                    "shared as 'Anyone with the link can view'.",
-                    status=response.status_code,
-                )
-            )
-
-        def normalize(row):
-            data = {key: row.get(column) for column, key in _CSV_COLUMN_MAP.items()}
-            data["checkin"] = self._parse_date(data["checkin"], _CHECKIN_DATE_FORMATS)
-            data["checkout"] = self._parse_date(data.get("checkout"), _CHECKIN_DATE_FORMATS)
-            data["dob"] = self._parse_date(data.get("dob"), _DOB_DATE_FORMATS)
-            return data
-
-        rows = (normalize(row) for row in csv.DictReader(io.StringIO(response.text)))
+        gid = int(gid_match.group(1)) if gid_match else None
+        rows = self._rows_with_gog(sheet_id_match.group(1), gid)
         return self._create_messages_for_month(rows)
 
     def action_load_month_from_file(self):
@@ -184,17 +167,83 @@ class GuestTaxSheet(models.Model):
         if not self.x_file:
             raise UserError(self.env._("Attach a file first."))
 
-        workbook = openpyxl.load_workbook(
-            io.BytesIO(base64.b64decode(self.x_file)), data_only=True, read_only=True
+        return self._create_messages_for_month(self._xlsx_rows(base64.b64decode(self.x_file)))
+
+    def _run_gog_json(self, *arguments):
+        parameters = self.env["ir.config_parameter"].sudo()
+        account = parameters.get_param(_GOG_ACCOUNT_PARAM) or _DEFAULT_GOG_ACCOUNT
+        command = parameters.get_param(_GOG_COMMAND_PARAM) or _DEFAULT_GOG_COMMAND
+        gog_environment = os.environ.copy()
+        passphrase = parameters.get_param(_GOG_PASSPHRASE_PARAM)
+        if passphrase:
+            gog_environment["GOGCLI_PASSPHRASE"] = passphrase
+        try:
+            result = subprocess.run(
+                [
+                    *shlex.split(command),
+                    "--account",
+                    account,
+                    "--readonly",
+                    "--no-input",
+                    "--json",
+                    *arguments,
+                ],
+                capture_output=True,
+                check=False,
+                env=gog_environment,
+                text=True,
+                timeout=60,
+            )
+        except FileNotFoundError as error:
+            raise UserError(self.env._("The configured gog command was not found on this Odoo server.")) from error
+        except subprocess.TimeoutExpired as error:
+            raise UserError(self.env._("Reading the Google Sheet via gog timed out.")) from error
+        if result.returncode:
+            detail = (result.stderr or result.stdout or "Unknown gog error").strip()
+            raise UserError(
+                self.env._(
+                    "Could not read the Google Sheet via gog: %(detail)s",
+                    detail=detail,
+                )
+            )
+        try:
+            return json.loads(result.stdout)
+        except json.JSONDecodeError as exc:
+            raise UserError(self.env._("gog returned invalid JSON.")) from exc
+
+    def _rows_with_gog(self, spreadsheet_id, gid=None):
+        metadata = self._run_gog_json("sheets", "metadata", spreadsheet_id)
+        sheets = metadata.get("sheets", [])
+        worksheet = next(
+            (item for item in sheets if gid is None or item.get("properties", {}).get("sheetId") == gid),
+            None,
         )
+        if not worksheet:
+            raise UserError(self.env._("Could not find the requested worksheet."))
+        title = worksheet["properties"]["title"]
+        escaped_title = title.replace("'", "''")
+        data = self._run_gog_json("sheets", "get", spreadsheet_id, f"'{escaped_title}'")
+        return self._rows_from_values(data.get("values", []))
+
+    def _xlsx_rows(self, content):
+        workbook = openpyxl.load_workbook(io.BytesIO(content), data_only=True, read_only=True)
         worksheet = workbook.worksheets[0]
-        rows_iter = worksheet.iter_rows(values_only=True)
-        header = [str(cell).strip() if cell else "" for cell in next(rows_iter)]
-        col_index = {
-            key: header.index(column_name)
-            for column_name, key in _XLSX_COLUMN_MAP.items()
-            if column_name in header
-        }
+        return self._rows_from_values(worksheet.iter_rows(values_only=True))
+
+    def _rows_from_values(self, values):
+        rows_iter = iter(values)
+        header = [str(cell).strip() if cell else "" for cell in next(rows_iter, [])]
+        occurrences = {}
+        col_index = {}
+        for index, column_name in enumerate(header):
+            duplicate_keys = _DUPLICATE_XLSX_COLUMNS.get(column_name)
+            if duplicate_keys:
+                occurrence = occurrences.get(column_name, 0)
+                occurrences[column_name] = occurrence + 1
+                if occurrence < len(duplicate_keys):
+                    col_index[duplicate_keys[occurrence]] = index
+            elif column_name in _XLSX_COLUMN_MAP:
+                col_index[_XLSX_COLUMN_MAP[column_name]] = index
         missing = _XLSX_REQUIRED_COLUMNS - set(col_index)
         if missing:
             raise UserError(
@@ -231,8 +280,7 @@ class GuestTaxSheet(models.Model):
                 "guest3_nationality": cell(row, "guest3_nationality"),
             }
 
-        rows = (normalize(row) for row in rows_iter if row)
-        return self._create_messages_for_month(rows)
+        return [normalize(row) for row in rows_iter if row]
 
     def _create_messages_for_month(self, rows):
         self.ensure_one()
@@ -243,6 +291,7 @@ class GuestTaxSheet(models.Model):
         guest_tax_message = self.env["guest.tax.message"]
         created_count = 0
         skipped_count = 0
+        warnings = []
         for row in rows:
             checkin = row.get("checkin")
             if not checkin or checkin.year != target_year or checkin.month != target_month:
@@ -251,9 +300,13 @@ class GuestTaxSheet(models.Model):
             email = (row.get("email") or "").strip()
             import_key = f"{email}|{checkin.isoformat()}"
             existing_message = guest_tax_message.search([("x_import_key", "=", import_key)], limit=1)
+            try:
+                sale_order = self._find_existing_sale_order(row, existing_message)
+            except UserError as error:
+                warnings.append(str(error))
+                continue
             if existing_message:
-                self._refresh_guest_countries(row)
-                self._ensure_sale_order(existing_message)
+                self._sync_guest_data(existing_message, sale_order, row, email)
                 skipped_count += 1
                 continue
 
@@ -263,18 +316,21 @@ class GuestTaxSheet(models.Model):
                     "name": f"{guest_name} ({checkin.isoformat()})",
                     "x_import_key": import_key,
                     "x_sheet_id": self.id,
+                    "x_sale_order_id": sale_order.id,
+                    "company_id": sale_order.company_id.id,
                     "x_arrival_date": row.get("checkin"),
                     "x_departure_date": row.get("checkout"),
                 }
             )
-            self._create_guest_lines(message, row, email)
-            self._ensure_sale_order(message)
+            self._sync_guest_data(message, sale_order, row, email)
             created_count += 1
 
+        self.x_import_warning = "\n".join(warnings) or False
         message = self.env._(
-            "%(created)s guest tax message(s) created, %(skipped)s already imported.",
+            "%(created)s guest tax message(s) created, %(skipped)s already imported, " "%(warnings)s warning(s).",
             created=created_count,
             skipped=skipped_count,
+            warnings=len(warnings),
         )
         return {
             "type": "ir.actions.client",
@@ -282,125 +338,113 @@ class GuestTaxSheet(models.Model):
             "params": {"title": self.env._("Sheet Loaded"), "message": message, "sticky": False},
         }
 
-    def _create_guest_lines(self, message, row, main_email):
+    def _find_existing_sale_order(self, row, existing_message=None):
+        if existing_message and existing_message.x_sale_order_id:
+            return existing_message.x_sale_order_id
+
+        checkin = row.get("checkin")
+        checkout = row.get("checkout")
+        if not checkin or not checkout:
+            raise UserError(self.env._("Check-in and check-out are required to find the sale order."))
+
+        domain = [
+            ("state", "!=", "cancel"),
+            ("rental_start_date", ">=", datetime.combine(checkin, time.min)),
+            ("rental_start_date", "<", datetime.combine(checkin + timedelta(days=1), time.min)),
+            ("rental_return_date", ">=", datetime.combine(checkout, time.min)),
+            ("rental_return_date", "<", datetime.combine(checkout + timedelta(days=1), time.min)),
+        ]
+        if self.x_product_id:
+            domain.append(("order_line.product_id", "=", self.x_product_id.id))
+        tiny_away_channel = self._get_tiny_away_sale_channel()
+        if tiny_away_channel:
+            domain.append(("sale_channel_id", "=", tiny_away_channel.id))
+
+        candidates = self.env["sale.order"].sudo().search(domain)
+        guest_name = (row.get("full_name") or "").strip().casefold()
+        email = (row.get("email") or "").strip().casefold()
+        matching_partner = candidates.filtered(
+            lambda order: (email and (order.partner_id.email or "").strip().casefold() == email)
+            or (guest_name and (order.partner_id.name or "").strip().casefold() == guest_name)
+        )
+        if len(matching_partner) == 1:
+            return matching_partner
+        if len(candidates) == 1:
+            return candidates
+
+        stay = f"{checkin.isoformat()} – {checkout.isoformat()}"
+        if not candidates:
+            raise UserError(
+                self.env._(
+                    "No existing Tiny House sale order was found for %(guest)s (%(stay)s).",
+                    guest=row.get("full_name") or "Unknown guest",
+                    stay=stay,
+                )
+            )
+        raise UserError(
+            self.env._(
+                "Multiple Tiny House sale orders match %(guest)s (%(stay)s). Link the correct "
+                "sale order manually and load again.",
+                guest=row.get("full_name") or "Unknown guest",
+                stay=stay,
+            )
+        )
+
+    def _sync_guest_data(self, message, sale_order, row, main_email):
+        message.write(
+            {
+                "x_sheet_id": self.id,
+                "x_sale_order_id": sale_order.id,
+                "company_id": sale_order.company_id.id,
+                "x_arrival_date": row.get("checkin"),
+                "x_departure_date": row.get("checkout"),
+            }
+        )
         guest_lines = self.env["x_guests_line"]
         for guest in _row_to_guests(row):
             if not guest.get("name"):
                 continue
-            partner = self._find_or_create_partner(guest, main_email if guest["is_main"] else None)
-            guest_line = guest_lines.create(
-                {
-                    "x_arrival_date_manual": message.x_arrival_date,
-                    "x_departure_date_manual": message.x_departure_date,
-                    "x_guest_partner_id": partner.id,
-                    "x_main_guest": guest["is_main"],
-                    "x_save_as_contact": guest["is_main"],
-                }
-            )
-            message.write({"x_guest_line_ids": [Command.link(guest_line.id)]})
+            email = main_email if guest["is_main"] else None
+            preferred_partner = sale_order.partner_id if guest["is_main"] else None
+            partner = self._find_or_create_partner(guest, email, preferred_partner)
+            # Look up the existing guest line on the sale order itself, not just on
+            # this message's own m2m link — the main guest's line is often already
+            # there (auto-added by sale.order._add_partner_as_guest()) before this
+            # sync ever runs, and missing that reuse used to create a duplicate.
+            guest_line = sale_order.x_guest_line_ids.filtered(
+                lambda line, partner=partner: line.x_guest_partner_id == partner
+            )[:1]
+            values = {
+                "x_arrival_date_manual": message.x_arrival_date,
+                "x_departure_date_manual": message.x_departure_date,
+                "x_sale_order_id": sale_order.id,
+                "x_guest_partner_id": partner.id,
+                "x_main_guest": guest["is_main"],
+                "x_save_as_contact": guest["is_main"],
+            }
+            if guest_line:
+                guest_line.write(values)
+            else:
+                guest_line = guest_lines.create(values)
+            if guest_line not in message.x_guest_line_ids:
+                message.write({"x_guest_line_ids": [Command.link(guest_line.id)]})
 
-    def _ensure_sale_order(self, message):
-        """Link the imported stay to an order and ensure its rental line."""
-        sale_order = message.x_sale_order_id
-        tiny_away_channel = self._get_tiny_away_sale_channel()
-        if not sale_order:
-            main_guest_line = message.x_guest_line_ids.filtered("x_main_guest")[:1]
-            partner = main_guest_line.x_guest_partner_id
-            if not partner or not message.x_arrival_date or not message.x_departure_date:
-                return self.env["sale.order"]
+        main_partner = sale_order.partner_id
+        message.x_guest_line_ids.filtered(lambda line: line.x_guest_partner_id != main_partner).write(
+            {"x_main_guest": False}
+        )
 
-            rental_start = datetime.combine(message.x_arrival_date, time(hour=16))
-            rental_return = datetime.combine(message.x_departure_date, time(hour=7))
-            sale_order_model = self.env["sale.order"].with_company(message.company_id)
-            sale_order = sale_order_model.search(
-                [
-                    ("company_id", "=", message.company_id.id),
-                    ("partner_id", "=", partner.id),
-                    ("rental_start_date", ">=", datetime.combine(message.x_arrival_date, time.min)),
-                    (
-                        "rental_start_date",
-                        "<",
-                        datetime.combine(message.x_arrival_date + timedelta(days=1), time.min),
-                    ),
-                    ("rental_return_date", ">=", datetime.combine(message.x_departure_date, time.min)),
-                    (
-                        "rental_return_date",
-                        "<",
-                        datetime.combine(message.x_departure_date + timedelta(days=1), time.min),
-                    ),
-                    ("state", "!=", "cancel"),
-                ],
-                limit=1,
-            )
-            if not sale_order:
-                order_vals = {
-                    "company_id": message.company_id.id,
-                    "partner_id": partner.id,
-                    "rental_start_date": rental_start,
-                    "rental_return_date": rental_return,
-                }
-                if tiny_away_channel:
-                    order_vals["sale_channel_id"] = tiny_away_channel.id
-                sale_order = sale_order_model.create(order_vals)
-
-            message.x_sale_order_id = sale_order
-            message.x_guest_line_ids.write({"x_sale_order_id": sale_order.id})
-
-        if tiny_away_channel and sale_order.sale_channel_id != tiny_away_channel:
-            sale_order.sale_channel_id = tiny_away_channel
-
-        if (
-            sale_order.company_id != message.company_id
-            and sale_order.state in ("draft", "sent")
-            and not sale_order.order_line
-        ):
-            warehouse = self.env["stock.warehouse"].search([("company_id", "=", message.company_id.id)], limit=1)
-            sale_order.write(
-                {
-                    "company_id": message.company_id.id,
-                    "warehouse_id": warehouse.id,
-                    "rental_start_date": datetime.combine(message.x_arrival_date, time(hour=16)),
-                    "rental_return_date": datetime.combine(message.x_departure_date, time(hour=7)),
-                }
-            )
-
-        product = self.x_product_id
-        if product and not sale_order.order_line.filtered(lambda line: line.product_id == product):
-            self.env["sale.order.line"].with_company(sale_order.company_id).create(
-                {
-                    "order_id": sale_order.id,
-                    "product_id": product.id,
-                    "product_uom_qty": 1,
-                    "is_rental": True,
-                }
-            )
-        return sale_order
-
-    def _refresh_guest_countries(self, row):
-        """Re-resolve and overwrite country/nationality for every guest in the
-        row. A message that was already imported is otherwise never touched
-        again by a later reimport, so this is the only way to fix a guest
-        whose country a prior (buggy or incomplete) import got wrong."""
+    def _find_or_create_partner(self, guest, email, preferred_partner=None):
         partner_model = self.env["res.partner"]
-        for guest in _row_to_guests(row):
-            if not guest.get("name"):
-                continue
-            country = self._find_country(guest.get("country"))
-            if not country:
-                continue
-            partner = partner_model.search([("name", "=ilike", guest["name"])], limit=1)
-            if partner:
-                partner.write({"country_id": country.id, "x_nationality": country.id})
-
-    def _find_or_create_partner(self, guest, email):
-        partner_model = self.env["res.partner"]
-        partner = partner_model.browse()
-        if email:
+        partner = preferred_partner or partner_model.browse()
+        if not partner and email:
             partner = partner_model.search([("email", "=ilike", email)], limit=1)
         if not partner:
             partner = partner_model.search([("name", "=ilike", guest["name"])], limit=1)
 
         vals = {}
+        if email:
+            vals["email"] = email
         anrede = _GENDER_TO_ANREDE.get((guest.get("gender") or "").strip().lower())
         if anrede:
             vals["x_anrede"] = anrede
@@ -417,10 +461,6 @@ class GuestTaxSheet(models.Model):
         country_vals = {"country_id": country.id, "x_nationality": country.id} if country else {}
 
         if partner:
-            # Enrich only fields the existing partner doesn't already have —
-            # never overwrite data that's already there. Country/nationality
-            # is the exception: always refresh it on reimport, since a prior
-            # import can have left it blank or wrong (e.g. a lookup bug).
             blank_vals = {key: value for key, value in vals.items() if not partner[key]}
             blank_vals.update(country_vals)
             if blank_vals:
@@ -429,8 +469,6 @@ class GuestTaxSheet(models.Model):
 
         vals.update(country_vals)
         vals["name"] = guest["name"]
-        if email:
-            vals["email"] = email
         return partner_model.create(vals)
 
     def _find_country(self, name):

@@ -9,6 +9,7 @@
                 <field name="x_anrede" />
                 <field name="x_anrede_calc" />
                 <field name="x_anrede_calc_refresh" widget="boolean_toggle" />
+                <field name="x_anrede_calc_ai" />
                 <field name="x_nationality" />
                 <field name="x_calc_nationality_id" />
             </xpath>

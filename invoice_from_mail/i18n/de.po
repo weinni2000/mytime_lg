@@ -1,0 +1,43 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# * invoice_from_mail
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"Language: de\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: invoice_from_mail
+#. odoo-javascript
+#: code:addons/invoice_from_mail/static/src/components/bank_reconciliation/button_list_patch.xml:0
+msgid "Search Invoice in Mail"
+msgstr "Rechnung in Mails suchen"
+
+#. module: invoice_from_mail
+#. odoo-python
+#: code:addons/invoice_from_mail/models/account_bank_statement_line.py:0
+msgid "No matching email with a PDF attachment was found for this transaction."
+msgstr "Es wurde keine passende E-Mail mit PDF-Anhang für diese Transaktion gefunden."
+
+#. module: invoice_from_mail
+#. odoo-python
+#: code:addons/invoice_from_mail/models/account_bank_statement_line.py:0
+msgid "Could not search mail because the gog CLI is not installed on this Odoo server."
+msgstr "Die Mail-Suche ist nicht möglich, da die gog-CLI auf diesem Odoo-Server nicht installiert ist."
+
+#. module: invoice_from_mail
+#. odoo-python
+#: code:addons/invoice_from_mail/models/account_bank_statement_line.py:0
+msgid "Searching mail timed out."
+msgstr "Die Mail-Suche hat das Zeitlimit überschritten."
+
+#. module: invoice_from_mail
+#. odoo-python
+#: code:addons/invoice_from_mail/models/account_bank_statement_line.py:0
+msgid "gog failed while searching mail."
+msgstr "gog ist bei der Mail-Suche fehlgeschlagen."

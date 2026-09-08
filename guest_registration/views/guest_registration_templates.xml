@@ -1,0 +1,615 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <template id="guest_registration_page" name="Guest Registration">
+        <t t-call="website.layout">
+            <div id="wrap">
+                <div class="container py-5" style="max-width: 720px;">
+                    <h2 class="mb-2">Complete Your Booking</h2>
+                    <p class="text-muted mb-4">
+                        Booking <strong
+                            t-out="order.name"
+                        /> — please complete your name, birthdate, address,
+                        contact information and the names and ages of your fellow guests.
+                    </p>
+                    <form
+                        t-attf-action="/guest_registration/#{order.id}/submit"
+                        method="post"
+                    >
+                        <input
+                            type="hidden"
+                            name="csrf_token"
+                            t-att-value="request.csrf_token()"
+                        />
+                        <input
+                            type="hidden"
+                            name="access_token"
+                            t-att-value="access_token"
+                        />
+
+                        <h5 class="mb-3">Scan ID / Passport</h5>
+                        <p class="text-muted small mb-2">
+                            Optionally upload photos of your ID or passport to
+                            pre-fill the fields below.
+                        </p>
+                        <div class="row g-3 mb-3">
+                            <div class="col-6">
+                                <label
+                                    class="form-label"
+                                    for="grf_id_front"
+                                >Document Front</label>
+                                <input
+                                    type="file"
+                                    id="grf_id_front"
+                                    accept="image/*"
+                                    class="form-control"
+                                />
+                            </div>
+                            <div class="col-6">
+                                <label
+                                    class="form-label"
+                                    for="grf_id_back"
+                                >Document Back</label>
+                                <input
+                                    type="file"
+                                    id="grf_id_back"
+                                    accept="image/*"
+                                    class="form-control"
+                                />
+                            </div>
+                            <div class="col-12">
+                                <button
+                                    type="button"
+                                    id="grf_scan_btn"
+                                    class="btn btn-outline-primary btn-sm"
+                                    t-attf-data-scan-url="/guest_registration/#{order.id}/scan_id"
+                                >
+                                    <i class="fa fa-camera me-1" />Scan Document
+                                </button>
+                                <span
+                                    id="grf_scan_status"
+                                    class="ms-2 text-muted small"
+                                />
+                            </div>
+                            <div class="col-12">
+                                <div
+                                    id="grf_scan_error"
+                                    class="alert alert-danger d-none mb-0"
+                                    role="alert"
+                                />
+                            </div>
+                        </div>
+
+                        <h5 class="mb-3">Booking Details</h5>
+                        <div class="row g-3 mb-5">
+                            <div class="col-6">
+                                <label
+                                    class="form-label"
+                                    for="grf_rental_start_date"
+                                >Start Date</label>
+                                <input
+                                    type="date"
+                                    id="grf_rental_start_date"
+                                    name="rental_start_date"
+                                    class="form-control"
+                                    t-att-value="default_start_date"
+                                />
+                            </div>
+                            <div class="col-6">
+                                <label
+                                    class="form-label"
+                                    for="grf_rental_return_date"
+                                >End Date</label>
+                                <input
+                                    type="date"
+                                    id="grf_rental_return_date"
+                                    name="rental_return_date"
+                                    class="form-control"
+                                    t-att-value="default_end_date"
+                                />
+                            </div>
+                            <div class="col-12">
+                                <label
+                                    class="form-label"
+                                    for="grf_product_id"
+                                >Product</label>
+                                <select
+                                    id="grf_product_id"
+                                    name="product_id"
+                                    class="form-select"
+                                >
+                                    <option value="">Select...</option>
+                                    <t t-foreach="products" t-as="product">
+                                        <option
+                                            t-att-value="product.id"
+                                            t-att-selected="'selected' if product.id == order.order_line[:1].product_id.id else None"
+                                            t-out="product.display_name"
+                                        />
+                                    </t>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <div class="form-check">
+                                    <input
+                                        type="checkbox"
+                                        id="grf_immediate_payment"
+                                        name="immediate_payment"
+                                        class="form-check-input"
+                                        t-att-checked="'checked' if order.is_paid else None"
+                                    />
+                                    <label
+                                        class="form-check-label"
+                                        for="grf_immediate_payment"
+                                    >Already Paid</label>
+                                </div>
+                            </div>
+                            <div
+                                class="col-12"
+                                id="grf_journal_wrapper"
+                                t-att-class="'col-12' if order.is_paid else 'col-12 d-none'"
+                            >
+                                <label
+                                    class="form-label"
+                                    for="grf_journal_id"
+                                >Payment Journal</label>
+                                <select
+                                    id="grf_journal_id"
+                                    name="journal_id"
+                                    class="form-select"
+                                >
+                                    <option value="">Select...</option>
+                                    <t t-foreach="journals" t-as="journal">
+                                        <option
+                                            t-att-value="journal.id"
+                                            t-att-selected="'selected' if journal.id in order.invoice_ids.matched_payment_ids.journal_id.ids else None"
+                                            t-out="journal.name"
+                                        />
+                                    </t>
+                                </select>
+                            </div>
+                        </div>
+
+                        <h5 class="mb-3">Address &amp; Contact</h5>
+                        <div class="row g-3 mb-5">
+                            <div class="col-12">
+                                <label class="form-label" for="grf_name">Name</label>
+                                <input
+                                    type="text"
+                                    id="grf_name"
+                                    name="name"
+                                    class="form-control"
+                                    t-att-value="order.partner_id.name"
+                                />
+                            </div>
+                            <div class="col-6">
+                                <label
+                                    class="form-label"
+                                    for="grf_birthdate"
+                                >Birthdate</label>
+                                <input
+                                    type="date"
+                                    id="grf_birthdate"
+                                    name="birthdate"
+                                    class="form-control"
+                                    t-att-value="order.partner_id.birthdate_date"
+                                />
+                            </div>
+                            <div class="col-12 position-relative">
+                                <label
+                                    class="form-label"
+                                    for="grf_location_search"
+                                >Search Address (ZIP or City)</label>
+                                <input
+                                    type="text"
+                                    id="grf_location_search"
+                                    class="form-control"
+                                    placeholder="e.g. 6020 or Innsbruck"
+                                    autocomplete="off"
+                                    t-attf-data-search-url="/guest_registration/#{order.id}/search_location"
+                                />
+                                <div
+                                    id="grf_location_results"
+                                    class="list-group position-absolute w-100 d-none"
+                                    style="z-index: 1000; max-height: 220px; overflow-y: auto;"
+                                />
+                            </div>
+                            <div class="col-12">
+                                <label
+                                    class="form-label"
+                                    for="grf_street"
+                                >Street</label>
+                                <input
+                                    type="text"
+                                    id="grf_street"
+                                    name="street"
+                                    class="form-control"
+                                    t-att-value="order.partner_id.street"
+                                />
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label" for="grf_zip">Zip</label>
+                                <input
+                                    type="text"
+                                    id="grf_zip"
+                                    name="zip"
+                                    class="form-control"
+                                    t-att-value="order.partner_id.zip"
+                                />
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label" for="grf_city">City</label>
+                                <input
+                                    type="text"
+                                    id="grf_city"
+                                    name="city"
+                                    class="form-control"
+                                    t-att-value="order.partner_id.city"
+                                />
+                            </div>
+                            <div class="col-12">
+                                <label
+                                    class="form-label"
+                                    for="grf_country_id"
+                                >Country</label>
+                                <select
+                                    id="grf_country_id"
+                                    name="country_id"
+                                    class="form-select"
+                                >
+                                    <option value="">Select...</option>
+                                    <t t-foreach="countries" t-as="country">
+                                        <option
+                                            t-att-value="country.id"
+                                            t-att-selected="'selected' if country.id == order.partner_id.country_id.id else None"
+                                            t-out="country.name"
+                                        />
+                                    </t>
+                                </select>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label" for="grf_email">Email</label>
+                                <input
+                                    type="email"
+                                    id="grf_email"
+                                    name="email"
+                                    class="form-control"
+                                    t-att-value="order.partner_id.email"
+                                />
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label" for="grf_phone">Phone</label>
+                                <input
+                                    type="tel"
+                                    id="grf_phone"
+                                    name="phone"
+                                    class="form-control"
+                                    t-att-value="order.partner_id.phone"
+                                />
+                            </div>
+                        </div>
+
+                        <h5 class="mb-3">Other Guests</h5>
+                        <div id="guest_rows">
+                            <t t-foreach="companion_guests" t-as="guest">
+                                <div class="guest-row row align-items-end mb-2">
+                                    <div class="col-6">
+                                        <input
+                                            type="hidden"
+                                            name="guest_line_id"
+                                            t-att-value="guest['id']"
+                                        />
+                                        <input
+                                            type="text"
+                                            name="guest_name"
+                                            class="form-control"
+                                            placeholder="Guest name"
+                                            t-att-value="guest['name']"
+                                        />
+                                    </div>
+                                    <div class="col-3">
+                                        <div class="form-check">
+                                            <input
+                                                type="hidden"
+                                                name="guest_is_child"
+                                                t-att-value="'1' if guest['is_child'] else '0'"
+                                            />
+                                            <input
+                                                type="checkbox"
+                                                class="form-check-input guest-is-child"
+                                                t-att-checked="'checked' if guest['is_child'] else None"
+                                            />
+                                            <label
+                                                class="form-check-label"
+                                            >Child</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-3">
+                                        <button
+                                            type="button"
+                                            class="btn btn-outline-danger btn-sm guest-row-remove"
+                                            aria-label="Remove guest"
+                                        >×</button>
+                                    </div>
+                                </div>
+                            </t>
+                            <div class="guest-row row align-items-end mb-2">
+                                <div class="col-6">
+                                    <input
+                                        type="hidden"
+                                        name="guest_line_id"
+                                        value=""
+                                    />
+                                    <input
+                                        type="text"
+                                        name="guest_name"
+                                        class="form-control"
+                                        placeholder="Guest name"
+                                    />
+                                </div>
+                                <div class="col-3">
+                                    <div class="form-check">
+                                        <input
+                                            type="hidden"
+                                            name="guest_is_child"
+                                            value="0"
+                                        />
+                                        <input
+                                            type="checkbox"
+                                            class="form-check-input guest-is-child"
+                                        />
+                                        <label class="form-check-label">Child</label>
+                                    </div>
+                                </div>
+                                <div class="col-3">
+                                    <button
+                                        type="button"
+                                        class="btn btn-outline-danger btn-sm guest-row-remove"
+                                        aria-label="Remove guest"
+                                    >×</button>
+                                </div>
+                            </div>
+                        </div>
+                        <button
+                            type="button"
+                            id="guest_row_add"
+                            class="btn btn-outline-secondary btn-sm mt-1 mb-5"
+                        >
+                            <i class="fa fa-plus me-1" />Add guest
+                        </button>
+
+                        <template id="guest_row_tpl">
+                            <div class="guest-row row align-items-end mb-2">
+                                <div class="col-6">
+                                    <input
+                                        type="hidden"
+                                        name="guest_line_id"
+                                        value=""
+                                    />
+                                    <input
+                                        type="text"
+                                        name="guest_name"
+                                        class="form-control"
+                                        placeholder="Guest name"
+                                    />
+                                </div>
+                                <div class="col-3">
+                                    <div class="form-check">
+                                        <input
+                                            type="hidden"
+                                            name="guest_is_child"
+                                            value="0"
+                                        />
+                                        <input
+                                            type="checkbox"
+                                            class="form-check-input guest-is-child"
+                                        />
+                                        <label class="form-check-label">Child</label>
+                                    </div>
+                                </div>
+                                <div class="col-3">
+                                    <button
+                                        type="button"
+                                        class="btn btn-outline-danger btn-sm guest-row-remove"
+                                        aria-label="Remove guest"
+                                    >×</button>
+                                </div>
+                            </div>
+                        </template>
+
+                        <script type="text/javascript">
+                            <![CDATA[
+                            document.addEventListener("DOMContentLoaded", function () {
+                                var rowsContainer = document.getElementById("guest_rows");
+                                var rowTpl = document.getElementById("guest_row_tpl");
+                                var addBtn = document.getElementById("guest_row_add");
+
+                                addBtn.addEventListener("click", function () {
+                                    rowsContainer.appendChild(rowTpl.content.cloneNode(true));
+                                });
+
+                                rowsContainer.addEventListener("click", function (ev) {
+                                    if (ev.target.classList.contains("guest-row-remove")) {
+                                        var rows = rowsContainer.querySelectorAll(".guest-row");
+                                        if (rows.length > 1) {
+                                            ev.target.closest(".guest-row").remove();
+                                        }
+                                    }
+                                });
+
+                                rowsContainer.addEventListener("change", function (ev) {
+                                    if (ev.target.classList.contains("guest-is-child")) {
+                                        ev.target.previousElementSibling.value = ev.target.checked ? "1" : "0";
+                                    }
+                                });
+
+                                var immediatePayment = document.getElementById("grf_immediate_payment");
+                                var journalWrapper = document.getElementById("grf_journal_wrapper");
+
+                                immediatePayment.addEventListener("change", function () {
+                                    journalWrapper.classList.toggle("d-none", !immediatePayment.checked);
+                                });
+
+                                var locationSearch = document.getElementById("grf_location_search");
+                                var locationResults = document.getElementById("grf_location_results");
+                                var locationTimeout = null;
+
+                                function hideLocationResults() {
+                                    locationResults.classList.add("d-none");
+                                    locationResults.replaceChildren();
+                                }
+
+                                function renderLocationResults(locations) {
+                                    locationResults.replaceChildren();
+                                    if (!locations.length) {
+                                        hideLocationResults();
+                                        return;
+                                    }
+                                    locations.forEach(function (location) {
+                                        var item = document.createElement("button");
+                                        item.type = "button";
+                                        item.className = "list-group-item list-group-item-action";
+                                        item.textContent = location.display_name;
+                                        item.addEventListener("click", function () {
+                                            document.getElementById("grf_zip").value = location.zip || "";
+                                            document.getElementById("grf_city").value = location.city || "";
+                                            if (location.country_id) {
+                                                document.getElementById("grf_country_id").value = location.country_id;
+                                            }
+                                            locationSearch.value = location.display_name;
+                                            hideLocationResults();
+                                        });
+                                        locationResults.appendChild(item);
+                                    });
+                                    locationResults.classList.remove("d-none");
+                                }
+
+                                locationSearch.addEventListener("input", function () {
+                                    var query = locationSearch.value.trim();
+                                    if (locationTimeout) {
+                                        clearTimeout(locationTimeout);
+                                    }
+                                    if (query.length < 2) {
+                                        hideLocationResults();
+                                        return;
+                                    }
+                                    locationTimeout = setTimeout(function () {
+                                        var formData = new FormData();
+                                        formData.append(
+                                            "csrf_token",
+                                            document.querySelector('input[name="csrf_token"]').value
+                                        );
+                                        formData.append(
+                                            "access_token",
+                                            document.querySelector('input[name="access_token"]').value
+                                        );
+                                        formData.append("query", query);
+                                        fetch(locationSearch.dataset.searchUrl, {method: "POST", body: formData})
+                                            .then(function (response) {
+                                                return response.json();
+                                            })
+                                            .then(function (data) {
+                                                renderLocationResults(Array.isArray(data) ? data : []);
+                                            })
+                                            .catch(function () {
+                                                hideLocationResults();
+                                            });
+                                    }, 300);
+                                });
+
+                                document.addEventListener("click", function (ev) {
+                                    if (ev.target !== locationSearch && !locationResults.contains(ev.target)) {
+                                        hideLocationResults();
+                                    }
+                                });
+
+                                var scanBtn = document.getElementById("grf_scan_btn");
+                                var scanStatus = document.getElementById("grf_scan_status");
+                                var scanError = document.getElementById("grf_scan_error");
+                                var frontInput = document.getElementById("grf_id_front");
+                                var backInput = document.getElementById("grf_id_back");
+
+                                function showScanError(message) {
+                                    scanError.textContent = message;
+                                    scanError.classList.remove("d-none");
+                                }
+
+                                scanBtn.addEventListener("click", function () {
+                                    if (!frontInput.files.length && !backInput.files.length) {
+                                        showScanError("Upload a front or back image of the document first.");
+                                        return;
+                                    }
+                                    scanError.classList.add("d-none");
+                                    scanBtn.disabled = true;
+                                    scanStatus.textContent = "Scanning...";
+
+                                    var formData = new FormData();
+                                    formData.append(
+                                        "csrf_token",
+                                        document.querySelector('input[name="csrf_token"]').value
+                                    );
+                                    formData.append(
+                                        "access_token",
+                                        document.querySelector('input[name="access_token"]').value
+                                    );
+                                    if (frontInput.files.length) {
+                                        formData.append("id_document_front", frontInput.files[0]);
+                                    }
+                                    if (backInput.files.length) {
+                                        formData.append("id_document_back", backInput.files[0]);
+                                    }
+
+                                    fetch(scanBtn.dataset.scanUrl, {method: "POST", body: formData})
+                                        .then(function (response) {
+                                            return response.json();
+                                        })
+                                        .then(function (data) {
+                                            if (data.error) {
+                                                showScanError(data.error);
+                                                return;
+                                            }
+                                            var fieldByKey = {
+                                                name: "grf_name",
+                                                birthdate: "grf_birthdate",
+                                                street: "grf_street",
+                                                zip: "grf_zip",
+                                                city: "grf_city",
+                                                country_id: "grf_country_id",
+                                            };
+                                            Object.keys(fieldByKey).forEach(function (key) {
+                                                if (data[key]) {
+                                                    document.getElementById(fieldByKey[key]).value = data[key];
+                                                }
+                                            });
+                                        })
+                                        .catch(function () {
+                                            showScanError("Document scan failed. Please try again.");
+                                        })
+                                        .finally(function () {
+                                            scanBtn.disabled = false;
+                                            scanStatus.textContent = "";
+                                        });
+                                });
+                            });
+                            ]]>
+                        </script>
+
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                    </form>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <template
+        id="guest_registration_invalid_link"
+        name="Guest Registration Invalid Link"
+    >
+        <t t-call="website.layout">
+            <div id="wrap">
+                <div class="container py-5 text-center" style="max-width: 720px;">
+                    <h2 class="mb-3">Link Invalid</h2>
+                    <p>This guest registration link is invalid or has expired.</p>
+                </div>
+            </div>
+        </t>
+    </template>
+</odoo>

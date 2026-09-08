@@ -46,14 +46,13 @@ _DESKLINE_SALUTATION_OHNE = _X_ANREDE_SELECTION[30][0]
 
 # Guest-registration completeness: "light" applies to accompanying guests,
 # "full" applies to the main guest of a stay (see x_guests_line.x_main_guest).
-_GUEST_LIGHT_REQUIRED_FIELDS = ["name", "x_anrede", "x_nationality"]
+_GUEST_LIGHT_REQUIRED_FIELDS = ["name", "x_anrede", "x_calc_nationality_id"]
 _GUEST_FULL_REQUIRED_FIELDS = [
     "name",
     "x_anrede",
-    "title_id",
     "lang",
     "country_id",
-    "x_nationality",
+    "x_calc_nationality_id",
     "zip",
     "city",
     "street",
@@ -61,10 +60,9 @@ _GUEST_FULL_REQUIRED_FIELDS = [
 _GUEST_FIELD_LABELS = {
     "name": "Name",
     "x_anrede": "Anrede",
-    "title_id": "Title",
     "lang": "Language",
     "country_id": "Country",
-    "x_nationality": "Nationality",
+    "x_calc_nationality_id": "Nationality",
     "zip": "Zip",
     "city": "City",
     "street": "Street",
@@ -72,7 +70,6 @@ _GUEST_FIELD_LABELS = {
 
 _DESKLINE_PERSON_GROUP_PFLICHTIG = ("98d0fd41-ae19-4e8d-a1a3-f5476069f967", "Pflichtig", "P")
 _DESKLINE_PERSON_GROUP_FREI = ("63dddfc8-5953-4cbd-aae3-451c593bda02", "Frei", "F")
-_DESKLINE_PERSON_GROUP_AGE_THRESHOLD = 16
 
 # The Deskline web form always submits the full salutation/person-group reference
 # lists alongside a guest, regardless of the guest's own values (from

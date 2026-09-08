@@ -1,0 +1,1 @@
+from . import test_action_search_invoice_in_mail

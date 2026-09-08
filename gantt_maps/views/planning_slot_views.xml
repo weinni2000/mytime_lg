@@ -53,10 +53,8 @@
         />
     </record>
 
-    <record
-        id="booking_engine.booking_engine_rooms_schedule_action"
-        model="ir.actions.act_window"
-    >
-        <field name="view_mode">gantt_maps,gantt,calendar,list,kanban,form</field>
-    </record>
+    <!-- The ir.actions.act_window.view row above is sufficient: Odoo includes
+         every explicit row when computing the action's views. Do not overwrite
+         booking_engine's scalar view_mode here, since that makes upgrades of
+         either module clobber the other module's view modes. -->
 </odoo>

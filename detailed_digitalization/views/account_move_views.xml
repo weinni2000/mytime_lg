@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+
+    <record id="view_move_form_inherit_detailed_digitalization" model="ir.ui.view">
+        <field name="name">account.move.form.inherit.detailed.digitalization</field>
+        <field name="model">account.move</field>
+        <field
+            name="inherit_id"
+            ref="account_invoice_extract.view_move_form_inherit_ocr"
+        />
+        <field name="arch" type="xml">
+            <xpath
+                expr="//button[@name='action_manual_send_for_digitization']"
+                position="after"
+            >
+                <button
+                    name="action_detailed_digitize"
+                    class="oe_highlight"
+                    string="Detailed Digitize"
+                    type="object"
+                    invisible="move_type not in ('in_invoice', 'in_refund', 'in_receipt') or state != 'draft'"
+                />
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

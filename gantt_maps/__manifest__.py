@@ -1,6 +1,6 @@
 {
     "name": "Gantt Maps",
-    "version": "19.0.1.0.0",
+    "version": "19.0.1.0.1",
     "author": "mytime.click",
     "category": "Hidden",
     "license": "OEEL-1",

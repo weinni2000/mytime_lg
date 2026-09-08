@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+    <t t-name="flower_calculator.ImageFullscreen">
+        <div class="o_flower_calculator_image_fullscreen">
+            <img
+                t-if="imageSource"
+                t-att-src="imageSource"
+                class="img-fluid rounded"
+                style="max-height: 200px; cursor: zoom-in;"
+                t-on-click="openFullscreen"
+            />
+            <div
+                t-if="state.fullscreen"
+                t-on-click="closeFullscreen"
+                style="position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); z-index: 2000; display: flex; align-items: center; justify-content: center; cursor: zoom-out;"
+            >
+                <img
+                    t-att-src="imageSource"
+                    style="max-width: 92vw; max-height: 92vh; object-fit: contain;"
+                />
+            </div>
+        </div>
+    </t>
+</templates>

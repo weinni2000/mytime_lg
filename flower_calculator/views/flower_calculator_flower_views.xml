@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="flower_calculator_flower_view_list" model="ir.ui.view">
+        <field name="name">flower.calculator.flower.list</field>
+        <field name="model">flower.calculator.flower</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="sale_order_id" />
+                <field name="name" />
+                <field name="quantity" />
+                <field name="size" />
+                <field name="product_id" />
+                <field name="description" optional="show" />
+                <field name="genus" optional="show" />
+                <field name="german_name" />
+                <field name="group_type" optional="show" />
+                <field name="variety" />
+                <field name="color" />
+            </list>
+        </field>
+    </record>
+
+    <record id="flower_calculator_flower_view_form" model="ir.ui.view">
+        <field name="name">flower.calculator.flower.form</field>
+        <field name="model">flower.calculator.flower</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <field name="sale_order_id" />
+                        <field name="name" />
+                        <field name="quantity" />
+                        <field name="size" />
+                        <field name="product_id" />
+                    </group>
+                    <group>
+                        <field name="genus" />
+                        <field name="german_name" />
+                        <field name="group_type" />
+                        <field name="variety" />
+                        <field name="color" />
+                    </group>
+                    <group>
+                        <field name="description" />
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="flower_calculator_flower_view_search" model="ir.ui.view">
+        <field name="name">flower.calculator.flower.search</field>
+        <field name="model">flower.calculator.flower</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name" />
+                <field name="sale_order_id" />
+                <field name="product_id" />
+                <filter
+                    name="unmatched"
+                    string="No Catalog Match"
+                    domain="[('product_id', '=', False)]"
+                />
+                <group name="group_by">
+                    <filter
+                        name="group_by_name"
+                        string="Flower Name"
+                        context="{'group_by': 'name'}"
+                    />
+                    <filter
+                        name="group_by_product"
+                        string="Product"
+                        context="{'group_by': 'product_id'}"
+                    />
+                    <filter
+                        name="group_by_order"
+                        string="Sale Order"
+                        context="{'group_by': 'sale_order_id'}"
+                    />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="flower_calculator_flower_action" model="ir.actions.act_window">
+        <field name="name">Detected Flowers</field>
+        <field name="res_model">flower.calculator.flower</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem
+        id="flower_calculator_flower_menu"
+        name="Detected Flowers"
+        action="flower_calculator_flower_action"
+        parent="sale.menu_sale_config"
+    />
+</odoo>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<templates>
+    <t
+        t-name="invoice_from_mail.BankRecButtonListDropdown"
+        t-inherit="account_accountant.BankRecButtonListDropdown"
+        t-inherit-mode="extension"
+    >
+        <xpath expr="//BankRecFileUploader" position="after">
+            <DropdownItem class="'btn btn-link'" onSelected.bind="searchInvoiceInMail">
+                Search Invoice in Mail
+            </DropdownItem>
+        </xpath>
+    </t>
+</templates>

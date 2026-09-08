@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="action_open_guest_registration_form" model="ir.actions.server">
+        <field name="name">New Guest Registration</field>
+        <field name="model_id" ref="sale.model_sale_order" />
+        <field name="state">code</field>
+        <field name="code">action = model.action_open_guest_registration_form()</field>
+    </record>
+
+    <record id="booking_engine_orders_kanban_guest_registration" model="ir.ui.view">
+        <field name="name">rental.order.kanban.guest.registration</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="booking_engine.booking_engine_orders_kanban" />
+        <field name="mode">extension</field>
+        <field name="priority">200</field>
+        <field name="arch" type="xml">
+            <xpath
+                expr="//button[@name='%(camping_automation.action_checkout_expired_rentals)d']"
+                position="after"
+            >
+                <button
+                    name="%(action_open_guest_registration_form)d"
+                    type="action"
+                    string="Guest Registration"
+                    class="btn-secondary"
+                    display="always"
+                />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="rental_order_view_inherit_guest_registration" model="ir.ui.view">
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='x_guest_line_ids']" position="before">
+                <button
+                    string="Guest Registration"
+                    type="object"
+                    name="action_open_guest_registration_wizard"
+                    class="btn-secondary mb-2"
+                />
+                <button
+                    string="Guest Registration Link"
+                    type="object"
+                    name="action_open_guest_registration_link"
+                    class="btn-secondary mb-2"
+                />
+            </xpath>
+            <xpath expr="//header/button[@name='action_open_pickup']" position="before">
+                <button
+                    string="Guest Registration"
+                    type="object"
+                    name="action_open_guest_registration_wizard"
+                    class="btn-secondary"
+                />
+                <button
+                    string="Guest Registration Link"
+                    type="object"
+                    name="action_open_guest_registration_link"
+                    class="btn-secondary"
+                />
+            </xpath>
+        </field>
+        <field name="inherit_id" ref="booking_engine.rental_order_view" />
+        <field name="mode">extension</field>
+        <field name="model">sale.order</field>
+        <field name="name">rental.order.form.inherit.guest_registration</field>
+        <field name="type">form</field>
+        <field name="active" eval="True" />
+    </record>
+</odoo>

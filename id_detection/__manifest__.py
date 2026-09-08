@@ -1,7 +1,7 @@
 {
     "name": "ID Detection",
     "summary": "Scan uploaded passport/ID images and fill the partner's identity fields.",
-    "version": "19.0.1.0.5",
+    "version": "19.0.1.2.0",
     "category": "Hidden/Tools",
     "license": "OPL-1",
     "author": "mytime.click",
@@ -13,8 +13,13 @@
         "partner_contact_gender",
         "sale_renting",
     ],
+    "external_dependencies": {
+        "python": ["opencv-python-headless>=4.11", "pytesseract"],
+        "bin": ["tesseract"],
+    },
     "data": [
         "security/ir.model.access.csv",
+        "views/res_company_views.xml",
         "views/res_partner_views.xml",
         "views/id_scan_guest_wizard_views.xml",
         "views/id_scan_customer_wizard_views.xml",

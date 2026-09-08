@@ -205,26 +205,6 @@ class ResCompany(models.Model):
         response = requests.post(url, json=body, headers=headers, timeout=30)
         return self._parse_deskline_response(response, "Deskline submission", url, body)
 
-    def _convert_deskline_payload(self, payload, master_id, master_sub_type):
-        """Convert an existing Voranmeldung/Meldeschein draft (identified by master_id,
-        as returned by a previous _submit_deskline_payload call) into a final numbered
-        Meldeschein. Confirmed via a real captured request/response: the endpoint expects
-        the same guest payload (with MasterId set to the existing registration) as a POST
-        body, not just the query-string parameters."""
-        self.ensure_one()
-        path = f"/{_DESKLINE_REGION}/de/visitorregistrationforms/convertto/{self.x_deskline_property_id}"
-        query = (
-            f"dbOv={self.x_deskline_db_ov}&masterId={master_id}"
-            f"&convertToType=0&masterSubType={master_sub_type}"
-        )
-        url, headers = self._deskline_request(path, query)
-        # ensure_ascii=False: purely cosmetic (a JSON parser reads ä and a
-        # literal "ä" identically), but keeps the wire payload readable and
-        # matches the format of every real captured request we have on file.
-        body = {"model": json.dumps(payload, ensure_ascii=False)}
-        response = requests.post(url, json=body, headers=headers, timeout=30)
-        return self._parse_deskline_response(response, "Deskline conversion", url, body)
-
     def _parse_deskline_response(self, response, action_label, request_url, request_body):
         self.ensure_one()
         # Deskline returns HTTP 200 even for application-level failures, with the

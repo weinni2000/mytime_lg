@@ -60,6 +60,10 @@ class ResPartner(models.Model):
     x_anrede_calc = fields.Selection(
         _X_ANREDE_SELECTION, string="Anrede (Calculated)", compute="_compute_x_anrede_calc"
     )
+    x_anrede_calc_ai = fields.Char(
+        string="Anrede (AI)",
+        ai='<p>What is the gender of <span data-ai-field="name">Name</span>?</p>',
+    )
 
     x_guest_data_check = fields.Selection(
         _GUEST_CHECK_SELECTION, string="Guest Data Check", compute="_compute_x_guest_checks"

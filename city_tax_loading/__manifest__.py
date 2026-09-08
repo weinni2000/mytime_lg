@@ -1,7 +1,7 @@
 {
     "name": "City Tax - Loading",
     "summary": "Load guest tax messages from a Google Sheet or uploaded file for a selected month.",
-    "version": "19.0.1.0.0",
+    "version": "19.0.1.0.5",
     "category": "Hidden/Tools",
     "license": "OPL-1",
     "author": "mytime.click",

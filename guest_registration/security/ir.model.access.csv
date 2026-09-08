@@ -1,0 +1,5 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_guest_registration_link_wizard,guest.registration.link.wizard,model_guest_registration_link_wizard,base.group_user,1,1,1,1
+access_guest_registration_wizard,guest.registration.wizard,model_guest_registration_wizard,base.group_user,1,1,1,1
+access_guest_registration_wizard_line,guest.registration.wizard.line,model_guest_registration_wizard_line,base.group_user,1,1,1,1
+access_guest_registration_guest_wizard,guest.registration.guest.wizard,model_guest_registration_guest_wizard,base.group_user,1,1,1,1

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo noupdate="1">
+    <record id="ir_config_parameter_gog_command" model="ir.config_parameter">
+        <field name="key">invoice_from_mail.gog_command</field>
+        <field name="value">/home/weinni2000/bin/gog-unlocked</field>
+    </record>
+</odoo>

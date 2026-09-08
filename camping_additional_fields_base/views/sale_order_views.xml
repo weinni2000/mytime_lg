@@ -72,6 +72,17 @@
         </field>
     </record>
 
+    <record id="rental_order_view_tree_calc_payment_type" model="ir.ui.view">
+        <field name="name">rental.order.list.calc.payment.type</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale_renting.rental_order_view_tree" />
+        <field name="arch" type="xml">
+            <field name="amount_total" position="after">
+                <field name="calc_payment_type" optional="show" />
+            </field>
+        </field>
+    </record>
+
     <record id="booking_engine_orders_kanban_is_paid" model="ir.ui.view">
         <field name="name">booking.engine.orders.kanban.is.paid</field>
         <field name="model">sale.order</field>
@@ -115,6 +126,23 @@
         </field>
     </record>
 
+    <record id="booking_engine_orders_kanban_calc_payment_type" model="ir.ui.view">
+        <field name="name">booking.engine.orders.kanban.calc.payment.type</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="booking_engine.booking_engine_orders_kanban" />
+        <field name="arch" type="xml">
+            <field name="is_late" position="after">
+                <field name="calc_payment_type" />
+            </field>
+            <xpath expr="//t[@t-name='card']/footer" position="after">
+                <div t-if="record.calc_payment_type.raw_value" class="mt-2 w-100">
+                    <span class="text-muted me-1">Payment:</span>
+                    <field name="calc_payment_type" />
+                </div>
+            </xpath>
+        </field>
+    </record>
+
     <record id="booking_engine_orders_kanban_city_tax_left" model="ir.ui.view">
         <field name="name">booking.engine.orders.kanban.city.tax.left</field>
         <field name="model">sale.order</field>
@@ -125,6 +153,28 @@
                     <span class="text-muted me-1">City Tax Left:</span>
                     <field name="city_tax_left" widget="monetary" />
                 </div>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="booking_engine_order_search_rental_start_date" model="ir.ui.view">
+        <field name="name">booking.engine.order.search.rental.start.date</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="booking_engine.booking_engine_order_search" />
+        <field name="arch" type="xml">
+            <xpath expr="//filter[@name='filter_check_out']" position="after">
+                <filter
+                    string="Rental Start Date"
+                    name="filter_rental_start_date"
+                    date="rental_start_date"
+                />
+            </xpath>
+            <xpath expr="//filter[@name='rental_status_group']" position="after">
+                <filter
+                    string="Rental Start Date"
+                    name="rental_start_date_group"
+                    context="{'group_by': 'rental_start_date'}"
+                />
             </xpath>
         </field>
     </record>

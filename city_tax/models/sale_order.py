@@ -9,6 +9,17 @@ class SaleOrder(models.Model):
         string="Transferred to Deskline", compute="_compute_x_transferred_to_deskline", store=True
     )
     x_data_valid = fields.Boolean(string="Data Valid", compute="_compute_x_data_valid")
+    x_guest_line_warning = fields.Text(
+        string="Guest Warnings",
+        compute="_compute_x_guest_line_warning",
+        store=True,
+    )
+    x_manual_exclude = fields.Boolean(string="Manual Exclude")
+    x_manual_exclude_calc = fields.Boolean(
+        string="Manual Exclude (Calculated)",
+        compute="_compute_x_manual_exclude_calc",
+        store=True,
+    )
 
     refresh = fields.Boolean(help="Toggle to force the computed Data Valid to recompute.")
 
@@ -29,6 +40,42 @@ class SaleOrder(models.Model):
             order.x_data_valid = any(guest_line.x_main_guest for guest_line in order.x_guest_line_ids) and all(
                 guest_line.x_main_guest_check == "ok" and guest_line.x_tourist_tax_check == "ok"
                 for guest_line in order.x_guest_line_ids
+            )
+
+    @api.depends(
+        "x_guest_line_ids",
+        "x_guest_line_ids.x_main_guest",
+        "x_guest_line_ids.x_guest_check_warning",
+        "x_guest_line_ids.x_tourist_tax_warning",
+        "x_guest_line_ids.x_manual_exclude",
+        "refresh",
+    )
+    def _compute_x_guest_line_warning(self):
+        for order in self:
+            warnings = []
+            included_guest_lines = order.x_guest_line_ids.filtered(lambda line: not line.x_manual_exclude)
+            if order.x_guest_line_ids and not included_guest_lines:
+                order.x_guest_line_warning = self.env._("All guests are manually excluded.")
+                continue
+            for guest_line in included_guest_lines:
+                # Main guest gets the fuller identity/arrival-departure check (x_guest_check_warning);
+                # every other guest only needs the lighter tourist-tax name check (x_tourist_tax_warning).
+                warning = (
+                    guest_line.x_guest_check_warning
+                    if guest_line.x_main_guest
+                    else guest_line.x_tourist_tax_warning
+                )
+                if warning:
+                    guest_name = guest_line.x_guest_name or guest_line.display_name
+                    warnings.append(f"{guest_name}: {warning}")
+            order.x_guest_line_warning = "\n".join(warnings) or False
+
+    @api.depends("x_manual_exclude", "x_guest_line_ids.x_manual_exclude")
+    def _compute_x_manual_exclude_calc(self):
+        for order in self:
+            order.x_manual_exclude_calc = order.x_manual_exclude or (
+                bool(order.x_guest_line_ids)
+                and all(guest_line.x_manual_exclude for guest_line in order.x_guest_line_ids)
             )
 
     def create(self, vals_list):

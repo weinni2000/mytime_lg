@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="res_company_form_view_gog_testing" model="ir.ui.view">
+        <field name="name">res.company.form.gog.testing</field>
+        <field name="model">res.company</field>
+        <field name="inherit_id" ref="base.view_company_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='branches']" position="after">
+                <page name="gog_testing" string="GOG Testing">
+                    <group>
+                        <field name="search_term" />
+                    </group>
+                    <button
+                        name="action_search_gmail"
+                        type="object"
+                        string="Search Gmail"
+                        class="btn-primary"
+                    />
+                    <field name="gog_test_mail_ids">
+                        <list create="0" edit="0" delete="0">
+                            <field name="mail_date" />
+                            <field name="sender" />
+                            <field name="subject" />
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

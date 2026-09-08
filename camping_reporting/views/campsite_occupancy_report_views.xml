@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="campsite_occupancy_report_view_list" model="ir.ui.view">
+        <field name="name">campsite.occupancy.report.list</field>
+        <field name="model">campsite.occupancy.report</field>
+        <field name="arch" type="xml">
+            <list string="Daily Occupancy" create="0" edit="0" delete="0">
+                <field name="date" />
+                <field name="pitch_id" />
+                <field name="role_id" />
+                <field name="product_id" optional="hide" />
+                <field name="sale_channel_id" optional="show" />
+                <field name="booking_id" />
+                <field name="adults" sum="Adults" />
+                <field name="children" sum="Children" />
+                <field name="guests" sum="Guests" />
+                <field name="occupied_pitch" sum="Occupied Pitches" optional="hide" />
+                <field name="rent_amount" sum="Rent Amount" />
+                <field name="ortstaxe_amount" sum="Ortstaxe Amount" />
+                <field name="currency_id" column_invisible="True" />
+                <field
+                    name="company_id"
+                    groups="base.group_multi_company"
+                    optional="hide"
+                />
+            </list>
+        </field>
+    </record>
+
+    <record id="campsite_occupancy_report_view_pivot" model="ir.ui.view">
+        <field name="name">campsite.occupancy.report.pivot</field>
+        <field name="model">campsite.occupancy.report</field>
+        <field name="arch" type="xml">
+            <pivot string="Daily Occupancy" display_quantity="1">
+                <field name="date" type="row" interval="day" />
+                <field name="pitch_id" type="col" />
+                <field name="role_id" type="col" />
+                <field name="product_id" type="col" />
+                <field name="adults" type="measure" />
+                <field name="children" type="measure" />
+                <field name="guests" type="measure" />
+                <field name="occupied_pitch" type="measure" />
+                <field name="rent_amount" type="measure" />
+                <field name="ortstaxe_amount" type="measure" />
+            </pivot>
+        </field>
+    </record>
+
+    <record id="campsite_occupancy_report_view_graph" model="ir.ui.view">
+        <field name="name">campsite.occupancy.report.graph</field>
+        <field name="model">campsite.occupancy.report</field>
+        <field name="arch" type="xml">
+            <graph string="Daily Occupancy" type="bar">
+                <field name="date" type="row" interval="day" />
+                <field name="guests" type="measure" />
+                <field name="occupied_pitch" type="measure" />
+                <field name="rent_amount" type="measure" />
+                <field name="ortstaxe_amount" type="measure" />
+            </graph>
+        </field>
+    </record>
+
+    <record id="campsite_occupancy_report_view_search" model="ir.ui.view">
+        <field name="name">campsite.occupancy.report.search</field>
+        <field name="model">campsite.occupancy.report</field>
+        <field name="arch" type="xml">
+            <search string="Daily Occupancy">
+                <field name="date" />
+                <field name="pitch_id" />
+                <field name="role_id" />
+                <field name="product_id" />
+                <field name="sale_channel_id" />
+                <field name="booking_id" />
+                <field name="company_id" groups="base.group_multi_company" />
+                <separator />
+                <filter
+                    name="exclude_tiny_house"
+                    string="Exclude Tiny House"
+                    domain="[('sale_channel_id.name', 'not in', ['Tiny House', 'Tiny Away'])]"
+                />
+                <filter
+                    name="not_future"
+                    string="Up to Today"
+                    domain="[('date', '&lt;=', context_today())]"
+                />
+                <separator />
+                <filter
+                    name="date_today"
+                    string="Today"
+                    domain="[('date', '=', context_today())]"
+                />
+                <filter
+                    name="date_this_week"
+                    string="This Week"
+                    domain="[('date', '&gt;=', '=week_start'), ('date', '&lt;', '=week_start +1w')]"
+                />
+                <filter
+                    name="date_this_month"
+                    string="This Month"
+                    domain="[('date', '&gt;=', context_today().strftime('%Y-%m-01')), ('date', '&lt;', (context_today() + relativedelta(months=1)).strftime('%Y-%m-01'))]"
+                />
+                <filter
+                    name="date_this_year"
+                    string="This Year"
+                    domain="[('date', '&gt;=', 'today =1m =1d'), ('date', '&lt;', 'today =1m =1d +1y')]"
+                />
+                <separator />
+                <filter
+                    name="group_by_date"
+                    string="Date"
+                    context="{'group_by': 'date:day'}"
+                />
+                <filter
+                    name="group_by_year"
+                    string="Year"
+                    context="{'group_by': 'date:year'}"
+                />
+                <filter
+                    name="group_by_pitch"
+                    string="Pitch"
+                    context="{'group_by': 'pitch_id'}"
+                />
+                <filter
+                    name="group_by_product"
+                    string="Product"
+                    context="{'group_by': 'product_id'}"
+                />
+                <filter
+                    name="group_by_role"
+                    string="Planning Role"
+                    context="{'group_by': 'role_id'}"
+                />
+                <filter
+                    name="group_by_booking"
+                    string="Booking"
+                    context="{'group_by': 'booking_id'}"
+                />
+            </search>
+        </field>
+    </record>
+
+    <record id="campsite_occupancy_report_action" model="ir.actions.act_window">
+        <field name="name">Daily Occupancy</field>
+        <field name="res_model">campsite.occupancy.report</field>
+        <field name="view_mode">pivot,list,graph</field>
+        <field name="search_view_id" ref="campsite_occupancy_report_view_search" />
+        <field
+            name="context"
+        >{'search_default_group_by_date': 1, 'search_default_not_future': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No occupied pitches found.</p>
+            <p
+            >Confirmed bookings are expanded into one row per pitch and occupied night.</p>
+        </field>
+    </record>
+
+    <menuitem
+        id="menu_campsite_reporting"
+        name="Reporting"
+        parent="booking_engine.booking_engine_menu_root"
+        sequence="50"
+    />
+    <menuitem
+        id="menu_campsite_occupancy_report"
+        name="Daily Occupancy"
+        parent="menu_campsite_reporting"
+        action="campsite_occupancy_report_action"
+        sequence="10"
+    />
+</odoo>

@@ -45,6 +45,16 @@ class SaleOrder(models.Model):
         compute="_compute_amount_guests",
         store=True,
     )
+    calc_payment_type = fields.Selection(
+        selection=[
+            ("cash", "Cash"),
+            ("banktransfer", "Bank Transfer"),
+            ("verrechnungskonto", "Verrechnungskonto"),
+        ],
+        string="Payment Type",
+        compute="_compute_calc_payment_type",
+        store=True,
+    )
 
     @api.depends("x_guest_line_ids")
     def _compute_amount_guests(self):
@@ -58,6 +68,30 @@ class SaleOrder(models.Model):
             order.is_paid = bool(invoices) and all(
                 invoice.payment_state in ("paid", "in_payment") for invoice in invoices
             )
+
+    @api.depends(
+        "ota_payment",
+        "invoice_ids.matched_payment_ids.journal_id.type",
+    )
+    def _compute_calc_payment_type(self):
+        for order in self:
+            if order.ota_payment:
+                order.calc_payment_type = "verrechnungskonto"
+                continue
+            journal_types = set(order.invoice_ids.matched_payment_ids.journal_id.mapped("type"))
+            if journal_types == {"cash"}:
+                order.calc_payment_type = "cash"
+            elif journal_types == {"bank"}:
+                order.calc_payment_type = "banktransfer"
+            else:
+                order.calc_payment_type = False
+
+    @api.depends("ota_payment")
+    def _compute_invoice_status(self):
+        res = super()._compute_invoice_status()
+        for order in self.filtered(lambda o: o.ota_payment and o.state == "sale"):
+            order.invoice_status = "invoiced"
+        return res
 
     @api.depends("rental_start_date", "rental_return_date")
     def _compute_is_ongoing(self):
