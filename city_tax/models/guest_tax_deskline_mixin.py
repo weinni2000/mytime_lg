@@ -40,6 +40,10 @@ class GuestTaxDesklineMixin(models.AbstractModel):
         already_transferred = self - to_send
         for record in to_send:
             record._send_guests_to_deskline()
+            # Commit after every record: if a later record's submission raises, the
+            # default rollback would otherwise also discard the masterId already
+            # written for records that succeeded earlier in this loop.
+            self.env.cr.commit()  # pylint: disable=invalid-commit
 
         if already_transferred:
             return {
