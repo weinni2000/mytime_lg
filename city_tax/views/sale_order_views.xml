@@ -160,6 +160,10 @@
                             readonly="1"
                             widget="boolean_toggle"
                         />
+                    <field
+                            name="x_manual_transferred_to_deskline"
+                            widget="boolean_toggle"
+                        />
                     <field name="x_data_valid" readonly="1" widget="boolean_toggle" />
                     <field name="x_feratel_number" />
                     </group>
@@ -254,6 +258,11 @@
                     name="x_transferred_to_deskline"
                     widget="boolean_toggle"
                     readonly="1"
+                />
+                <field
+                    name="x_manual_transferred_to_deskline"
+                    widget="boolean_toggle"
+                    optional="hide"
                 />
                 <field name="x_data_valid" widget="boolean_toggle" readonly="1" />
                 <field name="x_deskline_master_id" optional="hide" />

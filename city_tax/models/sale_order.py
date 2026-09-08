@@ -8,6 +8,7 @@ class SaleOrder(models.Model):
     x_transferred_to_deskline = fields.Boolean(
         string="Transferred to Deskline", compute="_compute_x_transferred_to_deskline", store=True
     )
+    x_manual_transferred_to_deskline = fields.Boolean(string="Manually Transferred to Deskline")
     x_data_valid = fields.Boolean(string="Data Valid", compute="_compute_x_data_valid")
     x_guest_line_warning = fields.Text(
         string="Guest Warnings",
@@ -23,10 +24,12 @@ class SaleOrder(models.Model):
 
     refresh = fields.Boolean(help="Toggle to force the computed Data Valid to recompute.")
 
-    @api.depends("x_deskline_master_id")
+    @api.depends("x_deskline_master_id", "x_manual_transferred_to_deskline")
     def _compute_x_transferred_to_deskline(self):
         for order in self:
-            order.x_transferred_to_deskline = bool(order.x_deskline_master_id)
+            order.x_transferred_to_deskline = bool(
+                order.x_deskline_master_id or order.x_manual_transferred_to_deskline
+            )
 
     @api.depends("x_guest_line_ids", "refresh")
     def _compute_x_data_valid(self):
