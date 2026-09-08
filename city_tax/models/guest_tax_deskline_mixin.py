@@ -16,6 +16,13 @@ class GuestTaxDesklineMixin(models.AbstractModel):
         "submission. Passed back on a later resubmission to update this same "
         "registration instead of creating a new one.",
     )
+    x_feratel_number = fields.Char(
+        string="Feratel Number",
+        copy=False,
+        help="Registration/Meldeschein number shown for this record in Feratel's own "
+        "Deskline portal. Not returned by the submission API (which only ever returns "
+        "the masterId), so this is entered manually after checking the Feratel portal.",
+    )
 
     def _get_deskline_guest_lines(self):
         """Return the x_guests_line records to submit."""

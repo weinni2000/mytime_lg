@@ -1,5 +1,45 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <odoo>
+    <record id="action_server_sale_order_send_to_deskline" model="ir.actions.server">
+        <field name="name">Send Tax Info to Deskline</field>
+        <field name="model_id" ref="sale.model_sale_order" />
+        <field name="binding_model_id" ref="sale.model_sale_order" />
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+        <field name="code">records.action_send_to_deskline()</field>
+    </record>
+
+    <record id="action_server_sale_order_toggle_refresh" model="ir.actions.server">
+        <field name="name">Toggle Refresh</field>
+        <field name="model_id" ref="sale.model_sale_order" />
+        <field name="binding_model_id" ref="sale.model_sale_order" />
+        <field name="binding_view_types">list,form</field>
+        <field name="state">code</field>
+        <field name="code">for record in records:
+    record.write({'refresh': not record.refresh})</field>
+    </record>
+
+    <record id="rental_order_view_tree_inherit_city_tax" model="ir.ui.view">
+        <field name="name">rental.order.list.inherit.city.tax</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale_renting.rental_order_view_tree" />
+        <field name="arch" type="xml">
+            <xpath expr="//list/field[@name='currency_id']" position="before">
+                <field name="x_guest_line_warning" optional="show" />
+                <field name="x_feratel_number" optional="show" />
+                <button
+                    name="action_send_to_deskline"
+                    type="object"
+                    string="Send Tax Info"
+                    icon="fa-paper-plane"
+                    invisible="not x_guest_line_ids"
+                    confirm="Submit all non-excluded guests of this order to Deskline?"
+                />
+                <field name="x_guest_line_ids" column_invisible="True" />
+            </xpath>
+        </field>
+    </record>
+
     <record id="rental_order_view_inherit_city_tax" model="ir.ui.view">
         <field name="arch" type="xml">
             <xpath expr="//field[@name='x_guest_line_ids']" position="before">
@@ -19,20 +59,15 @@
                     confirm="Submit all guests of this order to Deskline?"
                     class="btn-secondary mb-2"
                 />
-                <button
-                    string="Convert to Meldeschein"
-                    type="object"
-                    name="action_convert_to_meldeschein"
-                    invisible="not x_deskline_master_id"
-                    confirm="Convert this Deskline registration into a final numbered Meldeschein?"
-                    class="btn-secondary mb-2"
-                />
             </xpath>
             <xpath
                 expr="//field[@name='x_guest_line_ids']//field[@name='x_guest_partner_id']"
                 position="after"
             >
                 <field name="x_main_guest" optional="show" />
+                <field name="x_manual_exclude" optional="show" />
+                <field name="x_is_child" optional="show" />
+                <field name="x_comment" optional="show" />
                 <field
                     name="x_main_guest_check"
                     optional="hide"
@@ -126,6 +161,7 @@
                             widget="boolean_toggle"
                         />
                     <field name="x_data_valid" readonly="1" widget="boolean_toggle" />
+                    <field name="x_feratel_number" />
                     </group>
                     <group>
                     <field name="x_guest_line_ids">
@@ -137,6 +173,9 @@
                             <field name="x_sequence" widget="handle" />
                             <field name="x_guest_partner_id" required="1" />
                             <field name="x_main_guest" optional="show" />
+                            <field name="x_manual_exclude" optional="show" />
+                            <field name="x_is_child" optional="show" />
+                            <field name="x_comment" optional="show" />
                             <field
                                     name="x_main_guest_check"
                                     optional="hide"
@@ -218,6 +257,7 @@
                 />
                 <field name="x_data_valid" widget="boolean_toggle" readonly="1" />
                 <field name="x_deskline_master_id" optional="hide" />
+                <field name="x_feratel_number" optional="show" />
                 <field name="refresh" optional="show" />
                 <button
                     name="action_send_to_deskline"
