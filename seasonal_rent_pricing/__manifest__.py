@@ -9,5 +9,12 @@
     "depends": [
         "sale_renting",
     ],
+    "data": [
+        "security/ir.model.access.csv",
+        "views/product_pricelist_item_views.xml",
+        "views/product_pricelist_views.xml",
+        "views/product_template_views.xml",
+        "views/seasonal_rent_price_calendar_views.xml",
+    ],
     "installable": True,
 }

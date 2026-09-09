@@ -30,6 +30,14 @@
                 <group>
                     <field name="name" />
                     <field name="is_child" />
+                    <field name="birthdate_date" />
+                </group>
+                <group string="Address">
+                    <field name="street" />
+                    <field name="zip" />
+                    <field name="city" />
+                    <field name="country_id" />
+                    <field name="nationality_id" />
                 </group>
 
                 <footer>

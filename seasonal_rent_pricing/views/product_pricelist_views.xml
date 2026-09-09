@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+
+    <record id="view_product_pricelist_form_weekday_summary" model="ir.ui.view">
+        <field name="name">product.pricelist.form.inherit.weekday.summary</field>
+        <field name="model">product.pricelist</field>
+        <field name="inherit_id" ref="product.product_pricelist_view" />
+        <field name="arch" type="xml">
+            <field name="date_start" position="attributes">
+                <attribute name="optional">hide</attribute>
+            </field>
+            <field name="date_end" position="attributes">
+                <attribute name="optional">hide</attribute>
+            </field>
+            <field name="date_end" position="after">
+                <field name="weekday_summary" optional="hide" />
+                <field name="month_summary" optional="hide" />
+                <field name="validity_summary" />
+            </field>
+        </field>
+    </record>
+
+</odoo>

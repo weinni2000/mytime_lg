@@ -13,6 +13,12 @@ class GuestRegistrationGuestWizard(models.TransientModel):
     id_document_back = fields.Image(string="Document Back")
     name = fields.Char()
     is_child = fields.Boolean(string="Child")
+    birthdate_date = fields.Date(string="Birthdate")
+    street = fields.Char()
+    zip = fields.Char()
+    city = fields.Char()
+    country_id = fields.Many2one("res.country", string="Country")
+    nationality_id = fields.Many2one("res.country", string="Nationality")
 
     def action_scan_id_documents(self):
         self.ensure_one()
@@ -31,7 +37,21 @@ class GuestRegistrationGuestWizard(models.TransientModel):
             scan_values["x_id_document_back"] = self.id_document_back
         partner.write(scan_values)
         partner.action_scan_id_documents()
-        self.name = partner.name
+        self.write(
+            {
+                key: val
+                for key, val in {
+                    "name": partner.name,
+                    "birthdate_date": partner.birthdate_date,
+                    "street": partner.street,
+                    "zip": partner.zip,
+                    "city": partner.city,
+                    "country_id": partner.country_id.id,
+                    "nationality_id": partner.x_nationality.id,
+                }.items()
+                if val
+            }
+        )
 
         return {
             "type": "ir.actions.act_window",
@@ -48,7 +68,21 @@ class GuestRegistrationGuestWizard(models.TransientModel):
             raise UserError(_("Enter the guest's name first."))
 
         if self.guest_partner_id:
-            self.guest_partner_id.write({"name": name})
+            self.guest_partner_id.write(
+                {
+                    key: val
+                    for key, val in {
+                        "name": name,
+                        "birthdate_date": self.birthdate_date,
+                        "street": self.street,
+                        "zip": self.zip,
+                        "city": self.city,
+                        "country_id": self.country_id.id,
+                        "x_nationality": self.nationality_id.id,
+                    }.items()
+                    if val
+                }
+            )
 
         self.wizard_id.guest_line_ids = [
             Command.create(
@@ -59,4 +93,12 @@ class GuestRegistrationGuestWizard(models.TransientModel):
                 }
             )
         ]
-        return {"type": "ir.actions.act_window_close"}
+        # Reopen the parent wizard explicitly instead of act_window_close,
+        # which closes the whole stacked "new"-target dialogs.
+        return {
+            "type": "ir.actions.act_window",
+            "res_model": self.wizard_id._name,
+            "res_id": self.wizard_id.id,
+            "view_mode": "form",
+            "target": "new",
+        }

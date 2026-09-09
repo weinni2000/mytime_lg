@@ -1,0 +1,3 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_seasonal_rent_price_calendar,seasonal.rent.price.calendar,model_seasonal_rent_price_calendar,sales_team.group_sale_salesman,1,1,1,1
+access_seasonal_rent_price_calendar_line,seasonal.rent.price.calendar.line,model_seasonal_rent_price_calendar_line,base.group_user,1,1,1,1

@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+
+    <record id="view_product_pricelist_item_form_end_date" model="ir.ui.view">
+        <field name="name">product.pricelist.item.form.inherit.end.date</field>
+        <field name="model">product.pricelist.item</field>
+        <field name="inherit_id" ref="product.product_pricelist_item_form_view" />
+        <field name="arch" type="xml">
+            <field name="date_start" position="before">
+                <field name="apply_additionally" />
+                <field name="use_weekday_filter" />
+                <field name="use_month_filter" />
+            </field>
+            <field name="date_start" position="attributes">
+                <attribute
+                    name="invisible"
+                >use_weekday_filter or use_month_filter</attribute>
+            </field>
+            <field name="date_end" position="attributes">
+                <attribute
+                    name="invisible"
+                >use_weekday_filter or use_month_filter</attribute>
+            </field>
+            <field name="date_end" position="after">
+                <label
+                    for="weekday_monday"
+                    string="Weekdays"
+                    invisible="not use_weekday_filter"
+                />
+                <div
+                    class="o_row"
+                    name="pricelist_rule_weekdays"
+                    invisible="not use_weekday_filter"
+                >
+                    <field name="weekday_monday" />
+                    <span>Mon</span>
+                    <field name="weekday_tuesday" />
+                    <span>Tue</span>
+                    <field name="weekday_wednesday" />
+                    <span>Wed</span>
+                    <field name="weekday_thursday" />
+                    <span>Thu</span>
+                    <field name="weekday_friday" />
+                    <span>Fri</span>
+                    <field name="weekday_saturday" />
+                    <span>Sat</span>
+                    <field name="weekday_sunday" />
+                    <span>Sun</span>
+                </div>
+                <label
+                    for="month_january"
+                    string="Months"
+                    invisible="not use_month_filter"
+                />
+                <div
+                    class="o_row"
+                    name="pricelist_rule_months"
+                    invisible="not use_month_filter"
+                >
+                    <field name="month_january" />
+                    <span>Jan</span>
+                    <field name="month_february" />
+                    <span>Feb</span>
+                    <field name="month_march" />
+                    <span>Mar</span>
+                    <field name="month_april" />
+                    <span>Apr</span>
+                    <field name="month_may" />
+                    <span>May</span>
+                    <field name="month_june" />
+                    <span>Jun</span>
+                    <field name="month_july" />
+                    <span>Jul</span>
+                    <field name="month_august" />
+                    <span>Aug</span>
+                    <field name="month_september" />
+                    <span>Sep</span>
+                    <field name="month_october" />
+                    <span>Oct</span>
+                    <field name="month_november" />
+                    <span>Nov</span>
+                    <field name="month_december" />
+                    <span>Dec</span>
+                </div>
+            </field>
+        </field>
+    </record>
+
+</odoo>

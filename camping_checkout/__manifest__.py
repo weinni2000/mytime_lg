@@ -1,13 +1,14 @@
 {
     "name": "Camping Checkout",
     "summary": "Adds camping-specific information to the website checkout.",
-    "version": "19.0.1.3.0",
+    "version": "19.0.1.4.0",
     "category": "Website/eCommerce",
     "license": "OPL-1",
     "author": "mytime.click",
     "website": "https://mytime.click",
     "depends": [
         "animal",
+        "base_automation",
         "booking_engine",
         "camping_fleet",
         "camping_map_booking",
@@ -19,6 +20,7 @@
     "data": [
         "data/res_country_data.xml",
         "data/animal_data.xml",
+        "data/base_automation.xml",
         "views/product_template_views.xml",
         "views/res_company_views.xml",
         "views/website_sale_templates.xml",

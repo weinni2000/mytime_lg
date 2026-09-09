@@ -1,4 +1,4 @@
-from odoo import _, fields, models
+from odoo import _, api, fields, models
 from odoo.exceptions import ValidationError
 
 from odoo.addons.camping_map_booking.models.camping_map_state import STATE_FREE
@@ -20,13 +20,18 @@ class SaleOrder(models.Model):
     )
     pitch_planning_slot_ids = fields.Many2many(
         "planning.slot",
-        "camping_sale_order_pitch_slot_rel",
-        "order_id",
-        "slot_id",
+        compute="_compute_pitch_planning_slot_ids",
         string="Pitch Slots",
-        copy=False,
-        readonly=True,
     )
+
+    @api.depends("order_line.planning_slot_ids")
+    def _compute_pitch_planning_slot_ids(self):
+        # Reads straight from the lines' planning slots rather than filtering
+        # by pitch_resource_ids: most orders never populate that field (it's
+        # only set by the website map picker), while the slots themselves are
+        # always there regardless of which flow assigned the pitch.
+        for order in self:
+            order.pitch_planning_slot_ids = order.order_line.planning_slot_ids
 
     # pylint: disable=W8110
     def _cart_update_renting_period(self, start_date, end_date):
@@ -35,7 +40,7 @@ class SaleOrder(models.Model):
             lambda order: order.rental_start_date != start_date or order.rental_return_date != end_date
         )
         super()._cart_update_renting_period(start_date, end_date)
-        changed_orders.write({"pitch_resource_ids": [(5,)], "pitch_planning_slot_ids": [(5,)]})
+        changed_orders.write({"pitch_resource_ids": [(5,)]})
 
     def _get_pitch_sale_line(self, pitch):
         """Accommodation line a given pitch belongs to (matched by planning role)."""
@@ -105,9 +110,38 @@ class SaleOrder(models.Model):
         if not self.rental_start_date or not self.rental_return_date:
             raise ValidationError(_("The rental start and end are required to reserve a pitch."))
 
+        zone_model = self.env["camping.map.zone"]
         vehicle_type = self.vehicle_ids[:1].category_id
         for pitch in self.pitch_resource_ids:
-            zone = self.env["camping.map.zone"].search(
+            if not self._get_pitch_sale_line(pitch):
+                raise ValidationError(
+                    _("The pitch %s does not match any accommodation in this order.", pitch.name)
+                )
+            if not self.vehicle_ids:
+                # No vehicle means the pitch wasn't picked from the interactive
+                # map (e.g. it's a fixed, channel-synced unit like the Tiny
+                # House), so it isn't required to be plotted on that map or
+                # vehicle-suitability-checked; still guard against double-booking.
+                # Excludes this order's own planning slots: a channel sync (e.g.
+                # Guesty) already creates its slot for this stay before calling
+                # action_confirm(), which would otherwise always self-collide.
+                overlap = (
+                    [
+                        ("start_datetime", "<", self.rental_return_date),
+                        ("end_datetime", ">", self.rental_start_date),
+                    ]
+                    if self.rental_return_date > self.rental_start_date
+                    else [
+                        ("start_datetime", "<=", self.rental_start_date),
+                        ("end_datetime", ">", self.rental_start_date),
+                    ]
+                )
+                if self.env["planning.slot"].search_count(
+                    [("resource_id", "=", pitch.id), ("sale_order_id", "!=", self.id), *overlap]
+                ):
+                    raise ValidationError(_("The pitch %s is no longer available for this stay.", pitch.name))
+                continue
+            zone = zone_model.search(
                 [("resource_ids", "in", pitch.id), ("points", "!=", False)],
                 limit=1,
             )
@@ -123,13 +157,45 @@ class SaleOrder(models.Model):
                 != STATE_FREE
             ):
                 raise ValidationError(_("The pitch %s is no longer available for this stay.", pitch.name))
-            if not self._get_pitch_sale_line(pitch):
-                raise ValidationError(
-                    _("The pitch %s does not match any accommodation in this order.", pitch.name)
-                )
+
+    def _split_guest_lines_to_pitches(self):
+        """Assign each guest line without a room yet to one of the order's pitches.
+
+        Reads the pitches from the accommodation lines' planning slots rather
+        than ``pitch_resource_ids``: most confirmed orders never go through the
+        website map picker that fills ``pitch_resource_ids`` (backend bookings,
+        channel-synced orders, ...) and instead get a pitch dropped onto their
+        line's planning slot directly (Gantt/planning view), so the slot is the
+        source that is actually populated in the vast majority of cases.
+
+        Fills pitches in order, up to each accommodation's ``x_included_persons``
+        capacity, before moving on to the next pitch. Runs on check-in (see
+        ``data/base_automation.xml``) so it applies regardless of which flow
+        triggered the check-in (Pickup button, guest registration, channel sync).
+        """
+        for order in self:
+            accommodation_lines = order.order_line.filtered(
+                lambda line: not line.display_type and line.product_id.planning_role_id
+            )
+            slots = []
+            for line in accommodation_lines:
+                capacity = line.product_id.x_included_persons or 1
+                for resource in line.planning_slot_ids.resource_id:
+                    slots.append([resource, capacity])
+            if not slots:
+                continue
+            guests = order.x_guest_line_ids.filtered(lambda guest: not guest.x_room_resource_id)
+            if not guests:
+                continue
+            index = 0
+            for guest in guests:
+                while slots[index][1] <= 0 and index < len(slots) - 1:
+                    index += 1
+                guest.x_room_resource_id = slots[index][0].id
+                slots[index][1] -= 1
 
     def _action_confirm(self):
-        pitch_orders = self.filtered(lambda order: order.company_id.x_use_camping_pitch_map and order.vehicle_ids)
+        pitch_orders = self.filtered(lambda order: order.company_id.x_use_camping_pitch_map)
         for order in pitch_orders:
             for pitch in order.pitch_resource_ids:
                 self.env.cr.execute(
@@ -163,5 +229,4 @@ class SaleOrder(models.Model):
                     booked_slots |= slot
             if not booked_slots:
                 raise ValidationError(_("No planning slot was generated for the selected pitches."))
-            order.pitch_planning_slot_ids = [(6, 0, booked_slots.ids)]
         return result

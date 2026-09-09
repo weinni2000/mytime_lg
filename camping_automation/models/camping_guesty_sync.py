@@ -168,6 +168,7 @@ class CampingGuestySync(models.Model):
                 "is_rental_order": True,
                 "rental_start_date": check_in,
                 "rental_return_date": check_out,
+                "pitch_resource_ids": [(6, 0, [config["resource_id"]])],
                 "order_line": [
                     (
                         0,

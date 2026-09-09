@@ -87,6 +87,7 @@ class CampsiteOccupancyReport(models.Model):
                         LEFT JOIN res_partner partner
                             ON partner.id = guest_line.x_guest_partner_id
                         WHERE guest_line.x_sale_order_id = so.id
+                          AND guest_line.x_room_resource_id = ps.resource_id
                     ) guest_totals ON TRUE
                     WHERE ps.resource_id IS NOT NULL
                       AND ps.start_datetime IS NOT NULL

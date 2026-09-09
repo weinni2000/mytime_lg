@@ -23,6 +23,7 @@ class GuestRegistrationWizard(models.TransientModel):
     journal_id = fields.Many2one(
         "account.journal", string="Payment Journal", domain=[("type", "in", ("bank", "cash"))]
     )
+    booking_details_warning = fields.Char(compute="_compute_booking_details_warning")
 
     name = fields.Char()
     birthdate_date = fields.Date(string="Birthdate")
@@ -31,6 +32,7 @@ class GuestRegistrationWizard(models.TransientModel):
     zip = fields.Char()
     city = fields.Char()
     country_id = fields.Many2one("res.country", string="Country")
+    nationality_id = fields.Many2one("res.country", string="Nationality")
     email = fields.Char()
     phone = fields.Char()
 
@@ -76,6 +78,24 @@ class GuestRegistrationWizard(models.TransientModel):
             }
         )
         return vals
+
+    @api.depends("rental_start_date", "rental_return_date", "product_id", "immediate_payment", "journal_id")
+    def _compute_booking_details_warning(self):
+        for wizard in self:
+            missing = []
+            if not wizard.rental_start_date:
+                missing.append(wizard.env._("Start Date"))
+            if not wizard.rental_return_date:
+                missing.append(wizard.env._("End Date"))
+            if not wizard.product_id:
+                missing.append(wizard.env._("Product"))
+            if wizard.immediate_payment and not wizard.journal_id:
+                missing.append(wizard.env._("Payment Journal"))
+            if missing:
+                message = wizard.env._("Missing booking details: %(fields)s")
+                wizard.booking_details_warning = message % {"fields": ", ".join(missing)}
+            else:
+                wizard.booking_details_warning = False
 
     @api.onchange("location_id")
     def _onchange_location_id(self):
@@ -127,6 +147,7 @@ class GuestRegistrationWizard(models.TransientModel):
                     "zip": partner_sudo.zip,
                     "city": partner_sudo.city,
                     "country_id": partner_sudo.country_id.id,
+                    "nationality_id": partner_sudo.x_nationality.id,
                 }.items()
                 if val
             }
@@ -141,6 +162,9 @@ class GuestRegistrationWizard(models.TransientModel):
 
     def action_confirm(self):
         self.ensure_one()
+        if self.booking_details_warning:
+            raise UserError(self.booking_details_warning)
+
         order = self.sale_order_id
         order._update_guest_registration_address(
             {
@@ -149,6 +173,7 @@ class GuestRegistrationWizard(models.TransientModel):
                 "zip": self.zip,
                 "city": self.city,
                 "country_id": self.country_id.id,
+                "x_nationality": self.nationality_id.id,
                 "phone": self.phone,
                 "email": self.email,
                 "birthdate_date": self.birthdate_date,

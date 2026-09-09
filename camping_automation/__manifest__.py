@@ -9,6 +9,7 @@
     "depends": [
         "booking_engine",
         "camping_base",
+        "camping_checkout",
         "sale",
         "sale_renting",
         "sale_planning",

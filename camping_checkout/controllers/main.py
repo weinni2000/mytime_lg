@@ -56,6 +56,47 @@ class WebsiteSaleCampingCheckout(WebsiteSale):
             rendering_values["countries"] = countries - priority_countries
         return rendering_values
 
+    @route()
+    def shop_address_submit(self, *args, **kwargs):
+        response = super().shop_address_submit(*args, **kwargs)
+        order_sudo = request.cart
+        if order_sudo:
+            self._sync_camping_guests_after_address(order_sudo)
+        return response
+
+    def _sync_camping_guests_after_address(self, order_sudo):
+        """Fix up the guest lines and local tax once the real customer is known.
+
+        The "Address" step was moved after "Camping" (see
+        hooks._reorder_address_step), so ``_update_camping_guests`` may run
+        while ``order_sudo.partner_id`` is still the anonymous cart partner:
+        the main guest line then ends up linked to that placeholder instead
+        of the real customer, and the main guest's age (only known once the
+        birthdate submitted here is saved) can be missing from the local tax
+        count. Re-link the main guest line to the real customer and
+        recompute the local tax quantity from the guests' now-known
+        birthdates.
+        """
+        partner = order_sudo.partner_id
+        if not partner or partner == order_sudo.website_id.partner_id:
+            return
+
+        main_guest_lines = order_sudo.x_guest_line_ids.filtered(lambda guest: guest.x_main_guest)
+        keep = main_guest_lines.filtered(lambda guest: guest.x_guest_partner_id == partner)[:1]
+        if not keep and main_guest_lines:
+            keep = main_guest_lines[:1]
+            keep.sudo().x_guest_partner_id = partner.id
+        (main_guest_lines - keep).sudo().unlink()
+
+        adult_guest_count = sum(
+            1
+            for guest in order_sudo.x_guest_line_ids
+            if guest.x_guest_partner_id.birthdate_date
+            and self._age_from_birthdate(guest.x_guest_partner_id.birthdate_date) > LOCAL_TAX_MIN_AGE
+        )
+        if adult_guest_count:
+            self._update_local_tax_product(order_sudo, adult_guest_count)
+
     # === CHECKOUT FLOW - CAMPING STEP METHODS === #
 
     @route([CAMPING_STEP_HREF], type="http", auth="public", website=True, sitemap=False)

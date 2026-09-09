@@ -46,6 +46,18 @@
                 />
 
                 <group string="Booking Details">
+                    <div
+                        class="alert alert-warning"
+                        role="alert"
+                        colspan="2"
+                        invisible="not booking_details_warning"
+                    >
+                        <field
+                            name="booking_details_warning"
+                            nolabel="1"
+                            readonly="1"
+                        />
+                    </div>
                     <group>
                         <field name="rental_start_date" />
                         <field name="rental_return_date" />
@@ -69,6 +81,7 @@
                         <field name="zip" />
                         <field name="city" />
                         <field name="country_id" />
+                        <field name="nationality_id" />
                     </group>
                     <group>
                         <field name="email" />

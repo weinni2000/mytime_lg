@@ -19,6 +19,7 @@ def post_init_hook(env):
     _setup_pitch_step(env)
     _setup_dog_product(env)
     _reorder_cart_step(env)
+    _reorder_address_step(env)
     _setup_additional_guest_product(env)
     _setup_local_tax_product(env)
     _setup_electricity_product(env)
@@ -118,6 +119,33 @@ def _reorder_cart_step(env):
     target_sequence = (pitch_step or camping_step).sequence + 10
     if cart_step.sequence != target_sequence:
         cart_step.sequence = target_sequence
+
+
+def _reorder_address_step(env):
+    website = env["website"].search([("domain", "=", _CAMPING_WEBSITE_DOMAIN)], limit=1)
+    if not website:
+        return
+
+    address_step = env["website.checkout.step"].search(
+        [
+            ("website_id", "=", website.id),
+            ("step_href", "=", "/shop/checkout"),
+        ],
+        limit=1,
+    )
+    cart_step = env["website.checkout.step"].search(
+        [
+            ("website_id", "=", website.id),
+            ("step_href", "=", "/shop/cart"),
+        ],
+        limit=1,
+    )
+    if not address_step or not cart_step:
+        return
+
+    target_sequence = cart_step.sequence + 10
+    if address_step.sequence != target_sequence:
+        address_step.sequence = target_sequence
 
 
 def _setup_dog_product(env):
