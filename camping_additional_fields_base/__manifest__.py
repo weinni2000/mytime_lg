@@ -8,6 +8,7 @@
     "website": "https://mytime.click",
     "depends": [
         "camping_base",
+        "odoo_whatsapp_integration",
         "product",
         "sale",
         "sale_brand",

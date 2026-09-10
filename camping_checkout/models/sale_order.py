@@ -101,6 +101,59 @@ class SaleOrder(models.Model):
             mapping[line] = mapping.get(line, self.env["resource.resource"]) | pitch
         return mapping
 
+    def _pitch_is_free(self, pitch):
+        """Whether ``pitch`` has no other order's planning slot overlapping this stay.
+
+        Excludes this order's own planning slots: a channel sync (e.g. Guesty)
+        already creates its slot for this stay before calling action_confirm(),
+        which would otherwise always self-collide.
+        """
+        self.ensure_one()
+        overlap = (
+            [
+                ("start_datetime", "<", self.rental_return_date),
+                ("end_datetime", ">", self.rental_start_date),
+            ]
+            if self.rental_return_date > self.rental_start_date
+            else [
+                ("start_datetime", "<=", self.rental_start_date),
+                ("end_datetime", ">", self.rental_start_date),
+            ]
+        )
+        return not self.env["planning.slot"].search_count(
+            [("resource_id", "=", pitch.id), ("sale_order_id", "!=", self.id), *overlap]
+        )
+
+    def _auto_assign_pitches(self):
+        """Pick the next available pitch per accommodation line when none was selected.
+
+        Candidates come from the line's product (``x_resource_ids``, i.e. its
+        planning role's resources) rather than the visual map, since a pitch is
+        derived from the product, not from being plotted on the map.
+        """
+        self.ensure_one()
+        if self.pitch_resource_ids or not self.rental_start_date or not self.rental_return_date:
+            return
+        accommodation_lines = self.order_line.filtered(
+            lambda line: not line.display_type and line.product_id.planning_role_id
+        )
+        vehicle_type = self.vehicle_ids[:1].category_id
+        chosen = self.env["resource.resource"]
+        for line in accommodation_lines:
+            needed = int(line.product_uom_qty)
+            for resource in line.product_id.x_resource_ids - chosen:
+                if needed <= 0:
+                    break
+                allowed_vehicle_types = resource.role_ids.allowed_vehicle_type_ids
+                if vehicle_type and allowed_vehicle_types and vehicle_type not in allowed_vehicle_types:
+                    continue
+                if not self._pitch_is_free(resource):
+                    continue
+                chosen |= resource
+                needed -= 1
+        if chosen:
+            self.pitch_resource_ids = [(6, 0, chosen.ids)]
+
     def _validate_pitch_selection(self):
         self.ensure_one()
         if not self.company_id.x_use_camping_pitch_map:
@@ -122,23 +175,7 @@ class SaleOrder(models.Model):
                 # map (e.g. it's a fixed, channel-synced unit like the Tiny
                 # House), so it isn't required to be plotted on that map or
                 # vehicle-suitability-checked; still guard against double-booking.
-                # Excludes this order's own planning slots: a channel sync (e.g.
-                # Guesty) already creates its slot for this stay before calling
-                # action_confirm(), which would otherwise always self-collide.
-                overlap = (
-                    [
-                        ("start_datetime", "<", self.rental_return_date),
-                        ("end_datetime", ">", self.rental_start_date),
-                    ]
-                    if self.rental_return_date > self.rental_start_date
-                    else [
-                        ("start_datetime", "<=", self.rental_start_date),
-                        ("end_datetime", ">", self.rental_start_date),
-                    ]
-                )
-                if self.env["planning.slot"].search_count(
-                    [("resource_id", "=", pitch.id), ("sale_order_id", "!=", self.id), *overlap]
-                ):
+                if not self._pitch_is_free(pitch):
                     raise ValidationError(_("The pitch %s is no longer available for this stay.", pitch.name))
                 continue
             zone = zone_model.search(
@@ -197,6 +234,7 @@ class SaleOrder(models.Model):
     def _action_confirm(self):
         pitch_orders = self.filtered(lambda order: order.company_id.x_use_camping_pitch_map)
         for order in pitch_orders:
+            order._auto_assign_pitches()
             for pitch in order.pitch_resource_ids:
                 self.env.cr.execute(
                     "SELECT id FROM resource_resource WHERE id = %s FOR UPDATE",

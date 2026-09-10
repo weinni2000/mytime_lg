@@ -157,6 +157,17 @@
         </field>
     </record>
 
+    <record id="sale_order_form_view_remove_whatsapp_buttons" model="ir.ui.view">
+        <field name="name">sale.order.form.remove.whatsapp.buttons</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="odoo_whatsapp_integration.whatsapp_demo_sale" />
+        <field name="priority">99</field>
+        <field name="arch" type="xml">
+            <button name="sale_whatsapp" position="replace" />
+            <button name="send_direct_message" position="replace" />
+        </field>
+    </record>
+
     <record id="booking_engine_order_search_rental_start_date" model="ir.ui.view">
         <field name="name">booking.engine.order.search.rental.start.date</field>
         <field name="model">sale.order</field>
