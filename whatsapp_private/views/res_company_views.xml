@@ -44,6 +44,37 @@
                                 string="Send Message"
                                 class="btn-primary"
                             />
+                            <separator string="Notifications" />
+                            <field name="whatsapp_private_mute_notifications" />
+                            <separator string="Background Process" />
+                            <field
+                                name="whatsapp_private_process_running"
+                                readonly="1"
+                            />
+                            <field
+                                name="whatsapp_private_process_detail"
+                                readonly="1"
+                            />
+                            <field
+                                name="whatsapp_private_listener_paused"
+                                readonly="1"
+                                invisible="not whatsapp_private_listener_paused"
+                            />
+                            <button
+                                name="action_whatsapp_private_stop_process"
+                                type="object"
+                                string="Stop Process"
+                                class="btn-danger"
+                                invisible="not whatsapp_private_process_running"
+                                confirm="This kills the running WhatsApp worker process and pauses automatic restart until you resume it or link WhatsApp again. Continue?"
+                            />
+                            <button
+                                name="action_whatsapp_private_resume_listener"
+                                type="object"
+                                string="Resume Automatic Listener"
+                                class="btn-secondary"
+                                invisible="not whatsapp_private_listener_paused"
+                            />
                             <separator string="Contact Synchronization" />
                             <field
                                 name="whatsapp_private_contacts_last_sync"

@@ -393,6 +393,31 @@ class WebsiteSaleCampingPitch(WebsiteSale):
             ],
         )
 
+    def _get_pitch_products(self):
+        """Accommodation products the customer can arm the map with (one per planning role)."""
+        return (
+            request.env["product.template"]
+            .sudo()
+            .search([("planning_role_id", "!=", False), ("sale_ok", "=", True), ("website_published", "=", True)])
+            .product_variant_id
+        )
+
+    def _get_default_pitch_product_id(self, order_sudo, selected_pitches, pitch_products):
+        product_by_role_id = {product.planning_role_id.id: product for product in pitch_products}
+        if selected_pitches:
+            for role in selected_pitches[-1].role_ids:
+                if role.id in product_by_role_id:
+                    return product_by_role_id[role.id].id
+        # No pitch picked yet: default to whatever accommodation the customer
+        # already added from the shop page, rather than an arbitrary first
+        # product the map's pitches might not even offer.
+        accommodation_line = order_sudo.order_line.filtered(
+            lambda line: not line.display_type and line.product_id.planning_role_id
+        )[:1]
+        if accommodation_line and accommodation_line.product_id.id in {p.id for p in pitch_products}:
+            return accommodation_line.product_id.id
+        return pitch_products[:1].id
+
     def _get_pitch_page_values(self, order_sudo, error=None):
         vehicle = order_sudo.vehicle_ids[:1]
         campsite_map = request.env["campsite.map"].sudo().search([("active", "=", True)], order="id", limit=1)
@@ -401,6 +426,12 @@ class WebsiteSaleCampingPitch(WebsiteSale):
             code: colors["label"] for code, colors in request.env["camping.map.state"]._get_frontend_map().items()
         }
         selected_pitches = order_sudo.pitch_resource_ids
+        pitch_products = self._get_pitch_products()
+        # Resolve a resource's product from this same list (rather than the
+        # broader, unpublished-inclusive order_sudo._get_pitch_product), so a
+        # pitch's product_id always matches one of the products offered by the
+        # picker below the map and can actually be armed.
+        product_by_role_id = {product.planning_role_id.id: product for product in pitch_products}
         shapes = []
         first_free_resource = request.env["resource.resource"]
         if campsite_map:
@@ -430,6 +461,17 @@ class WebsiteSaleCampingPitch(WebsiteSale):
                             "state": state,
                             "state_label": state_labels.get(state, ""),
                             "selectable": state == STATE_FREE,
+                            # Which accommodation product this pitch belongs to, so the
+                            # map can only let the customer add it while that product is
+                            # armed (see the product picker in ResourceMap).
+                            "product_id": next(
+                                (
+                                    product_by_role_id[role.id].id
+                                    for role in resource.role_ids
+                                    if role.id in product_by_role_id
+                                ),
+                                False,
+                            ),
                         }
                     )
                 zone_states = {item["state"] for item in items}
@@ -447,12 +489,14 @@ class WebsiteSaleCampingPitch(WebsiteSale):
         # Customers may pick as many free pitches as they like; the warning only
         # fires when the map has nothing free and nothing is already selected.
         no_availability = bool(campsite_map) and not first_free_resource and not selected_pitches
+        vehicle_types = request.env["camping.vehicle.type"].sudo().search([])
         values = {
             "website_sale_order": order_sudo,
             "order": order_sudo,
             "vehicle": vehicle,
-            "vehicle_types": request.env["camping.vehicle.type"].sudo().search([]),
+            "vehicle_types": vehicle_types,
             "selected_vehicle_type_id": vehicle.category_id.id,
+            "extra_vehicle_category_ids": order_sudo.vehicle_ids[1:].mapped("category_id.id"),
             "start_date_value": self._pitch_date_input_value(order_sudo, order_sudo.rental_start_date),
             "end_date_value": self._pitch_date_input_value(order_sudo, order_sudo.rental_return_date),
             "campsite_map": campsite_map,
@@ -464,6 +508,12 @@ class WebsiteSaleCampingPitch(WebsiteSale):
             ),
             "selected_pitches": selected_pitches,
             "selected_pitch_ids_csv": ",".join(map(str, selected_pitches.ids)),
+            "pitch_products_json": json.dumps(
+                [{"id": product.id, "name": product.name} for product in pitch_products]
+            ),
+            "default_pitch_product_id": self._get_default_pitch_product_id(
+                order_sudo, selected_pitches, pitch_products
+            ),
             "map_legend_json": json.dumps(campsite_map._get_availability_legend()) if campsite_map else "[]",
             "map_legend_position": campsite_map._legend_position() if campsite_map else "none",
             "error": error,
@@ -600,6 +650,25 @@ class WebsiteSaleCampingPitch(WebsiteSale):
         # additional-guest surcharge now that the quantities are known.
         order_sudo._update_additional_guest_charge()
 
+        self._update_extra_vehicles(order_sudo)
+        order_sudo._update_extra_vehicle_charge()
+
         current_step = request.website._get_checkout_step(PITCH_STEP_HREF)
         next_step = current_step._get_next_checkout_step(request.website._get_allowed_steps_domain())
         return request.redirect(next_step.step_href or "/shop/cart")
+
+    def _update_extra_vehicles(self, order_sudo):
+        """Replace the order's extra vehicles (everything beyond the first,
+        which was chosen on the Camping step) with what was submitted here.
+        """
+        category_ids = [
+            int(value)
+            for value in request.httprequest.form.getlist("x_extra_vehicle_category_id")
+            if value.isdigit()
+        ]
+        primary_vehicle = order_sudo.vehicle_ids[:1]
+        (order_sudo.vehicle_ids - primary_vehicle).sudo().unlink()
+        if category_ids:
+            request.env["camping.fleet.vehicle"].sudo().create(
+                [{"category_id": category_id, "sale_order_id": order_sudo.id} for category_id in category_ids]
+            )

@@ -78,6 +78,15 @@
         </xpath>
     </template>
     <template
+        id="header_cart_link_camping_step"
+        inherit_id="website_sale.header_cart_link"
+        name="Header cart icon links to camping step"
+    >
+        <xpath expr="//a[@href='/shop/cart']" position="attributes">
+            <attribute name="href">/shop/camping</attribute>
+        </xpath>
+    </template>
+    <template
         id="cart_selected_pitch"
         inherit_id="website_sale.cart"
         name="Selected camping pitch in order summary"
@@ -93,6 +102,41 @@
                     t-out="', '.join(website_sale_order.pitch_resource_ids.mapped('name'))"
                 />
             </div>
+        </xpath>
+    </template>
+    <template
+        id="cart_summary_pitch_and_qty"
+        inherit_id="website_sale.cart_summary_content"
+        name="Pitch names and a quantity column in the checkout order summary"
+    >
+        <xpath expr="//table[hasclass('o_cart_products_table')]" position="before">
+            <t
+                t-set="camping_pitch_names_by_line"
+                t-value="website_sale_order._get_pitch_names_by_line() if website_sale_order else {}"
+            />
+        </xpath>
+        <xpath
+            expr="//td[@name='website_sale_cart_summary_product_name']"
+            position="inside"
+        >
+            <div
+                t-if="camping_pitch_names_by_line.get(line)"
+                class="text-muted small mt-1"
+            >
+                <i class="fa fa-map-marker me-1" />
+                <t t-esc="camping_pitch_names_by_line.get(line)" />
+            </div>
+        </xpath>
+        <xpath
+            expr="//td[@name='website_sale_cart_summary_line_price']"
+            position="before"
+        >
+            <td
+                class="td-qty pe-2 pt-3 text-end text-muted"
+                name="website_sale_cart_summary_qty"
+            >
+                <t t-out="int(line.product_uom_qty)" />
+            </td>
         </xpath>
     </template>
 </odoo>

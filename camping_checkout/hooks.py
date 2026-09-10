@@ -12,6 +12,12 @@ _ACCOMMODATION_PRODUCT_NAMES = [
 ]
 _LOCAL_TAX_PRODUCT_NAME = "City Tax"
 _ELECTRICITY_PRODUCT_TEMPLATE_ID = 2898
+_EXTRA_VEHICLE_PRODUCT_NAME = "Zusätzliches Fahrzeug"
+_EXTRA_VEHICLE_PRODUCT_XMLID = "product_extra_vehicle"
+# The "Pro Nacht" (nightly) UoM the other per-stay fee products (Hunde, ...)
+# already use has no stable xmlid of its own (unlike the recurrence below,
+# which does) - same kind of hardcoded reference as _ELECTRICITY_PRODUCT_TEMPLATE_ID.
+_NIGHT_UOM_ID = 66
 
 
 def post_init_hook(env):
@@ -23,6 +29,7 @@ def post_init_hook(env):
     _setup_additional_guest_product(env)
     _setup_local_tax_product(env)
     _setup_electricity_product(env)
+    _setup_extra_vehicle_product(env)
 
 
 def _setup_camping_step(env):
@@ -232,4 +239,50 @@ def _setup_electricity_product(env):
     accommodation_templates = env["product.template"].search([("name", "in", _ACCOMMODATION_PRODUCT_NAMES)])
     accommodation_templates.filtered(lambda t: not t.x_electricity_product_id).write(
         {"x_electricity_product_id": electricity_product.id}
+    )
+
+
+def _setup_extra_vehicle_product(env):
+    """Create the per-night "extra vehicle" fee product, unlike the other fee
+    products above this one isn't expected to already exist - it's created
+    here so it has a real price to be set on it afterward in the backend.
+    """
+    existing = env["ir.model.data"].search(
+        [("module", "=", "camping_checkout"), ("name", "=", _EXTRA_VEHICLE_PRODUCT_XMLID)],
+        limit=1,
+    )
+    if existing:
+        return
+
+    night_uom = env["uom.uom"].browse(_NIGHT_UOM_ID).exists()
+    recurrence = env.ref("sale_renting.recurrence_nightly", raise_if_not_found=False)
+    if not night_uom or not recurrence:
+        return
+
+    product = env["product.product"].create(
+        {
+            "name": _EXTRA_VEHICLE_PRODUCT_NAME,
+            "type": "service",
+            "rent_ok": True,
+            "sale_ok": False,
+            "invoice_policy": "order",
+            "uom_id": night_uom.id,
+            "list_price": 0.0,
+        }
+    )
+    env["product.pricing"].create(
+        {
+            "product_template_id": product.product_tmpl_id.id,
+            "recurrence_id": recurrence.id,
+            "price": 0.0,
+        }
+    )
+    env["ir.model.data"].create(
+        {
+            "module": "camping_checkout",
+            "name": _EXTRA_VEHICLE_PRODUCT_XMLID,
+            "model": "product.product",
+            "res_id": product.id,
+            "noupdate": True,
+        }
     )

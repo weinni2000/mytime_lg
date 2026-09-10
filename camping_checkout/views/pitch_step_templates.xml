@@ -49,54 +49,29 @@
                     role="alert"
                     t-out="error"
                 />
-                <form
-                    method="get"
-                    action="/shop/pitch"
-                    id="o_pitch_filters_form"
-                    class="row g-3 mb-4"
-                >
-                    <div class="col-md-4">
-                        <label class="form-label" for="o_pitch_vehicle_type">
-                            Vehicle type
-                        </label>
-                        <select
-                            id="o_pitch_vehicle_type"
-                            name="vehicle_type_id"
-                            class="form-select"
-                            onchange="this.form.submit()"
-                        >
-                            <t t-foreach="vehicle_types" t-as="vehicle_type">
-                                <option
-                                    t-att-value="vehicle_type.id"
-                                    t-att-selected="vehicle_type.id == selected_vehicle_type_id or None"
-                                    t-esc="vehicle_type.name"
-                                />
-                            </t>
-                        </select>
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label" for="o_pitch_start_date">Start</label>
-                        <input
-                            id="o_pitch_start_date"
-                            type="date"
-                            name="start_date"
-                            class="form-control"
-                            t-att-value="start_date_value"
-                            onchange="this.form.submit()"
-                        />
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label" for="o_pitch_end_date">End</label>
-                        <input
-                            id="o_pitch_end_date"
-                            type="date"
-                            name="end_date"
-                            class="form-control"
-                            t-att-value="end_date_value"
-                            t-att-min="start_date_value"
-                            onchange="this.form.submit()"
-                        />
-                    </div>
+                <!-- Vehicle type / Start / End are shared across the whole order (see
+                     _apply_pitch_filters); the visible controls for them now live inside
+                     the map component's repeating rows, which submit this form via
+                     onFiltersChange instead of rendering their own inputs here. -->
+                <form method="get" action="/shop/pitch" id="o_pitch_filters_form">
+                    <input
+                        id="o_pitch_vehicle_type"
+                        type="hidden"
+                        name="vehicle_type_id"
+                        t-att-value="selected_vehicle_type_id"
+                    />
+                    <input
+                        id="o_pitch_start_date"
+                        type="hidden"
+                        name="start_date"
+                        t-att-value="start_date_value"
+                    />
+                    <input
+                        id="o_pitch_end_date"
+                        type="hidden"
+                        name="end_date"
+                        t-att-value="end_date_value"
+                    />
                 </form>
 
                 <form
@@ -116,6 +91,16 @@
                         t-att-value="selected_pitch_ids_csv"
                     />
 
+                    <div class="d-flex justify-content-end mb-3">
+                        <button
+                            type="submit"
+                            t-att-disabled="not selected_pitches"
+                            class="btn btn-primary pitch_continue_button"
+                        >
+                            Continue<i class="fw-light fa fa-angle-right ms-2" />
+                        </button>
+                    </div>
+
                     <div t-if="campsite_map" class="mb-4">
                         <div
                             class="o_camping_map_booking"
@@ -125,8 +110,15 @@
                             t-att-data-legend-position="map_legend_position"
                             data-selectable="true"
                             t-att-data-selected-items="selected_pitch_ids_csv"
+                            t-att-data-products="pitch_products_json"
+                            t-att-data-default-product-id="default_pitch_product_id or ''"
+                            t-att-data-start-date="start_date_value"
+                            t-att-data-end-date="end_date_value"
                             data-input-id="pitch_resource_ids"
-                            data-button-id="pitch_continue_button"
+                            data-button-selector=".pitch_continue_button"
+                            data-filters-form-id="o_pitch_filters_form"
+                            data-start-date-input-id="o_pitch_start_date"
+                            data-end-date-input-id="o_pitch_end_date"
                             t-att-data-no-availability="'true' if no_availability else 'false'"
                             data-modal-id="o_pitch_no_availability_modal"
                         >
@@ -135,6 +127,130 @@
                     </div>
                     <div t-else="" class="alert alert-warning">
                         No active campsite map is configured.
+                    </div>
+
+                    <div class="accordion mb-4" id="o_pitch_vehicles_accordion">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button
+                                    t-attf-class="accordion-button {{'' if extra_vehicle_category_ids else 'collapsed'}}"
+                                    type="button"
+                                    data-bs-toggle="collapse"
+                                    data-bs-target="#o_pitch_vehicles_collapse"
+                                    t-att-aria-expanded="'true' if extra_vehicle_category_ids else 'false'"
+                                    aria-controls="o_pitch_vehicles_collapse"
+                                >
+                                    <i class="fa fa-car me-2" />Vehicles
+                                </button>
+                            </h2>
+                            <div
+                                id="o_pitch_vehicles_collapse"
+                                t-attf-class="accordion-collapse collapse {{'show' if extra_vehicle_category_ids else ''}}"
+                            >
+                                <div class="accordion-body">
+                                    <p class="text-muted small mb-3">
+                                        1 vehicle is included per Stellplatz. Add any extra
+                                        vehicles you're bringing below.
+                                    </p>
+                                    <div id="extra_vehicle_rows">
+                                        <t
+                                            t-foreach="extra_vehicle_category_ids"
+                                            t-as="category_id"
+                                        >
+                                            <div
+                                                class="extra-vehicle-row row align-items-end mb-2"
+                                            >
+                                                <div class="col-10">
+                                                    <label
+                                                        class="col-form-label"
+                                                    >Vehicle Category</label>
+                                                    <select
+                                                        name="x_extra_vehicle_category_id"
+                                                        class="form-select"
+                                                    >
+                                                        <option
+                                                            value=""
+                                                        >Select...</option>
+                                                        <option
+                                                            t-foreach="vehicle_types"
+                                                            t-as="vehicle_type"
+                                                            t-att-value="vehicle_type.id"
+                                                            t-att-selected="vehicle_type.id == category_id"
+                                                            t-out="vehicle_type.name"
+                                                        />
+                                                    </select>
+                                                </div>
+                                                <div class="col-2">
+                                                    <button
+                                                        type="button"
+                                                        class="btn btn-outline-danger btn-sm extra-vehicle-row-remove"
+                                                        aria-label="Remove vehicle"
+                                                    >×</button>
+                                                </div>
+                                            </div>
+                                        </t>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        id="extra_vehicle_row_add"
+                                        class="btn btn-outline-secondary btn-sm mt-1"
+                                    >
+                                        <i class="fa fa-plus me-1" />Add vehicle
+                                    </button>
+
+                                    <template id="extra_vehicle_row_tpl">
+                                        <div
+                                            class="extra-vehicle-row row align-items-end mb-2"
+                                        >
+                                            <div class="col-10">
+                                                <label
+                                                    class="col-form-label"
+                                                >Vehicle Category</label>
+                                                <select
+                                                    name="x_extra_vehicle_category_id"
+                                                    class="form-select"
+                                                >
+                                                    <option value="">Select...</option>
+                                                    <option
+                                                        t-foreach="vehicle_types"
+                                                        t-as="vehicle_type"
+                                                        t-att-value="vehicle_type.id"
+                                                        t-out="vehicle_type.name"
+                                                    />
+                                                </select>
+                                            </div>
+                                            <div class="col-2">
+                                                <button
+                                                    type="button"
+                                                    class="btn btn-outline-danger btn-sm extra-vehicle-row-remove"
+                                                    aria-label="Remove vehicle"
+                                                >×</button>
+                                            </div>
+                                        </div>
+                                    </template>
+
+                                    <script type="text/javascript">
+                                        <![CDATA[
+                                        document.addEventListener("DOMContentLoaded", function () {
+                                            var rowsContainer = document.getElementById("extra_vehicle_rows");
+                                            var rowTpl = document.getElementById("extra_vehicle_row_tpl");
+                                            var addBtn = document.getElementById("extra_vehicle_row_add");
+
+                                            addBtn.addEventListener("click", function () {
+                                                rowsContainer.appendChild(rowTpl.content.cloneNode(true));
+                                            });
+
+                                            rowsContainer.addEventListener("click", function (ev) {
+                                                if (ev.target.classList.contains("extra-vehicle-row-remove")) {
+                                                    ev.target.closest(".extra-vehicle-row").remove();
+                                                }
+                                            });
+                                        });
+                                        ]]>
+                                    </script>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div
@@ -148,10 +264,9 @@
                             <i class="fw-light fa fa-angle-left me-2" />Back
                         </a>
                         <button
-                            id="pitch_continue_button"
                             type="submit"
                             t-att-disabled="not selected_pitches"
-                            class="btn btn-primary w-100 w-md-auto order-1 order-md-3"
+                            class="btn btn-primary w-100 w-md-auto order-1 order-md-3 pitch_continue_button"
                         >
                             Continue<i class="fw-light fa fa-angle-right ms-2" />
                         </button>

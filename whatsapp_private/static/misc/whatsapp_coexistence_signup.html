@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>WhatsApp Coexistence Signup</title>
+    <style>
+      body {
+        font-family: -apple-system, sans-serif;
+        max-width: 640px;
+        margin: 40px auto;
+        padding: 0 16px;
+      }
+      button {
+        font-size: 16px;
+        padding: 12px 24px;
+        background: #25d366;
+        color: #fff;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+      }
+      button:disabled {
+        opacity: 0.5;
+        cursor: default;
+      }
+      pre {
+        background: #f4f4f4;
+        padding: 16px;
+        border-radius: 6px;
+        overflow-x: auto;
+        white-space: pre-wrap;
+        word-break: break-all;
+      }
+      .hint {
+        color: #666;
+        font-size: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>WhatsApp Coexistence Signup</h1>
+    <p class="hint">
+      One-time relinking page for the "LG" private WhatsApp company. Have the phone with
+      the WhatsApp Business app for this number ready before clicking Connect.
+    </p>
+    <p class="hint">
+      Pass the Embedded Signup Configuration ID as a URL parameter, e.g. append
+      <code>?config_id=1234567890</code> to this page's URL.
+    </p>
+    <div id="fb-root"></div>
+    <button id="connect-btn" disabled>Loading Facebook SDK…</button>
+    <h2>Result</h2>
+    <p class="hint">Copy this immediately — the code expires in about 30 seconds.</p>
+    <pre id="result">(waiting for signup to complete)</pre>
+
+    <script>
+      const APP_ID = "1607222250989773";
+      const params = new URLSearchParams(window.location.search);
+      const CONFIG_ID = params.get("config_id");
+      const resultEl = document.getElementById("result");
+      const btn = document.getElementById("connect-btn");
+
+      let sessionInfo = {};
+
+      window.fbAsyncInit = function () {
+        FB.init({appId: APP_ID, autoLogAppEvents: true, xfbml: true, version: "v21.0"});
+        btn.disabled = !CONFIG_ID;
+        btn.textContent = CONFIG_ID
+          ? "Connect WhatsApp Business App"
+          : "Missing ?config_id=… in URL";
+      };
+
+      window.addEventListener("message", (event) => {
+        if (!event.origin.endsWith("facebook.com")) return;
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === "WA_EMBEDDED_SIGNUP") {
+            sessionInfo = Object.assign({}, sessionInfo, data.data || {});
+            render();
+          }
+        } catch (error) {
+          /* not a JSON message from the signup flow, ignore */
+        }
+      });
+
+      function render() {
+        resultEl.textContent = JSON.stringify(sessionInfo, null, 2);
+      }
+
+      btn.addEventListener("click", () => {
+        FB.login(
+          (response) => {
+            if (response.authResponse && response.authResponse.code) {
+              sessionInfo.code = response.authResponse.code;
+              render();
+            } else {
+              resultEl.textContent =
+                "Login did not return a code:\n" + JSON.stringify(response, null, 2);
+            }
+          },
+          {
+            config_id: CONFIG_ID,
+            response_type: "code",
+            override_default_response_type: true,
+            extras: {
+              setup: {},
+              featureType: "whatsapp_business_app_onboarding",
+              sessionInfoVersion: "3",
+            },
+          }
+        );
+      });
+    </script>
+    <script
+      async
+      defer
+      crossorigin="anonymous"
+      src="https://connect.facebook.net/en_US/sdk.js"
+    ></script>
+  </body>
+</html>

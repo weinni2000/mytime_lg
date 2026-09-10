@@ -4,6 +4,7 @@ from odoo.exceptions import ValidationError
 from odoo.addons.camping_map_booking.models.camping_map_state import STATE_FREE
 
 ADDITIONAL_GUEST_PRODUCT_XMLID = "camping_checkout.product_additional_guest"
+EXTRA_VEHICLE_PRODUCT_XMLID = "camping_checkout.product_extra_vehicle"
 
 
 class SaleOrder(models.Model):
@@ -42,16 +43,68 @@ class SaleOrder(models.Model):
         super()._cart_update_renting_period(start_date, end_date)
         changed_orders.write({"pitch_resource_ids": [(5,)]})
 
-    def _get_pitch_sale_line(self, pitch):
-        """Accommodation line a given pitch belongs to (matched by planning role)."""
+    def _get_pitch_product(self, pitch):
+        """Accommodation product matching a given pitch's planning role."""
+        return (
+            self.env["product.template"]
+            .search([("planning_role_id", "in", pitch.role_ids.ids)], limit=1)
+            .product_variant_id
+        )
+
+    def _find_pitch_sale_line(self, pitch):
+        """Existing accommodation line matching a pitch's planning role, if any.
+
+        Read-only (never creates a line) - shared by _get_pitch_sale_line
+        (which does create one, for cart mutation) and _get_pitch_names_by_line
+        (for display, called while just rendering a page).
+        """
         self.ensure_one()
         accommodation_lines = self.order_line.filtered(
             lambda line: not line.display_type and line.product_id.planning_role_id
         )
-        matching_line = accommodation_lines.filtered(
-            lambda line: line.product_id.planning_role_id in pitch.role_ids
-        )[:1]
-        return matching_line or accommodation_lines[:1]
+        return accommodation_lines.filtered(lambda line: line.product_id.planning_role_id in pitch.role_ids)[:1]
+
+    def _get_pitch_sale_line(self, pitch):
+        """Accommodation line a given pitch belongs to (matched by planning role).
+
+        Creates the line for the pitch's own product if the order doesn't have
+        one yet, so pitches of different types (e.g. a tent spot and a caravan
+        spot) each land on their own product line instead of all being lumped
+        onto whichever accommodation line already happens to be in the cart.
+        """
+        self.ensure_one()
+        matching_line = self._find_pitch_sale_line(pitch)
+        if matching_line:
+            return matching_line
+
+        product = self._get_pitch_product(pitch)
+        if not product:
+            return self.order_line.filtered(
+                lambda line: not line.display_type and line.product_id.planning_role_id
+            )[:1]
+
+        self._cart_add(
+            product_id=product.id,
+            quantity=1,
+            start_date=self.rental_start_date,
+            end_date=self.rental_return_date,
+        )
+        return self._cart_find_product_line(product.id, uom_id=product.uom_id.id)[:1]
+
+    def _get_pitch_names_by_line(self):
+        """{accommodation sale.order.line: pitch names shown on it, comma-separated}.
+
+        Read-only display helper for the checkout order summary - unlike
+        _pitch_lines_map, this never creates a line, so it's safe to call
+        on every page render instead of only after a form submit.
+        """
+        self.ensure_one()
+        mapping = {}
+        for pitch in self.pitch_resource_ids:
+            line = self._find_pitch_sale_line(pitch)
+            if line:
+                mapping[line] = mapping.get(line, self.env["resource.resource"]) | pitch
+        return {line: ", ".join(pitches.mapped("name")) for line, pitches in mapping.items()}
 
     def _update_additional_guest_charge(self):
         """(Re)price the additional-guest surcharge.
@@ -75,6 +128,26 @@ class SaleOrder(models.Model):
             line.product_uom_qty * line.product_id.x_included_persons for line in accommodation_lines
         )
         extra_qty = max(len(self.x_guest_line_ids) - included_total, 0)
+        self._set_camping_extra_quantity(extra_product, extra_qty)
+
+    def _update_extra_vehicle_charge(self):
+        """(Re)price the extra-vehicle surcharge.
+
+        Each pitch includes 1 vehicle; the included count scales with the
+        accommodation quantity (2 pitches = 2 included vehicles), same as
+        ``_update_additional_guest_charge`` does for guests. Every vehicle
+        beyond that total adds one extra-vehicle unit. Safe to call again
+        whenever the vehicle count or pitch quantity changes.
+        """
+        self.ensure_one()
+        extra_product = self.env.ref(EXTRA_VEHICLE_PRODUCT_XMLID, raise_if_not_found=False)
+        if not extra_product:
+            return
+        accommodation_lines = self.order_line.filtered(
+            lambda line: not line.display_type and line.product_id.planning_role_id
+        )
+        included_total = sum(line.product_uom_qty for line in accommodation_lines)
+        extra_qty = max(len(self.vehicle_ids) - included_total, 0)
         self._set_camping_extra_quantity(extra_product, extra_qty)
 
     def _set_camping_extra_quantity(self, product, quantity):

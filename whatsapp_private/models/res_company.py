@@ -39,6 +39,30 @@ class ResCompany(models.Model):
         string="Status Detail",
         compute="_compute_whatsapp_private_state",
     )
+    whatsapp_private_process_running = fields.Boolean(
+        string="Process Running",
+        compute="_compute_whatsapp_private_state",
+    )
+    whatsapp_private_process_detail = fields.Char(
+        string="Process Detail",
+        compute="_compute_whatsapp_private_state",
+    )
+    whatsapp_private_listener_paused = fields.Boolean(
+        string="Automatic Restart Paused",
+        help=(
+            "When enabled, the recurring cron will not automatically restart the "
+            "WhatsApp listener process. Set by the Stop Process button; clear it with "
+            "Resume Automatic Listener or by linking WhatsApp again."
+        ),
+    )
+    whatsapp_private_mute_notifications = fields.Boolean(
+        string="Mute WhatsApp Notifications",
+        help=(
+            "When enabled, private WhatsApp messages no longer pop open a chat window "
+            "and are marked as read immediately, so they don't add to the Discuss "
+            "unread counter."
+        ),
+    )
 
     def _whatsapp_private_directory(self):
         self.ensure_one()
@@ -81,6 +105,30 @@ class ResCompany(models.Model):
             encoded_qr = base64.b64encode(qr_data) if qr_data else False
             company.whatsapp_private_qr_code = encoded_qr
             company.whatsapp_private_qr_live = encoded_qr
+            running, detail = company._whatsapp_private_process_summary()
+            company.whatsapp_private_process_running = running
+            company.whatsapp_private_process_detail = detail
+
+    def _whatsapp_private_process_summary(self):
+        self.ensure_one()
+        directory = self._whatsapp_private_directory()
+        listen_pids = self._whatsapp_private_worker_pids(("listen",))
+        if listen_pids:
+            try:
+                age = int(time.time() - (directory / "heartbeat").stat().st_mtime)
+                heartbeat_text = self.env._("%(age)ss ago") % {"age": age}
+            except OSError:
+                heartbeat_text = self.env._("no heartbeat yet")
+            detail = self.env._("Listener running (PID %(pid)s, heartbeat %(heartbeat)s).")
+            detail = detail % {"pid": listen_pids[0], "heartbeat": heartbeat_text}
+            return True, detail
+        link_pids = self._whatsapp_private_worker_pids(("link",))
+        if link_pids:
+            detail = self.env._("Linking in progress (PID %(pid)s).") % {"pid": link_pids[0]}
+            return True, detail
+        if self.whatsapp_private_listener_paused:
+            return False, self.env._("No process running. Automatic restart is paused.")
+        return False, self.env._("No process running.")
 
     def get_whatsapp_private_live_qr(self):
         self.ensure_one()
@@ -202,12 +250,45 @@ class ResCompany(models.Model):
         _logger.warning("Private WhatsApp session reset for company %s (%s).", self.id, self.name)
         return self.action_whatsapp_private_connect()
 
+    def action_whatsapp_private_stop_process(self):
+        """Kill the running worker and keep the recurring cron from restarting it."""
+        self.ensure_one()
+        self._stop_whatsapp_private_workers()
+        self.whatsapp_private_listener_paused = True
+        _logger.warning(
+            "Private WhatsApp worker manually stopped for company %s (%s); automatic restart paused.",
+            self.id,
+            self.name,
+        )
+        return self.action_whatsapp_private_refresh()
+
+    def action_whatsapp_private_resume_listener(self):
+        """Clear the pause flag and restart the persistent listener right away."""
+        self.ensure_one()
+        self.whatsapp_private_listener_paused = False
+        account = (
+            self.env["whatsapp.account"]
+            .sudo()
+            .search(
+                [
+                    ("private_company_id", "=", self.id),
+                    ("connection_type", "=", "private"),
+                    ("active", "=", True),
+                ],
+                limit=1,
+            )
+        )
+        if account:
+            account._start_private_listener()
+        return self.action_whatsapp_private_refresh()
+
     def action_whatsapp_private_connect(self):
         self.ensure_one()
         if not self.id:
             raise UserError(_("Save the company before linking WhatsApp."))
         directory = self._whatsapp_private_directory()
         directory.mkdir(parents=True, exist_ok=True)
+        self.whatsapp_private_listener_paused = False
         if self._whatsapp_private_worker_pids():
             return self.action_whatsapp_private_refresh()
         command = [

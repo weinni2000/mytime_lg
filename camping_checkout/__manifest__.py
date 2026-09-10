@@ -1,7 +1,7 @@
 {
     "name": "Camping Checkout",
     "summary": "Adds camping-specific information to the website checkout.",
-    "version": "19.0.1.4.0",
+    "version": "19.0.1.5.0",
     "category": "Website/eCommerce",
     "license": "OPL-1",
     "author": "mytime.click",
@@ -28,6 +28,11 @@
         "views/pitch_step_templates.xml",
         "views/sale_order_views.xml",
     ],
+    "assets": {
+        "web.assets_frontend": [
+            "camping_checkout/static/src/xml/add_to_cart_notification_patch.xml",
+        ],
+    },
     "post_init_hook": "post_init_hook",
     "installable": True,
     "application": False,
