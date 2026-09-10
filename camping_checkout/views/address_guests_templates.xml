@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <!-- Companion guests (name + age), moved here from the Camping step: the
+         primary guest is the address form's own "Your name" + Date of Birth
+         fields on this same page (see _update_camping_guests), so it isn't
+         repeated as a guest row. -->
+    <template
+        id="address_guests"
+        inherit_id="website_sale.address"
+        name="Guests on the address step"
+    >
+        <xpath expr="//t[@t-call='website_sale.address_form_fields']" position="after">
+            <div class="col-12 mt-4">
+                <h5 class="mb-2">Guests</h5>
+                <p class="text-muted small mb-2">
+                    Guests aged 16 or younger are exempt from the local tax; it is only
+                    charged for guests older than 16.
+                </p>
+                <div id="guest_rows">
+                    <t t-foreach="guest_rows" t-as="guest">
+                        <div class="guest-row row align-items-end mb-2">
+                            <div class="col-6">
+                                <label class="col-form-label">Name</label>
+                                <input
+                                    type="text"
+                                    name="x_guest_name"
+                                    class="form-control"
+                                    t-att-value="guest['name']"
+                                />
+                            </div>
+                            <div class="col-4">
+                                <label class="col-form-label">Age</label>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    step="1"
+                                    name="x_guest_age"
+                                    class="form-control"
+                                    required="required"
+                                    t-attf-value="{{ guest['age'] if guest['age'] is not False and guest['age'] is not None else '' }}"
+                                />
+                            </div>
+                            <div class="col-2">
+                                <button
+                                    type="button"
+                                    class="btn btn-outline-danger btn-sm guest-row-remove"
+                                    aria-label="Remove guest"
+                                >×</button>
+                            </div>
+                        </div>
+                    </t>
+                </div>
+                <button
+                    type="button"
+                    id="guest_row_add"
+                    class="btn btn-outline-secondary btn-sm mt-1"
+                >
+                    <i class="fa fa-plus me-1" />Add guest
+                </button>
+
+                <template id="guest_row_tpl">
+                    <div class="guest-row row align-items-end mb-2">
+                        <div class="col-6">
+                            <label class="col-form-label">Name</label>
+                            <input
+                                type="text"
+                                name="x_guest_name"
+                                class="form-control"
+                            />
+                        </div>
+                        <div class="col-4">
+                            <label class="col-form-label">Age</label>
+                            <input
+                                type="number"
+                                min="0"
+                                step="1"
+                                name="x_guest_age"
+                                class="form-control"
+                                required="required"
+                            />
+                        </div>
+                        <div class="col-2">
+                            <button
+                                type="button"
+                                class="btn btn-outline-danger btn-sm guest-row-remove"
+                                aria-label="Remove guest"
+                            >×</button>
+                        </div>
+                    </div>
+                </template>
+
+                <script type="text/javascript">
+                    <![CDATA[
+                    document.addEventListener("DOMContentLoaded", function () {
+                        var rowsContainer = document.getElementById("guest_rows");
+                        var rowTpl = document.getElementById("guest_row_tpl");
+                        var addBtn = document.getElementById("guest_row_add");
+                        if (!rowsContainer || !rowTpl || !addBtn) {
+                            return;
+                        }
+
+                        addBtn.addEventListener("click", function () {
+                            rowsContainer.appendChild(rowTpl.content.cloneNode(true));
+                        });
+
+                        rowsContainer.addEventListener("click", function (ev) {
+                            if (ev.target.classList.contains("guest-row-remove")) {
+                                // Unlike dogs/pitches, an empty guest list is a
+                                // valid (the default) state, so this can go
+                                // all the way down to zero rows.
+                                ev.target.closest(".guest-row").remove();
+                            }
+                        });
+                    });
+                    ]]>
+                </script>
+            </div>
+        </xpath>
+    </template>
+</odoo>

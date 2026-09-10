@@ -26,6 +26,7 @@
         "views/website_sale_templates.xml",
         "views/camping_step_templates.xml",
         "views/pitch_step_templates.xml",
+        "views/address_guests_templates.xml",
         "views/sale_order_views.xml",
     ],
     "assets": {

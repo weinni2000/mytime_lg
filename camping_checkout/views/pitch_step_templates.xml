@@ -152,6 +152,28 @@
                                         1 vehicle is included per Stellplatz. Add any extra
                                         vehicles you're bringing below.
                                     </p>
+                                    <div
+                                        t-if="vehicle.category_id"
+                                        class="row align-items-end mb-2"
+                                    >
+                                        <div class="col-10">
+                                            <label
+                                                class="col-form-label"
+                                            >Vehicle Category</label>
+                                            <input
+                                                type="text"
+                                                class="form-control"
+                                                disabled="disabled"
+                                                t-att-value="vehicle.category_id.name"
+                                            />
+                                        </div>
+                                        <div class="col-2">
+                                            <span
+                                                class="text-muted small"
+                                                title="Chosen on the Camping step"
+                                            >Included</span>
+                                        </div>
+                                    </div>
                                     <div id="extra_vehicle_rows">
                                         <t
                                             t-foreach="extra_vehicle_category_ids"

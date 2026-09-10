@@ -237,7 +237,6 @@ class SaleOrder(models.Model):
             raise ValidationError(_("The rental start and end are required to reserve a pitch."))
 
         zone_model = self.env["camping.map.zone"]
-        vehicle_type = self.vehicle_ids[:1].category_id
         for pitch in self.pitch_resource_ids:
             if not self._get_pitch_sale_line(pitch):
                 raise ValidationError(
@@ -260,7 +259,7 @@ class SaleOrder(models.Model):
             if (
                 zone._get_resource_state(
                     pitch,
-                    vehicle_type,
+                    None,
                     self.rental_start_date,
                     self.rental_return_date,
                 )

@@ -54,48 +54,27 @@ class WebsiteSaleCampingCheckout(WebsiteSale):
             )
             rendering_values["priority_countries"] = priority_countries
             rendering_values["countries"] = countries - priority_countries
+        order_sudo = kwargs.get("order_sudo")
+        if order_sudo:
+            # No starter row: stays empty (and out of the way) until the
+            # customer actually clicks "Add guest".
+            rendering_values["guest_rows"] = self._get_camping_guest_rows(order_sudo)
         return rendering_values
 
     @route()
     def shop_address_submit(self, *args, **kwargs):
         response = super().shop_address_submit(*args, **kwargs)
         order_sudo = request.cart
-        if order_sudo:
-            self._sync_camping_guests_after_address(order_sudo)
-        return response
-
-    def _sync_camping_guests_after_address(self, order_sudo):
-        """Fix up the guest lines and local tax once the real customer is known.
-
-        The "Address" step was moved after "Camping" (see
-        hooks._reorder_address_step), so ``_update_camping_guests`` may run
-        while ``order_sudo.partner_id`` is still the anonymous cart partner:
-        the main guest line then ends up linked to that placeholder instead
-        of the real customer, and the main guest's age (only known once the
-        birthdate submitted here is saved) can be missing from the local tax
-        count. Re-link the main guest line to the real customer and
-        recompute the local tax quantity from the guests' now-known
-        birthdates.
-        """
-        partner = order_sudo.partner_id
-        if not partner or partner == order_sudo.website_id.partner_id:
-            return
-
-        main_guest_lines = order_sudo.x_guest_line_ids.filtered(lambda guest: guest.x_main_guest)
-        keep = main_guest_lines.filtered(lambda guest: guest.x_guest_partner_id == partner)[:1]
-        if not keep and main_guest_lines:
-            keep = main_guest_lines[:1]
-            keep.sudo().x_guest_partner_id = partner.id
-        (main_guest_lines - keep).sudo().unlink()
-
-        adult_guest_count = sum(
-            1
-            for guest in order_sudo.x_guest_line_ids
-            if guest.x_guest_partner_id.birthdate_date
-            and self._age_from_birthdate(guest.x_guest_partner_id.birthdate_date) > LOCAL_TAX_MIN_AGE
-        )
-        if adult_guest_count:
+        # Guests are entered on this same page now (moved from the Camping
+        # step, which runs earlier), so order_sudo.partner_id is already the
+        # real customer by the time this runs - only guard against the
+        # address submission itself having failed (still-anonymous cart).
+        partner = order_sudo.partner_id if order_sudo else False
+        if partner and partner != order_sudo.website_id.partner_id:
+            _guest_count, adult_guest_count = self._update_camping_guests(order_sudo)
+            order_sudo._update_additional_guest_charge()
             self._update_local_tax_product(order_sudo, adult_guest_count)
+        return response
 
     # === CHECKOUT FLOW - CAMPING STEP METHODS === #
 
@@ -118,7 +97,6 @@ class WebsiteSaleCampingCheckout(WebsiteSale):
             "dog_breeds": sudo_env["animal.breed"].search(
                 [("species_id", "=", dog_species.id)] if dog_species else []
             ),
-            "guest_rows": self._get_camping_guest_rows(order_sudo),
         }
         values.update(request.website._get_checkout_step_values())
 
@@ -145,24 +123,10 @@ class WebsiteSaleCampingCheckout(WebsiteSale):
         return response
 
     def _get_camping_guest_rows(self, order_sudo):
-        main_guest_line = order_sudo.x_guest_line_ids.filtered(
-            lambda guest: guest.x_main_guest and guest.x_guest_partner_id == order_sudo.partner_id
-        )[:1]
+        """Companion guests only - the primary guest is the address form's own
+        "Your name" + Date of Birth fields, not a row here."""
         companion_lines = order_sudo.x_guest_line_ids.filtered(lambda g: not g.x_main_guest)
-
-        birthdate = order_sudo.partner_id.birthdate_date
-        main_row = {
-            "name": order_sudo.partner_id.name,
-            "age": (
-                self._age_from_birthdate(birthdate)
-                if birthdate
-                else main_guest_line.x_guest_age
-                if main_guest_line
-                else order_sudo.partner_id.x_age
-            ),
-        }
-        rows = [main_row] + [{"name": g.x_guest_name, "age": g.x_guest_age} for g in companion_lines]
-        return rows
+        return [{"name": g.x_guest_name, "age": g.x_guest_age} for g in companion_lines]
 
     @route(
         [f"{CAMPING_STEP_HREF}/submit"],
@@ -196,9 +160,6 @@ class WebsiteSaleCampingCheckout(WebsiteSale):
 
         self._update_camping_dogs(order_sudo, post)
         self._update_electricity_product(order_sudo, post.get("x_with_electricity") == "on")
-        guest_count, adult_guest_count = self._update_camping_guests(order_sudo)
-        order_sudo._update_additional_guest_charge()
-        self._update_local_tax_product(order_sudo, adult_guest_count)
 
         current_step = request.website._get_checkout_step(CAMPING_STEP_HREF)
         next_step = current_step._get_next_checkout_step(request.website._get_allowed_steps_domain())
@@ -266,12 +227,14 @@ class WebsiteSaleCampingCheckout(WebsiteSale):
             self._set_camping_product_quantity(order_sudo, electricity_product, int(selected))
 
     def _update_camping_guests(self, order_sudo):
-        """Save the submitted guest rows and return (total_guests, adult_guests).
+        """Save the submitted companion guest rows and return (total_guests, adult_guests).
 
-        The first row always represents the ordering customer: it's only ever
-        used to make sure a main guest line exists, never to rename/edit the
-        actual billing contact. Remaining rows are saved as companion guests.
-        Age is required on every row, so every counted guest has a known age.
+        Called from shop_address_submit, after the real customer and their
+        birthdate are already saved - so a main guest line always exists (or
+        gets created here) linked to the real order_sudo.partner_id, and its
+        age comes straight from that partner's birthdate. Every submitted row
+        here is a companion; age is required on every row, so every counted
+        guest has a known age.
         """
         names = request.httprequest.form.getlist("x_guest_name")
         ages = request.httprequest.form.getlist("x_guest_age")
@@ -296,11 +259,9 @@ class WebsiteSaleCampingCheckout(WebsiteSale):
         guest_ages = []
         if order_sudo.partner_id.birthdate_date:
             guest_ages.append(self._age_from_birthdate(order_sudo.partner_id.birthdate_date))
-        elif ages and ages[0].isdigit():
-            guest_ages.append(int(ages[0]))
 
         guest_vals = []
-        for name, age in zip(names[1:], ages[1:], strict=False):
+        for name, age in zip(names, ages, strict=False):
             name = (name or "").strip()
             if not name:
                 continue
@@ -440,9 +401,12 @@ class WebsiteSaleCampingPitch(WebsiteSale):
             ):
                 items = []
                 for resource in zone.resource_ids:
+                    # Vehicle type no longer restricts which pitch a customer
+                    # can pick (see _validate_pitch_selection) - the vehicle
+                    # is tracked for the included-vehicle count/fee only.
                     state = zone._get_resource_state(
                         resource,
-                        vehicle.category_id,
+                        None,
                         order_sudo.rental_start_date,
                         order_sudo.rental_return_date,
                     )
