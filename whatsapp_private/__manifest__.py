@@ -1,7 +1,7 @@
 {
     "name": "Private WhatsApp",
     "summary": "Link a private WhatsApp account and send messages to contacts.",
-    "version": "19.0.7.2.1",
+    "version": "19.0.7.2.2",
     "category": "Productivity/Discuss",
     "license": "OPL-1",
     "author": "mytime.click",
