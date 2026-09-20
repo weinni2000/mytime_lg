@@ -2,6 +2,7 @@ import base64
 import json
 import logging
 import os
+import secrets
 import subprocess
 import sys
 import time
@@ -68,6 +69,28 @@ class ResCompany(models.Model):
         self.ensure_one()
         data_dir = Path(tools.config.get("data_dir") or "/var/lib/odoo")
         return data_dir / "whatsapp_private" / f"company_{self.id}"
+
+    def _whatsapp_private_notify_token(self):
+        """Shared secret letting the local WhatsApp worker ask Odoo to
+        process the inbox immediately instead of waiting for the next
+        'Private WhatsApp: Receive Messages' cron tick. Stored next to the
+        worker's other per-company session files so both sides read the
+        same value without a DB round trip from the worker process."""
+        self.ensure_one()
+        directory = self._whatsapp_private_directory()
+        directory.mkdir(parents=True, exist_ok=True)
+        token_path = directory / "notify_token"
+        try:
+            token = token_path.read_text(encoding="utf-8").strip()
+        except OSError:
+            token = ""
+        if token:
+            return token
+        token = secrets.token_hex(32)
+        temporary = directory / "notify_token.tmp"
+        temporary.write_text(token, encoding="utf-8")
+        os.replace(temporary, token_path)
+        return token
 
     def _whatsapp_private_worker(self):
         return Path(__file__).resolve().parents[1] / "misc" / "whatsapp_worker.py"

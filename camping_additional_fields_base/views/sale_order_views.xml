@@ -4,6 +4,7 @@
         <field name="name">sale.order.form.city.tax.left</field>
         <field name="model">sale.order</field>
         <field name="inherit_id" ref="sale_renting.rental_order_form_view" />
+        <field name="active" eval="False" />
         <field name="arch" type="xml">
             <xpath expr="//field[@name='remaining_hours']/parent::div" position="after">
                 <label for="city_tax_left" />
@@ -147,6 +148,7 @@
         <field name="name">booking.engine.orders.kanban.city.tax.left</field>
         <field name="model">sale.order</field>
         <field name="inherit_id" ref="booking_engine.booking_engine_orders_kanban" />
+        <field name="active" eval="False" />
         <field name="arch" type="xml">
             <xpath expr="//t[@t-name='card']/footer" position="after">
                 <div t-if="record.city_tax_left.raw_value" class="mt-2 w-100">

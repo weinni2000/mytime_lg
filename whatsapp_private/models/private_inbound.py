@@ -31,6 +31,10 @@ class WhatsAppAccount(models.Model):
             return
         directory = self.private_company_id._whatsapp_private_directory()
         directory.mkdir(parents=True, exist_ok=True)
+        # Written before the worker starts so it can read the same secret
+        # and push new messages to Odoo immediately instead of only relying
+        # on the once-a-minute cron.
+        self.private_company_id._whatsapp_private_notify_token()
         command = [
             sys.executable,
             str(self.private_company_id._whatsapp_private_worker()),
@@ -50,15 +54,6 @@ class WhatsAppAccount(models.Model):
             )
         finally:
             log_file.close()
-
-    def _mute_private_whatsapp_channel(self, channel):
-        if not self.private_company_id.whatsapp_private_mute_notifications:
-            return
-        last_message = channel.message_ids[:1]
-        if not last_message:
-            return
-        for member in channel.channel_member_ids:
-            member._mark_as_read(last_message.id)
 
     def _process_private_inbox(self):
         self.ensure_one()
@@ -134,7 +129,6 @@ class WhatsAppAccount(models.Model):
                         message_type="comment",
                         subtype_xmlid="mail.mt_note",
                     )
-                self._mute_private_whatsapp_channel(channel)
                 processing_path.unlink(missing_ok=True)
             except Exception:
                 _logger.exception("Could not import private WhatsApp event %s", processing_path)

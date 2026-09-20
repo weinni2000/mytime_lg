@@ -14,6 +14,7 @@ import time
 import uuid
 from pathlib import Path
 
+import httpx
 import qrcode
 from neonize.aioze.client import ClientFactory, NewAClient
 from neonize.aioze.events import ConnectedEv, MessageEv
@@ -21,6 +22,8 @@ from neonize.proto.Neonize_pb2 import ContactEntry
 from neonize.utils import build_jid
 
 _logger = logging.getLogger(__name__)
+
+ODOO_LOCAL_URL = "http://127.0.0.1:8069"
 
 
 class OperationAlreadyRunning(RuntimeError):
@@ -88,6 +91,39 @@ def message_text(event: MessageEv) -> str:
     if message.HasField("extendedTextMessage"):
         return message.extendedTextMessage.text
     return ""
+
+
+async def notify_odoo_inbox(directory: Path) -> None:
+    """Ask Odoo to process the inbox right away instead of waiting for the
+    next 'Private WhatsApp: Receive Messages' cron tick (up to a minute
+    later, longer if the cron thread pool is busy with other jobs).
+
+    Best-effort only: the cron stays as the fallback, so Odoo being down,
+    slow, or rejecting the token just means the message waits for the next
+    cron tick like before - it never blocks or drops the queued message.
+    """
+    try:
+        company_id = int(directory.name.rsplit("_", 1)[-1])
+    except ValueError:
+        return
+    try:
+        token = (directory / "notify_token").read_text(encoding="utf-8").strip()
+    except OSError:
+        return
+    if not token:
+        return
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            await client.post(
+                f"{ODOO_LOCAL_URL}/whatsapp_private/notify_inbox",
+                json={
+                    "jsonrpc": "2.0",
+                    "method": "call",
+                    "params": {"company_id": company_id, "token": token},
+                },
+            )
+    except Exception as exc:  # pylint: disable=broad-exception-caught
+        _logger.warning("Could not notify Odoo of a new WhatsApp inbox item: %s", exc)
 
 
 async def queue_inbound(directory: Path, client: NewAClient, event: MessageEv) -> None:
@@ -163,6 +199,7 @@ async def queue_inbound(directory: Path, client: NewAClient, event: MessageEv) -
         message_id,
         sender.User or source.Chat.User,
     )
+    asyncio.create_task(notify_odoo_inbox(directory))
 
 
 async def link(directory: Path, timeout: float) -> None:

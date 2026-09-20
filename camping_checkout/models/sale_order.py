@@ -227,9 +227,15 @@ class SaleOrder(models.Model):
         if chosen:
             self.pitch_resource_ids = [(6, 0, chosen.ids)]
 
+    def _requires_pitch_reservation(self):
+        self.ensure_one()
+        return self.company_id.x_use_camping_pitch_map and any(
+            not line.display_type and line.product_id.planning_role_id for line in self.order_line
+        )
+
     def _validate_pitch_selection(self):
         self.ensure_one()
-        if not self.company_id.x_use_camping_pitch_map:
+        if not self._requires_pitch_reservation():
             return
         if not self.pitch_resource_ids:
             raise ValidationError(_("Please select at least one available pitch before confirming the order."))
@@ -304,7 +310,7 @@ class SaleOrder(models.Model):
                 slots[index][1] -= 1
 
     def _action_confirm(self):
-        pitch_orders = self.filtered(lambda order: order.company_id.x_use_camping_pitch_map)
+        pitch_orders = self.filtered(lambda order: order._requires_pitch_reservation())
         for order in pitch_orders:
             order._auto_assign_pitches()
             for pitch in order.pitch_resource_ids:
