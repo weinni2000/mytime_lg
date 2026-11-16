@@ -476,7 +476,7 @@ class WebsiteSaleCampingPitch(WebsiteSale):
             "map_image_url": (
                 f"/shop/pitch/map/{campsite_map.id}/image?preview=1024&unique={campsite_map.write_date.timestamp()}"
                 if campsite_map and campsite_map.image
-                else "/camping_map_booking/static/src/img/camping_map.png"
+                else ""
             ),
             "selected_pitches": selected_pitches,
             "selected_pitch_ids_csv": ",".join(map(str, selected_pitches.ids)),

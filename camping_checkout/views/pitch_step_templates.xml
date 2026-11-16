@@ -101,7 +101,7 @@
                         </button>
                     </div>
 
-                    <div t-if="campsite_map" class="mb-4">
+                    <div t-if="campsite_map and map_image_url" class="mb-4">
                         <div
                             class="o_camping_map_booking"
                             t-att-data-zones="zones_json"
