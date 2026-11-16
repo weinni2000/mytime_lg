@@ -41,9 +41,16 @@ class WebsiteSaleCampingCheckout(WebsiteSale):
 
     def _get_mandatory_billing_address_fields(self, country_sudo):
         mandatory_fields = super()._get_mandatory_billing_address_fields(country_sudo)
-        if self._needs_address():
+        order_sudo = request.cart
+        if self._needs_address() and order_sudo and self._has_booking_product(order_sudo):
             mandatory_fields = mandatory_fields | {"birthdate_date"}
         return mandatory_fields
+
+    @staticmethod
+    def _has_booking_product(order_sudo):
+        """Birth date, ID photo and guests are only collected for bookings, i.e.
+        when the cart holds an accommodation (planning role) product."""
+        return bool(order_sudo.order_line.product_id.planning_role_id)
 
     def _prepare_address_form_values(self, *args, **kwargs):
         rendering_values = super()._prepare_address_form_values(*args, **kwargs)
@@ -56,6 +63,7 @@ class WebsiteSaleCampingCheckout(WebsiteSale):
             rendering_values["countries"] = countries - priority_countries
         order_sudo = kwargs.get("order_sudo")
         if order_sudo:
+            rendering_values["has_booking_product"] = self._has_booking_product(order_sudo)
             # No starter row: stays empty (and out of the way) until the
             # customer actually clicks "Add guest".
             rendering_values["guest_rows"] = self._get_camping_guest_rows(order_sudo)
@@ -70,7 +78,7 @@ class WebsiteSaleCampingCheckout(WebsiteSale):
         # real customer by the time this runs - only guard against the
         # address submission itself having failed (still-anonymous cart).
         partner = order_sudo.partner_id if order_sudo else False
-        if partner and partner != order_sudo.website_id.partner_id:
+        if partner and partner != order_sudo.website_id.partner_id and self._has_booking_product(order_sudo):
             _guest_count, adult_guest_count = self._update_camping_guests(order_sudo)
             order_sudo._update_additional_guest_charge()
             self._update_local_tax_product(order_sudo, adult_guest_count)
@@ -285,7 +293,7 @@ class WebsiteSaleCampingCheckout(WebsiteSale):
             )
 
         total_guests = 1 + len(guest_vals)
-        adult_guests = sum(1 for age in guest_ages if age > LOCAL_TAX_MIN_AGE)
+        adult_guests = sum(1 for age in guest_ages if age >= LOCAL_TAX_MIN_AGE)
         return total_guests, adult_guests
 
     def _update_local_tax_product(self, order_sudo, adult_guest_count):

@@ -13,6 +13,9 @@
                         placeholder="Enter temporary information to display on sales orders..."
                     />
                 </group>
+                <group string="City Tax">
+                    <field name="city_tax_per_night" />
+                </group>
                 <group string="Online Orders">
                     <field name="default_brand_id" options="{'no_create': True}" />
                 </group>

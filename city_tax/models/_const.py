@@ -46,7 +46,9 @@ _DESKLINE_SALUTATION_OHNE = _X_ANREDE_SELECTION[30][0]
 
 # Guest-registration completeness: "light" applies to accompanying guests,
 # "full" applies to the main guest of a stay (see x_guests_line.x_main_guest).
-_GUEST_LIGHT_REQUIRED_FIELDS = ["name", "x_anrede", "x_calc_nationality_id"]
+# Additional guests inherit country and address from the main guest (see
+# _deskline_utils.build_guest_payload), so only the main guest needs them.
+_GUEST_LIGHT_REQUIRED_FIELDS = ["name", "x_anrede"]
 _GUEST_FULL_REQUIRED_FIELDS = [
     "name",
     "x_anrede",

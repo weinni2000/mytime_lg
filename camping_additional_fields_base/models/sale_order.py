@@ -45,6 +45,18 @@ class SaleOrder(models.Model):
         compute="_compute_amount_guests",
         store=True,
     )
+    total_nights = fields.Integer(
+        compute="_compute_total_nights",
+        store=True,
+        help="Sum of the stay days of all guest lines (same value as Stay Days on each guest line).",
+    )
+    city_tax_amount = fields.Monetary(
+        compute="_compute_city_tax_amount",
+        store=True,
+        currency_field="currency_id",
+        help="Nights of the taxable guests (not exempt, e.g. children) multiplied with the company's "
+        "city tax per night.",
+    )
     calc_payment_type = fields.Selection(
         selection=[
             ("cash", "Cash"),
@@ -60,6 +72,30 @@ class SaleOrder(models.Model):
     def _compute_amount_guests(self):
         for order in self:
             order.amount_guests = len(order.x_guest_line_ids)
+
+    @api.depends("x_guest_line_ids.x_arrival_date", "x_guest_line_ids.x_departure_date")
+    def _compute_total_nights(self):
+        for record in self:
+            record.total_nights = sum(
+                (guest_line.x_departure_date - guest_line.x_arrival_date).days
+                for guest_line in record.x_guest_line_ids
+                if guest_line.x_arrival_date and guest_line.x_departure_date
+            )
+
+    @api.depends(
+        "x_guest_line_ids.x_arrival_date",
+        "x_guest_line_ids.x_departure_date",
+        "x_guest_line_ids.x_person_group_frei",
+        "company_id.city_tax_per_night",
+    )
+    def _compute_city_tax_amount(self):
+        for record in self:
+            taxable_nights = sum(
+                (guest_line.x_departure_date - guest_line.x_arrival_date).days
+                for guest_line in record.x_guest_line_ids
+                if guest_line.x_arrival_date and guest_line.x_departure_date and not guest_line.x_person_group_frei
+            )
+            record.city_tax_amount = taxable_nights * record.company_id.city_tax_per_night
 
     @api.depends("invoice_ids.payment_state", "invoice_ids.state")
     def _compute_is_paid(self):

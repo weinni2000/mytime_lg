@@ -249,6 +249,21 @@ class TestIdScan(TransactionCase):
         self.assertEqual(self.partner.x_nationality.code, "CZ")
         self.assertEqual(self.partner.gender, "female")
 
+    def test_scan_sets_country_from_nationality_without_address_country(self):
+        self.partner.country_id = False
+        extraction = self._extraction(address_country=None)
+        with patch.object(type(self.partner), "_call_id_scan", return_value=extraction):
+            self.partner.action_scan_id_documents()
+        self.assertEqual(self.partner.country_id.code, "CZ")
+
+    def test_scan_keeps_existing_country_without_address_country(self):
+        austria = self.env.ref("base.at")
+        self.partner.country_id = austria
+        extraction = self._extraction(address_country=None)
+        with patch.object(type(self.partner), "_call_id_scan", return_value=extraction):
+            self.partner.action_scan_id_documents()
+        self.assertEqual(self.partner.country_id, austria)
+
     def test_scan_raises_without_any_usable_data(self):
         empty_extraction = {
             "first_name": None,

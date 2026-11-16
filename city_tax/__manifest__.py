@@ -1,7 +1,7 @@
 {
     "name": "City Tax",
     "summary": "Overview of all guest lines used for city tax reporting.",
-    "version": "19.0.1.1.14",
+    "version": "19.0.1.1.15",
     "category": "Hidden/Tools",
     "license": "OPL-1",
     "author": "mytime.click",

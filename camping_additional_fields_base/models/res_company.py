@@ -15,3 +15,9 @@ class ResCompany(models.Model):
         help="Brand automatically applied to sales orders created from the "
         "website or imported from an OTA/sales channel, when none is set.",
     )
+    city_tax_per_night = fields.Monetary(
+        string="City Tax per Night",
+        currency_field="currency_id",
+        default=2.4,
+        help="Local tax (Ortstaxe) charged per guest night; multiplied with the total nights of a sales order.",
+    )

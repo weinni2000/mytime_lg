@@ -16,6 +16,7 @@
         "sale_renting",
         "website_sale",
         "booking_engine",
+        "city_tax",
         "planning",
     ],
     "data": [

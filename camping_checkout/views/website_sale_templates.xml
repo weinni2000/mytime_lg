@@ -6,7 +6,11 @@
         name="Checkout birth date"
     >
         <xpath expr="//div[@id='div_phone']" position="after">
-            <div id="div_birthdate" class="col-lg-6 mb-2">
+            <div
+                id="div_birthdate"
+                class="col-lg-6 mb-2"
+                t-if="has_booking_product is not False"
+            >
                 <label class="col-form-label" for="o_birthdate">Date of Birth</label>
                 <input
                     id="o_birthdate"
@@ -17,7 +21,11 @@
                     required="required"
                 />
             </div>
-            <div id="div_id_document_front" class="col-lg-6 mb-2">
+            <div
+                id="div_id_document_front"
+                class="col-lg-6 mb-2"
+                t-if="has_booking_product is not False"
+            >
                 <label
                     class="col-form-label label-optional"
                     for="o_id_document_front"

@@ -56,6 +56,13 @@
         <field name="model_id" ref="booking_engine.x_model_guests_line" />
         <field name="name">x_refresh</field>
     </record>
+    <record id="model_x_guests_line_x_studio_refresh" model="ir.model.fields">
+        <field name="ttype">boolean</field>
+        <field name="field_description">Refresh</field>
+        <field name="help">Toggle to force the guest-check fields to recompute.</field>
+        <field name="model_id" ref="booking_engine.x_model_guests_line" />
+        <field name="name">x_studio_refresh</field>
+    </record>
     <record id="model_x_guests_line_x_arrival_date_manual" model="ir.model.fields">
         <field name="ttype">date</field>
         <field name="field_description">Arrival (Manual)</field>
@@ -146,7 +153,7 @@
 ]]></field>
         <field
             name="depends"
-        >x_main_guest, x_refresh, x_arrival_date, x_departure_date, x_guest_partner_id.x_guest_data_check, x_guest_partner_id.x_guest_full_data_check, x_guest_partner_id.x_anrede_calc_refresh</field>
+        >x_main_guest, x_refresh, x_studio_refresh, x_arrival_date, x_departure_date, x_guest_partner_id.x_guest_data_check, x_guest_partner_id.x_guest_full_data_check, x_guest_partner_id.x_anrede_calc_refresh</field>
         <field name="field_description">Guest Check</field>
         <field name="model_id" ref="booking_engine.x_model_guests_line" />
         <field name="name">x_main_guest_check</field>
@@ -211,7 +218,7 @@
 ]]></field>
         <field
             name="depends"
-        >x_main_guest, x_refresh, x_arrival_date, x_departure_date, x_guest_partner_id.x_guest_data_warning, x_guest_partner_id.x_guest_full_data_warning, x_guest_partner_id.x_anrede_calc_refresh</field>
+        >x_main_guest, x_refresh, x_studio_refresh, x_arrival_date, x_departure_date, x_guest_partner_id.x_guest_data_warning, x_guest_partner_id.x_guest_full_data_warning, x_guest_partner_id.x_anrede_calc_refresh</field>
         <field name="field_description">Guest Check Warning</field>
         <field name="model_id" ref="booking_engine.x_model_guests_line" />
         <field name="name">x_guest_check_warning</field>

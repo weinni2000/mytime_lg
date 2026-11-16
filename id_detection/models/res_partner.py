@@ -3,6 +3,7 @@ import functools
 import json
 import logging
 import os
+import time
 from datetime import datetime
 from io import BytesIO
 
@@ -36,6 +37,11 @@ from ._const import (
 )
 
 _logger = logging.getLogger(__name__)
+
+# Tesseract's OpenMP threads can spin for minutes on a busy server; one thread
+# is plenty for a single orientation probe.
+os.environ.setdefault("OMP_THREAD_LIMIT", "1")
+_TESSERACT_OSD_TIMEOUT = 15
 
 _IMAGE_SIGNATURES = (
     (b"\x89PNG", "image/png"),
@@ -142,8 +148,11 @@ def _detect_text_rotation(image):
     photo, a mostly-graphical side, too few characters, ...).
     """
     try:
-        osd = pytesseract.image_to_osd(image, output_type=pytesseract.Output.DICT)
+        osd = pytesseract.image_to_osd(image, output_type=pytesseract.Output.DICT, timeout=_TESSERACT_OSD_TIMEOUT)
     except pytesseract.TesseractError:
+        return None
+    except RuntimeError:
+        _logger.warning("Tesseract orientation detection timed out after %ss.", _TESSERACT_OSD_TIMEOUT)
         return None
     if osd.get("orientation_conf", 0) < _TEXT_ROTATION_MIN_CONFIDENCE:
         return None
@@ -205,9 +214,19 @@ class ResPartner(models.Model):
         # writes and leave the record in a mix of both results.
         self.env.cr.execute("SELECT id FROM res_partner WHERE id = %s FOR UPDATE", [self.id])
         try:
+            started = time.monotonic()
             images = self._prepare_id_scan_images()
+            prepared = time.monotonic()
             extraction = self._call_id_scan(images)
+            scanned = time.monotonic()
             self._apply_id_scan_images(extraction.get("images", []), images)
+            _logger.info(
+                "ID document scan for partner %s: prepare %.1fs, AI call %.1fs, image processing %.1fs",
+                self.id,
+                prepared - started,
+                scanned - prepared,
+                time.monotonic() - scanned,
+            )
         except (UserError, ValueError, KeyError, IndexError, UnidentifiedImageError) as error:
             _logger.warning("ID document scan failed for %s: %s", self.display_name, error)
             raise UserError(_("Document scan failed: %(error)s", error=str(error))) from error
@@ -511,6 +530,10 @@ class ResPartner(models.Model):
         address_country = self._find_country_by_code(extraction.get("address_country"))
         if address_country:
             values["country_id"] = address_country.id
+        elif nationality and not self.country_id:
+            # Documents without an address (e.g. passports) still give a usable
+            # country; never overwrite one that is already set.
+            values["country_id"] = nationality.id
 
         gender_code = extraction.get("gender")
 

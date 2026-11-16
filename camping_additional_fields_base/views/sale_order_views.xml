@@ -69,6 +69,8 @@
             >
                 <field name="is_rental_order" />
                 <field name="amount_guests" />
+                <field name="total_nights" />
+                <field name="city_tax_amount" />
             </xpath>
         </field>
     </record>

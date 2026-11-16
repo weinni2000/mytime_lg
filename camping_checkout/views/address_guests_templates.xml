@@ -10,11 +10,11 @@
         name="Guests on the address step"
     >
         <xpath expr="//t[@t-call='website_sale.address_form_fields']" position="after">
-            <div class="col-12 mt-4">
+            <div class="col-12 mt-4" t-if="has_booking_product is not False">
                 <h5 class="mb-2">Guests</h5>
                 <p class="text-muted small mb-2">
-                    Guests aged 16 or younger are exempt from the local tax; it is only
-                    charged for guests older than 16.
+                    Guests under 16 are exempt from the local tax; it is only charged
+                    for guests aged 16 or older.
                 </p>
                 <div id="guest_rows">
                     <t t-foreach="guest_rows" t-as="guest">
