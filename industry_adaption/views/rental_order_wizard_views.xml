@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="rental_order_wizard_view_form_adaption" model="ir.ui.view">
+        <field name="name">rental.order.wizard.form.adaption</field>
+        <field name="model">rental.order.wizard</field>
+        <field name="inherit_id" ref="sale_renting.rental_order_wizard_view_form" />
+        <!-- after booking_engine.rental_order_view_inherit (priority 200) -->
+        <field name="priority">999</field>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='x_resource_id']" position="replace" />
+        </field>
+    </record>
+</odoo>
